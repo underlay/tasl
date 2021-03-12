@@ -29,7 +29,7 @@
 	},
 	"homepage": "https://github.com/underlay/tasl#readme",
 	"dependencies": {
-		"@underlay/taslx-lezer": "0.0.1",
+		"@underlay/taslx-lezer": "^0.0.1",
 		"lezer-tree": "^0.13.2"
 	},
 	"devDependencies": {
