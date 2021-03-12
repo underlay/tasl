@@ -1,0 +1,48 @@
+@top Schema { statement* }
+
+@tokens {
+  space { std.whitespace+ }
+  Comment { "#" ![\n]* }
+  identifier { $[a-zA-Z] $[a-zA-Z0-9]* }
+  Uri { "<>" }
+  Pointer { "*" }
+  Term { $[a-zA-Z] $[a-zA-Z0-9]* (":" $[a-zA-Z0-9/_.:#\-]*)? }
+}
+
+@skip { space | Comment }
+
+delimited<element> { "" | element (";" element)* ";"? }
+
+Literal { "<" Term ">" }
+
+expression[@isGroup=Expression] {
+  Variable | Optional | Reference | Uri | Literal | Product | Coproduct
+}
+
+Variable { identifier }
+
+Optional { "?" expression }
+
+Reference { Pointer Term }
+
+Product { "{" delimited<Component> "}" }
+Component { Term "->" expression }
+
+Coproduct { "[" delimited<Option> "]" }
+Option { Term (">-" expression)? }
+
+statement { Namespace | Type | Class | Edge | List }
+
+Prefix { identifier }
+
+Namespace { @specialize[@name=namespace]<identifier, "namespace"> Prefix Term }
+
+TypeName { identifier }
+
+Type { @specialize[@name=type]<identifier, "type"> TypeName expression }
+
+Class { @specialize[@name=class]<identifier, "class"> Term expression }
+
+Edge { @specialize[@name=edge]<identifier, "edge"> Term "==/" Term expression? "/=>" Term }
+
+List { @specialize[@name=list]<identifier, "list"> Term "::" expression }

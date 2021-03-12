@@ -1,0 +1,55 @@
+@top Mapping { statement* }
+
+@tokens {
+  space { std.whitespace+ }
+  Comment { "#" ![\n]* }
+  identifier { $[a-zA-Z] $[a-zA-Z0-9]* }
+  Term { $[a-zA-Z] $[a-zA-Z0-9]* (":" $[a-zA-Z0-9/_.:#\-]*)? }
+  Pointer { "*" }
+  Projector { "/" }
+  Injector { "\\" }
+  String { '"' char* '"' }
+  char { $[\u{20}\u{21}\u{23}-\u{5b}\u{5d}-\u{10ffff}] | "\\" esc }
+  esc  { $["\\\/bfnrt] | "u" hex hex hex hex }
+  hex  { $[0-9a-fA-F] }
+}
+
+@skip { space | Comment }
+
+delimited<element> { "" | element (";" element)* ";"? }
+
+expression[@isGroup=Expression] {
+  Variable | Dereference | Projection | Injection | Identifier | Constant | Tuple | Match
+}
+
+expressions { "|"? expression ("|" expression)* }
+
+Variable { identifier }
+
+Dereference { Pointer Term }
+
+Projection { Projector Term }
+
+Injection { Injector Term }
+
+Identifier { "<" Term ">" }
+
+Constant { String "<" Term ">" }
+
+Tuple { "{" delimited<Slot> "}" }
+Slot { Term ("->" expressions)? }
+
+Match { "[" delimited<Case> "]" }
+Case { Term (">-" expressions)? }
+
+statement { Namespace | Expr | Map }
+
+Prefix { identifier }
+
+Namespace { @specialize[@name=namespace]<identifier, "namespace"> Prefix Term }
+
+ExprName { identifier }
+
+Expr { @specialize[@name=expr]<identifier, "expr"> ExprName expressions }
+
+Map { @specialize[@name=map]<identifier, "map"> Term ("::" Term)? expressions }
