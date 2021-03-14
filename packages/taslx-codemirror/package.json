@@ -51,5 +51,6 @@
 	"peerDependencies": {
 		"@codemirror/next": "^0.15.0",
 		"@underlay/apg": "^1.2.4"
-	}
+	},
+	"gitHead": "0e8ae64a81b67f54d84990ce0916095a114b02f2"
 }

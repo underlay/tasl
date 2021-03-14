@@ -16,6 +16,7 @@
 	},
 	"homepage": "https://github.com/underlay/tasl#readme",
 	"devDependencies": {
-		"lerna": "^3.22.1"
+		"lerna": "^3.22.1",
+		"lerna-update-wizard": "^0.17.8"
 	}
 }

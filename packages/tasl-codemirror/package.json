@@ -29,7 +29,7 @@
 	},
 	"homepage": "https://github.com/underlay/tasl#readme",
 	"dependencies": {
-		"@underlay/namespaces": "^0.0.2",
+		"@underlay/namespaces": "0.0.3",
 		"@underlay/tasl-lezer": "^0.0.1",
 		"lezer-tree": "^0.13.2"
 	},
@@ -48,5 +48,6 @@
 	"peerDependencies": {
 		"@codemirror/next": "^0.15.0",
 		"@underlay/apg": "^1.2.4"
-	}
+	},
+	"gitHead": "0e8ae64a81b67f54d84990ce0916095a114b02f2"
 }
