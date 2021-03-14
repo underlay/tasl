@@ -39,7 +39,7 @@
 		"@babel/preset-env": "^7.13.10",
 		"@babel/preset-typescript": "^7.13.0",
 		"@codemirror/next": "^0.15.0",
-		"@underlay/apg": "^1.2.4",
+		"@underlay/apg": "^1.2.5",
 		"babel-loader": "^8.2.2",
 		"npm-run-all": "^4.1.5",
 		"source-map-loader": "^2.0.1",
@@ -50,7 +50,7 @@
 	},
 	"peerDependencies": {
 		"@codemirror/next": "^0.15.0",
-		"@underlay/apg": "^1.2.4"
+		"@underlay/apg": "1.2.5"
 	},
 	"gitHead": "0e8ae64a81b67f54d84990ce0916095a114b02f2"
 }
