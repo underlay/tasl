@@ -1,4 +1,6 @@
-import { linter } from "@codemirror/next/lint";
+import { StateEffect, StateField } from "@codemirror/next/state";
+import { setDiagnostics } from "@codemirror/next/lint";
+import { ViewPlugin } from "@codemirror/next/view";
 import { syntaxTree } from "@codemirror/next/language";
 import { Schema } from "@underlay/apg";
 import { ul } from "@underlay/namespaces";
@@ -27,7 +29,7 @@ export function lintView({ state, }) {
             message: "Syntax error: invalid document",
             severity: "error",
         });
-        return { errors: 1, state, schema: {}, namespaces: {}, diagnostics };
+        return { errorCount: 1, schema: {}, namespaces: {}, diagnostics };
     }
     do {
         if (cursor.type.isError) {
@@ -165,20 +167,12 @@ export function lintView({ state, }) {
     }
     const sorted = diagnostics.sort(({ from: a, to: c }, { from: b, to: d }) => a < b ? -1 : b < a ? 1 : c < d ? -1 : d < c ? 1 : 0);
     return {
-        errors: sorted.length,
-        state: state,
+        errorCount: sorted.length,
         schema: parseState.schema,
         namespaces: { ...defaultNamespaces, ...Object.fromEntries(namespaces) },
         diagnostics: sorted,
     };
 }
-export const makeLinter = (onChange) => linter((view) => {
-    const { diagnostics, ...props } = lintView(view);
-    if (onChange !== undefined) {
-        onChange(props);
-    }
-    return diagnostics;
-});
 function getURI(state, diagnostics, node) {
     try {
         return parseURI(state, node);
@@ -295,3 +289,45 @@ function reportChildErrors(diagnostics, cursor) {
         cursor.parent();
     }
 }
+const LintDelay = 500;
+const setSchemaEffect = StateEffect.define();
+export const SchemaState = StateField.define({
+    create() {
+        return { errorCount: 0, schema: {}, namespaces: defaultNamespaces };
+    },
+    update(value, tr) {
+        return tr.effects.reduce((value, effect) => (effect.is(setSchemaEffect) ? effect.value : value), value);
+    },
+});
+export const linter = [
+    SchemaState,
+    ViewPlugin.fromClass(class {
+        constructor(view) {
+            this.view = view;
+            this.lintTime = Date.now() + LintDelay;
+            this.set = true;
+            this.run = this.run.bind(this);
+            setTimeout(this.run, LintDelay);
+        }
+        run() {
+            const now = Date.now();
+            if (now < this.lintTime - 10) {
+                setTimeout(this.run, this.lintTime - now);
+            }
+            else {
+                this.set = false;
+                const { diagnostics, ...props } = lintView(this.view);
+                this.view.dispatch({ effects: [setSchemaEffect.of(props)] }, setDiagnostics(this.view.state, diagnostics));
+            }
+        }
+        update(update) {
+            if (update.docChanged) {
+                this.lintTime = Date.now() + LintDelay;
+                if (!this.set) {
+                    this.set = true;
+                    setTimeout(this.run, LintDelay);
+                }
+            }
+        }
+    }),
+];

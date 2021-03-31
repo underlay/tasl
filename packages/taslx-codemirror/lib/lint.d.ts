@@ -1,14 +1,14 @@
-import { EditorState, Extension } from "@codemirror/next/state";
+import { Extension, StateField } from "@codemirror/next/state";
 import { Diagnostic } from "@codemirror/next/lint";
 import { EditorView } from "@codemirror/next/view";
 import { Mapping } from "@underlay/apg";
-export interface UpdateProps {
-    errors: number;
-    state: EditorState;
+export interface MappingProps {
+    errorCount: number;
     mapping: Mapping.Mapping;
     namespaces: Record<string, string>;
 }
-export declare function lintView(view: EditorView): UpdateProps & {
+export declare function lintView(view: EditorView): MappingProps & {
     diagnostics: Diagnostic[];
 };
-export declare const makeLinter: (onChange?: ((props: UpdateProps) => void) | undefined) => Extension;
+export declare const MappingState: StateField<Readonly<MappingProps>>;
+export declare const linter: Extension;

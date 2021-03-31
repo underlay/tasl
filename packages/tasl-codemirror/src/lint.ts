@@ -1,6 +1,6 @@
-import { EditorState, Extension } from "@codemirror/next/state"
-import { Diagnostic, linter } from "@codemirror/next/lint"
-import { EditorView } from "@codemirror/next/view"
+import { Extension, StateEffect, StateField } from "@codemirror/next/state"
+import { Diagnostic, setDiagnostics } from "@codemirror/next/lint"
+import { EditorView, ViewPlugin, ViewUpdate } from "@codemirror/next/view"
 import { syntaxTree } from "@codemirror/next/language"
 import { SyntaxNode, TreeCursor } from "lezer-tree"
 
@@ -18,9 +18,8 @@ import {
 } from "@underlay/tasl-lezer"
 import { errorUnit } from "./error.js"
 
-export interface UpdateProps {
-	errors: number
-	state: EditorState
+export interface SchemaProps {
+	errorCount: number
 	schema: Schema.Schema
 	namespaces: Record<string, string>
 }
@@ -33,7 +32,7 @@ interface parseState extends ParseState {
 
 export function lintView({
 	state,
-}: EditorView): UpdateProps & { diagnostics: Diagnostic[] } {
+}: EditorView): SchemaProps & { diagnostics: Diagnostic[] } {
 	const cursor = syntaxTree(state).cursor()
 
 	const slice = ({ from, to }: SyntaxNode) => state.doc.sliceString(from, to)
@@ -60,7 +59,7 @@ export function lintView({
 			message: "Syntax error: invalid document",
 			severity: "error",
 		})
-		return { errors: 1, state, schema: {}, namespaces: {}, diagnostics }
+		return { errorCount: 1, schema: {}, namespaces: {}, diagnostics }
 	}
 
 	do {
@@ -209,24 +208,12 @@ export function lintView({
 	)
 
 	return {
-		errors: sorted.length,
-		state: state,
+		errorCount: sorted.length,
 		schema: parseState.schema,
 		namespaces: { ...defaultNamespaces, ...Object.fromEntries(namespaces) },
 		diagnostics: sorted,
 	}
 }
-
-export const makeLinter = (
-	onChange?: (props: UpdateProps) => void
-): Extension =>
-	linter((view: EditorView) => {
-		const { diagnostics, ...props } = lintView(view)
-		if (onChange !== undefined) {
-			onChange(props)
-		}
-		return diagnostics
-	})
 
 function getURI(
 	state: parseState,
@@ -353,3 +340,58 @@ function reportChildErrors(diagnostics: Diagnostic[], cursor: TreeCursor) {
 		cursor.parent()
 	}
 }
+
+const LintDelay = 500
+
+const setSchemaEffect = StateEffect.define<Readonly<SchemaProps>>()
+
+export const SchemaState = StateField.define<Readonly<SchemaProps>>({
+	create() {
+		return { errorCount: 0, schema: {}, namespaces: defaultNamespaces }
+	},
+	update(value, tr) {
+		return tr.effects.reduce<SchemaProps>(
+			(value, effect) => (effect.is(setSchemaEffect) ? effect.value : value),
+			value
+		)
+	},
+})
+
+export const linter: Extension = [
+	SchemaState,
+	ViewPlugin.fromClass(
+		class {
+			public lintTime = Date.now() + LintDelay
+			public set = true
+
+			constructor(readonly view: EditorView) {
+				this.run = this.run.bind(this)
+				setTimeout(this.run, LintDelay)
+			}
+
+			run() {
+				const now = Date.now()
+				if (now < this.lintTime - 10) {
+					setTimeout(this.run, this.lintTime - now)
+				} else {
+					this.set = false
+					const { diagnostics, ...props } = lintView(this.view)
+					this.view.dispatch(
+						{ effects: [setSchemaEffect.of(props)] },
+						setDiagnostics(this.view.state, diagnostics)
+					)
+				}
+			}
+
+			update(update: ViewUpdate) {
+				if (update.docChanged) {
+					this.lintTime = Date.now() + LintDelay
+					if (!this.set) {
+						this.set = true
+						setTimeout(this.run, LintDelay)
+					}
+				}
+			}
+		}
+	),
+]

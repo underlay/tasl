@@ -1,6 +1,6 @@
-import { EditorState, Extension } from "@codemirror/next/state"
-import { Diagnostic, linter } from "@codemirror/next/lint"
-import { EditorView } from "@codemirror/next/view"
+import { Extension, StateEffect, StateField } from "@codemirror/next/state"
+import { Diagnostic, setDiagnostics } from "@codemirror/next/lint"
+import { EditorView, ViewPlugin, ViewUpdate } from "@codemirror/next/view"
 import { syntaxTree } from "@codemirror/next/language"
 import { SyntaxNode, TreeCursor } from "lezer-tree"
 
@@ -15,9 +15,8 @@ import {
 	uriPattern,
 } from "@underlay/taslx-lezer"
 
-export interface UpdateProps {
-	errors: number
-	state: EditorState
+export interface MappingProps {
+	errorCount: number
 	mapping: Mapping.Mapping
 	namespaces: Record<string, string>
 }
@@ -30,7 +29,7 @@ interface parseState extends ParseState {
 
 export function lintView(
 	view: EditorView
-): UpdateProps & { diagnostics: Diagnostic[] } {
+): MappingProps & { diagnostics: Diagnostic[] } {
 	const cursor = syntaxTree(view.state).cursor()
 
 	const slice = ({ from, to }: SyntaxNode) =>
@@ -51,8 +50,7 @@ export function lintView(
 		cursor.firstChild()
 	} else {
 		return {
-			errors: 1,
-			state: view.state,
+			errorCount: 1,
 			mapping: {},
 			namespaces: {},
 			diagnostics: [
@@ -145,24 +143,28 @@ export function lintView(
 	)
 
 	return {
-		errors: sorted.length,
-		state: view.state,
+		errorCount: sorted.length,
 		mapping: state.mapping,
 		namespaces: { ...defaultNamespaces, ...Object.fromEntries(namespaces) },
 		diagnostics: sorted,
 	}
 }
 
-export const makeLinter = (
-	onChange?: (props: UpdateProps) => void
-): Extension =>
-	linter((view: EditorView) => {
-		const { diagnostics, ...props } = lintView(view)
-		if (onChange !== undefined) {
-			onChange(props)
-		}
-		return diagnostics
-	})
+// export const makeLinter = (
+// 	onChange?: (props: UpdateProps) => void
+// ): Extension =>
+// 	linter((view: EditorView) => {
+// 		const { diagnostics, ...props } = lintView(view)
+// 		if (onChange !== undefined) {
+// 			onChange(props)
+// 		}
+// 		return diagnostics
+// 	})
+
+// export const linterExtension = makeLinter((view: EditorView) => {
+// 	const { diagnostics, ...props } = lintView(view)
+// 	return diagnostics
+// })
 
 function getURI(state: parseState, node: SyntaxNode): string {
 	try {
@@ -298,3 +300,59 @@ function reportChildErrors(diagnostics: Diagnostic[], cursor: TreeCursor) {
 		cursor.parent()
 	}
 }
+
+const LintDelay = 500
+
+const setMappingEffect = StateEffect.define<Readonly<MappingProps>>()
+
+export const MappingState = StateField.define<Readonly<MappingProps>>({
+	create() {
+		return { errorCount: 0, mapping: {}, namespaces: defaultNamespaces }
+	},
+	update(value, tr) {
+		return tr.effects.reduce<MappingProps>(
+			(value, effect) => (effect.is(setMappingEffect) ? effect.value : value),
+			value
+		)
+	},
+})
+
+export const linter: Extension = [
+	MappingState,
+	ViewPlugin.fromClass(
+		class {
+			public lintTime = Date.now() + LintDelay
+			public set = true
+
+			constructor(readonly view: EditorView) {
+				this.run = this.run.bind(this)
+				setTimeout(this.run, LintDelay)
+			}
+
+			run() {
+				const now = Date.now()
+				if (now < this.lintTime - 10) {
+					setTimeout(this.run, this.lintTime - now)
+				} else {
+					this.set = false
+					const { diagnostics, ...props } = lintView(this.view)
+					// const { errorCount } = this.view.state.field(mappingState)
+					this.view.dispatch(
+						{ effects: [setMappingEffect.of(props)] },
+						setDiagnostics(this.view.state, diagnostics)
+					)
+				}
+			}
+
+			update(update: ViewUpdate) {
+				if (update.docChanged) {
+					this.lintTime = Date.now() + LintDelay
+					if (!this.set) {
+						this.set = true
+						setTimeout(this.run, LintDelay)
+					}
+				}
+			}
+		}
+	),
+]

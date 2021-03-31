@@ -1,4 +1,6 @@
-import { linter } from "@codemirror/next/lint";
+import { StateEffect, StateField } from "@codemirror/next/state";
+import { setDiagnostics } from "@codemirror/next/lint";
+import { ViewPlugin } from "@codemirror/next/view";
 import { syntaxTree } from "@codemirror/next/language";
 import { Mapping } from "@underlay/apg";
 import { defaultNamespaces, LintError, namespacePattern, parseURI, uriPattern, } from "@underlay/taslx-lezer";
@@ -19,8 +21,7 @@ export function lintView(view) {
     }
     else {
         return {
-            errors: 1,
-            state: view.state,
+            errorCount: 1,
             mapping: {},
             namespaces: {},
             diagnostics: [
@@ -104,20 +105,26 @@ export function lintView(view) {
     const namespaces = Object.entries(state.namespaces).filter(([_, base]) => base !== null);
     const sorted = state.diagnostics.sort(({ from: a, to: c }, { from: b, to: d }) => a < b ? -1 : b < a ? 1 : c < d ? -1 : d < c ? 1 : 0);
     return {
-        errors: sorted.length,
-        state: view.state,
+        errorCount: sorted.length,
         mapping: state.mapping,
         namespaces: { ...defaultNamespaces, ...Object.fromEntries(namespaces) },
         diagnostics: sorted,
     };
 }
-export const makeLinter = (onChange) => linter((view) => {
-    const { diagnostics, ...props } = lintView(view);
-    if (onChange !== undefined) {
-        onChange(props);
-    }
-    return diagnostics;
-});
+// export const makeLinter = (
+// 	onChange?: (props: UpdateProps) => void
+// ): Extension =>
+// 	linter((view: EditorView) => {
+// 		const { diagnostics, ...props } = lintView(view)
+// 		if (onChange !== undefined) {
+// 			onChange(props)
+// 		}
+// 		return diagnostics
+// 	})
+// export const linterExtension = makeLinter((view: EditorView) => {
+// 	const { diagnostics, ...props } = lintView(view)
+// 	return diagnostics
+// })
 function getURI(state, node) {
     try {
         return parseURI(state, node);
@@ -243,3 +250,46 @@ function reportChildErrors(diagnostics, cursor) {
         cursor.parent();
     }
 }
+const LintDelay = 500;
+const setMappingEffect = StateEffect.define();
+export const MappingState = StateField.define({
+    create() {
+        return { errorCount: 0, mapping: {}, namespaces: defaultNamespaces };
+    },
+    update(value, tr) {
+        return tr.effects.reduce((value, effect) => (effect.is(setMappingEffect) ? effect.value : value), value);
+    },
+});
+export const linter = [
+    MappingState,
+    ViewPlugin.fromClass(class {
+        constructor(view) {
+            this.view = view;
+            this.lintTime = Date.now() + LintDelay;
+            this.set = true;
+            this.run = this.run.bind(this);
+            setTimeout(this.run, LintDelay);
+        }
+        run() {
+            const now = Date.now();
+            if (now < this.lintTime - 10) {
+                setTimeout(this.run, this.lintTime - now);
+            }
+            else {
+                this.set = false;
+                const { diagnostics, ...props } = lintView(this.view);
+                // const { errorCount } = this.view.state.field(mappingState)
+                this.view.dispatch({ effects: [setMappingEffect.of(props)] }, setDiagnostics(this.view.state, diagnostics));
+            }
+        }
+        update(update) {
+            if (update.docChanged) {
+                this.lintTime = Date.now() + LintDelay;
+                if (!this.set) {
+                    this.set = true;
+                    setTimeout(this.run, LintDelay);
+                }
+            }
+        }
+    }),
+];

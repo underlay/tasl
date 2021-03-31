@@ -1,7 +1,7 @@
 import { openLintPanel } from "@codemirror/next/lint"
 import { EditorState } from "@codemirror/next/state"
 import { EditorView } from "@codemirror/next/view"
-import { editableConfig, makeLinter } from "../lib/index.js"
+import { editableConfig, linter, MappingState } from "../lib/index.js"
 
 const initialValue = `# Welcome to the schema editor!
 # If you're new, you probably want to read
@@ -28,7 +28,6 @@ map ex:jksl :: ex:jsl
 
 `
 
-const linter = makeLinter()
 const extensions = [...editableConfig, linter]
 
 const state = EditorState.create({
@@ -39,6 +38,10 @@ const state = EditorState.create({
 const view = new EditorView({
 	state,
 	parent: document.getElementById("editor"),
+	dispatch(tr) {
+		view.update([tr])
+		// const { mapping } = view.state.field(MappingState)
+	},
 })
 
 openLintPanel(view)

@@ -1,7 +1,7 @@
 import { openLintPanel } from "@codemirror/next/lint"
 import { EditorState } from "@codemirror/next/state"
 import { EditorView } from "@codemirror/next/view"
-import { editableConfig, makeLinter } from "../lib/index.js"
+import { editableConfig } from "../lib/index.js"
 
 const initialValue = `# Welcome to the schema editor!
 # If you're new, you probably want to read
@@ -34,12 +34,9 @@ class ex:wau {
 
 `
 
-const linter = makeLinter()
-const extensions = [...editableConfig, linter]
-
 const state = EditorState.create({
 	doc: initialValue,
-	extensions,
+	extensions: [editableConfig],
 })
 
 const view = new EditorView({

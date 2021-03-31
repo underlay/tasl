@@ -14,6 +14,7 @@ import { highlightSelectionMatches } from "@codemirror/next/search"
 import { defaultHighlightStyle } from "@codemirror/next/highlight"
 
 import { syntax } from "./syntax.js"
+import { linter } from "./lint.js"
 
 export const readOnlyConfig: Extension[] = [
 	EditorView.editable.of(false),
@@ -26,6 +27,7 @@ export const readOnlyConfig: Extension[] = [
 export const editableConfig: Extension[] = [
 	basicSetup,
 	syntax,
+	linter,
 	keymap.of([
 		...defaultKeymap,
 		...commentKeymap,
