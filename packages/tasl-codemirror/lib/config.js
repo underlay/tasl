@@ -3,7 +3,7 @@ import { defaultKeymap, indentMore, indentLess, } from "@codemirror/next/command
 import { EditorView, keymap } from "@codemirror/next/view";
 import { commentKeymap } from "@codemirror/next/comment";
 import { lineNumbers } from "@codemirror/next/gutter";
-import { highlightSelectionMatches } from "@codemirror/next/highlight-selection";
+import { highlightSelectionMatches } from "@codemirror/next/search";
 import { defaultHighlightStyle } from "@codemirror/next/highlight";
 import { syntax } from "./syntax.js";
 export const readOnlyConfig = [
@@ -16,7 +16,7 @@ export const readOnlyConfig = [
 export const editableConfig = [
     basicSetup,
     syntax,
-    keymap([
+    keymap.of([
         ...defaultKeymap,
         ...commentKeymap,
         {

@@ -10,7 +10,7 @@ import { commentKeymap } from "@codemirror/next/comment"
 import { Extension } from "@codemirror/next/state"
 
 import { lineNumbers } from "@codemirror/next/gutter"
-import { highlightSelectionMatches } from "@codemirror/next/highlight-selection"
+import { highlightSelectionMatches } from "@codemirror/next/search"
 import { defaultHighlightStyle } from "@codemirror/next/highlight"
 
 import { syntax } from "./syntax.js"
@@ -26,7 +26,7 @@ export const readOnlyConfig: Extension[] = [
 export const editableConfig: Extension[] = [
 	basicSetup,
 	syntax,
-	keymap([
+	keymap.of([
 		...defaultKeymap,
 		...commentKeymap,
 		{
