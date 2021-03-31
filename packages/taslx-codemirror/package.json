@@ -33,20 +33,20 @@
 		"lezer-tree": "^0.13.2"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.13.10",
+		"@babel/core": "^7.13.14",
 		"@babel/plugin-transform-modules-commonjs": "^7.13.8",
 		"@babel/plugin-transform-typescript": "^7.13.0",
-		"@babel/preset-env": "^7.13.10",
+		"@babel/preset-env": "^7.13.12",
 		"@babel/preset-typescript": "^7.13.0",
 		"@codemirror/next": "^0.15.0",
 		"@underlay/apg": "^1.2.5",
 		"babel-loader": "^8.2.2",
 		"npm-run-all": "^4.1.5",
 		"source-map-loader": "^2.0.1",
-		"ts-loader": "^8.0.18",
+		"ts-loader": "^8.1.0",
 		"typescript": "^4.2.3",
-		"webpack": "^5.24.4",
-		"webpack-cli": "^4.5.0"
+		"webpack": "^5.28.0",
+		"webpack-cli": "^4.6.0"
 	},
 	"peerDependencies": {
 		"@codemirror/next": "^0.15.0",

@@ -9,6 +9,13 @@
 		"jsx": "react",
 		"moduleResolution": "node",
 		"esModuleInterop": true,
-		"paths": { "@underlay/*": ["./packages/*/src/index.ts"] }
+		"paths": {
+			"@underlay/tasl-codemirror": ["./packages/tasl-codemirror/src/index.ts"],
+			"@underlay/tasl-lezer": ["./packages/tasl-lezer/src/index.ts"],
+			"@underlay/taslx-codemirror": [
+				"./packages/taslx-codemirror/src/index.ts"
+			],
+			"@underlay/taslx-lezer": ["./packages/taslx-lezer/src/index.ts"]
+		}
 	}
 }
