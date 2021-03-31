@@ -1,6 +1,4 @@
-import { Tree } from "lezer"
-
-export function matchTree(tree: Tree, names: string[]) {
+export function matchTree(tree, names) {
 	const cursor = tree.cursor()
 	const iter = names[Symbol.iterator]()
 	do {

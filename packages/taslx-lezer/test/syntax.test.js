@@ -1,6 +1,6 @@
 import { parser } from "../grammar/taslx.js"
 
-import { matchTree } from "./utils"
+import { matchTree } from "./utils.js"
 
 test("Single comment", () => {
 	const tree = parser.parse(`# this is a comment`)
