@@ -1,6 +1,6 @@
 {
 	"name": "@underlay/tasl-codemirror",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"description": "",
 	"type": "module",
 	"main": "lib/index.js",
@@ -27,7 +27,7 @@
 	"homepage": "https://github.com/underlay/tasl#readme",
 	"dependencies": {
 		"@underlay/namespaces": "0.0.3",
-		"@underlay/tasl-lezer": "^0.0.4",
+		"@underlay/tasl-lezer": "^0.0.5",
 		"lezer-tree": "^0.13.2"
 	},
 	"devDependencies": {
