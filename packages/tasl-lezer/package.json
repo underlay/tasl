@@ -1,6 +1,6 @@
 {
 	"name": "@underlay/tasl-lezer",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"description": "Lezer parser for the tasl schema DSL",
 	"type": "module",
 	"main": "lib/index.js",
