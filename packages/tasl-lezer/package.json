@@ -32,10 +32,10 @@
 		"lezer": "^0.13.4"
 	},
 	"peerDependencies": {
-		"@underlay/apg": "1.2.5"
+		"@underlay/apg": "1.2.6"
 	},
 	"devDependencies": {
-		"@underlay/apg": "^1.2.5",
+		"@underlay/apg": "^1.2.6",
 		"jest": "^26.6.3",
 		"lezer-generator": "^0.13.3",
 		"typescript": "^4.2.3"

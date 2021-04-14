@@ -33,7 +33,7 @@
 		"@babel/core": "^7.13.14",
 		"@babel/preset-env": "^7.13.12",
 		"@codemirror/next": "^0.16.0",
-		"@underlay/apg": "^1.2.5",
+		"@underlay/apg": "^1.2.6",
 		"babel-loader": "^8.2.2",
 		"source-map-loader": "^2.0.1",
 		"typescript": "^4.2.3",
@@ -42,7 +42,7 @@
 	},
 	"peerDependencies": {
 		"@codemirror/next": "0.16.0",
-		"@underlay/apg": "1.2.5"
+		"@underlay/apg": "1.2.6"
 	},
 	"gitHead": "0e8ae64a81b67f54d84990ce0916095a114b02f2"
 }
