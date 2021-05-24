@@ -32,7 +32,7 @@ export const syntax = LezerLanguage.define({
 				Term: tags.name,
 				"Class/Term Edge/Term": [tags.className, tags.strong],
 				"Product/Term Coproduct/Term": tags.propertyName,
-				Uri: tags.null,
+				URI: tags.null,
 				Literal: tags.string,
 				"Literal/Term": tags.string,
 				"Reference/Term": [tags.className, tags.strong],
