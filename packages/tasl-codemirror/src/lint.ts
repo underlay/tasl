@@ -4,17 +4,15 @@ import { EditorView, ViewPlugin, ViewUpdate } from "@codemirror/next/view"
 import { syntaxTree } from "@codemirror/next/language"
 import { SyntaxNode, TreeCursor } from "lezer-tree"
 
-import { Schema } from "@underlay/apg"
 import { ul } from "@underlay/namespaces"
+import { Schema } from "@underlay/apg"
 
 import {
 	defaultTypes,
 	defaultNamespaces,
 	LintError,
-	namespacePattern,
 	ParseState,
 	parseURI,
-	uriPattern,
 } from "@underlay/tasl-lezer"
 import { errorUnit } from "./error.js"
 
@@ -67,26 +65,17 @@ export function lintView({
 		} else if (cursor.type.name === "Namespace") {
 			let namespace = ""
 
-			const term = cursor.node.getChild("Term")
+			const term = cursor.node.getChild("NamespaceURI")
 			if (term !== null) {
 				namespace = parseState.slice(term)
-				if (!uriPattern.test(namespace)) {
-					const { from, to } = term
-					const message = `Invalid URI: URIs must match ${uriPattern.source}`
-					diagnostics.push({ from, to, message, severity: "error" })
-				} else if (!namespacePattern.test(namespace)) {
-					const { from, to } = term
-					const message = "Invalid namespace: namespaces must end in / or #"
-					diagnostics.push({ from, to, message, severity: "error" })
-				}
 			}
 
-			const identifier = cursor.node.getChild("Prefix")
+			const identifier = cursor.node.getChild("NamespaceName")
 			if (identifier !== null) {
 				const prefix = parseState.slice(identifier)
 				if (prefix in parseState.namespaces) {
 					const { from, to } = identifier
-					const message = `Duplicate namespace: ${prefix}`
+					const message = `duplicate namespace: ${prefix}`
 					diagnostics.push({ from, to, message, severity: "error" })
 				} else {
 					parseState.namespaces[prefix] = namespace
@@ -103,7 +92,7 @@ export function lintView({
 				const name = parseState.slice(identifier)
 				if (name in parseState.types) {
 					const { from, to } = identifier
-					const message = `Invalid type declaration: type ${name} has already been declared`
+					const message = `type ${name} has already been declared`
 					diagnostics.push({ from, to, message, severity: "error" })
 				} else {
 					parseState.types[name] = type
@@ -116,7 +105,7 @@ export function lintView({
 				if (uri !== null) {
 					if (uri in parseState.schema) {
 						const { from, to } = term
-						const message = `Invalid class declaration: class ${uri} has already been declared`
+						const message = `class ${uri} has already been declared`
 						diagnostics.push({ from, to, message, severity: "error" })
 					} else {
 						const expression = cursor.node.getChild("Expression")
@@ -128,77 +117,56 @@ export function lintView({
 				}
 			}
 		} else if (cursor.type.name === "Edge") {
-			const terms = cursor.node.getChildren("Term")
-			const uris = terms.map((uri) => getURI(parseState, diagnostics, uri))
-			if (terms.length === 3 && uris.length === 3) {
-				const [sourceNode, labelNode, targetNode] = terms
-				const [source, label, target] = uris
-				if (label in parseState.schema) {
-					const { from, to } = labelNode
-					const message = `Invalid edge declaration: class ${label} has already been declared`
-					diagnostics.push({ from, to, message, severity: "error" })
-				}
-
-				if (!(source in parseState.schema)) {
-					const { from, to } = sourceNode
-					parseState.references.push({ from, to, key: source })
-				}
-
-				if (!(target in parseState.schema)) {
-					const { from, to } = targetNode
-					parseState.references.push({ from, to, key: target })
-				}
-
-				const components: Record<string, Schema.Type> = {
-					[ul.source]: Schema.reference(source),
-					[ul.target]: Schema.reference(target),
-				}
-
-				const expression = cursor.node.getChild("Expression")
-				if (expression !== null) {
-					components[ul.value] = getType(parseState, diagnostics, expression)
-				}
-
-				parseState.schema[label] = Schema.product(components)
-			}
-		} else if (cursor.type.name === "List") {
-			const term = cursor.node.getChild("Term")
-			const expression = cursor.node.getChild("Expression")
-			const head =
-				expression === null
-					? errorUnit
-					: getType(parseState, diagnostics, expression)
-
-			if (term !== null) {
-				const uri = getURI(parseState, diagnostics, term)
-				if (uri in parseState.schema) {
+			const [term, source, target] = cursor.node.getChildren("Term")!
+			if (term !== undefined) {
+				const key = getURI(parseState, diagnostics, term)
+				if (key in parseState.schema) {
 					const { from, to } = term
-					const message = `Invalid list declaration: class ${uri} has already been declared`
+					const message = `class ${key} has already been declared`
 					diagnostics.push({ from, to, message, severity: "error" })
 				}
 
-				parseState.schema[uri] = Schema.coproduct({
-					[ul.none]: Schema.product({}),
-					[ul.some]: Schema.coproduct({
-						[ul.head]: head,
-						[ul.tail]: Schema.reference(uri),
-					}),
-				})
+				if (source !== undefined) {
+					const sourceURI = getURI(parseState, diagnostics, source)
+
+					if (!(sourceURI in parseState.schema)) {
+						const { from, to } = source
+						parseState.references.push({ from, to, key: sourceURI })
+					}
+
+					if (target !== undefined) {
+						const targetURI = getURI(parseState, diagnostics, target)
+
+						if (!(targetURI in parseState.schema)) {
+							const { from, to } = target
+							parseState.references.push({ from, to, key: targetURI })
+						}
+
+						const components: Record<string, Schema.Type> = {
+							[ul.source]: Schema.reference(sourceURI),
+							[ul.target]: Schema.reference(targetURI),
+						}
+
+						const expression = cursor.node.getChild("Expression")
+						if (expression !== null) {
+							const type = getType(parseState, diagnostics, expression)
+							components[ul.value] = type
+						}
+
+						parseState.schema[key] = Schema.product(components)
+					}
+				}
 			}
 		}
 
 		reportChildErrors(diagnostics, cursor)
 	} while (cursor.nextSibling())
 
-	const namespaces: [string, string][] = Object.entries(
-		parseState.namespaces
-	).filter(([_, base]) => base !== null) as [string, string][]
-
 	for (const { from, to, key } of parseState.references) {
 		if (key in parseState.schema) {
 			continue
 		} else {
-			const message = `Reference error: class ${key} is not defined`
+			const message = `class ${key} is not defined`
 			diagnostics.push({ from, to, message, severity: "error" })
 		}
 	}
@@ -210,7 +178,7 @@ export function lintView({
 	return {
 		errorCount: sorted.length,
 		schema: parseState.schema,
-		namespaces: { ...defaultNamespaces, ...Object.fromEntries(namespaces) },
+		namespaces: { ...defaultNamespaces, ...parseState.namespaces },
 		diagnostics: sorted,
 	}
 }
@@ -267,7 +235,7 @@ function getType(
 		}
 
 		return Schema.reference(key)
-	} else if (node.name === "Uri") {
+	} else if (node.name === "URI") {
 		return Schema.uri()
 	} else if (node.name === "Literal") {
 		const term = node.getChild("Term")
@@ -310,7 +278,7 @@ function getType(
 			const key = getURI(state, diagnostics, term)
 			if (key in options) {
 				const { from, to } = term
-				const message = `Duplicate coproduct option key`
+				const message = `duplicate coproduct option key`
 				diagnostics.push({ from, to, message, severity: "error" })
 			}
 
@@ -323,14 +291,14 @@ function getType(
 
 		return Schema.coproduct(options)
 	} else {
-		throw new Error("Unexpected Expression node")
+		throw new Error("unexpected expression node")
 	}
 }
 
 function reportChildErrors(diagnostics: Diagnostic[], cursor: TreeCursor) {
 	if (cursor.type.isError) {
 		const { from, to } = cursor
-		const message = `Syntax error: unexpected or missing token (that's all we know)`
+		const message = `unexpected or missing token (that's all we know)`
 		diagnostics.push({ from, to, message, severity: "error" })
 	}
 	if (cursor.firstChild()) {

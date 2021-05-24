@@ -8,7 +8,7 @@ import {
 import { styleTags, tags } from "@codemirror/next/highlight"
 import { SyntaxNode } from "lezer-tree"
 
-import { parser } from "@underlay/tasl-lezer/grammar/tasl.js"
+import { parser } from "@underlay/tasl-lezer"
 
 export const syntax = LezerLanguage.define({
 	parser: parser.configure({
@@ -27,36 +27,29 @@ export const syntax = LezerLanguage.define({
 			}),
 			styleTags({
 				Comment: tags.comment,
-				Prefix: tags.namespace,
 				TypeName: tags.typeName,
 				Variable: tags.typeName,
 				Term: tags.name,
-				"Class/Term": tags.className,
-				"Edge/Term": tags.className,
-				"Product/Term": tags.propertyName,
-				"Coproduct/Term": tags.propertyName,
-				Uri: tags.string,
+				"Class/Term Edge/Term": [tags.className, tags.strong],
+				"Product/Term Coproduct/Term": tags.propertyName,
+				Uri: tags.null,
 				Literal: tags.string,
 				"Literal/Term": tags.string,
-				"Reference/Term": tags.className,
-				Pointer: tags.operator,
-				Optional: tags.operator,
-				"{ }": tags.bracket,
-				"[ ]": tags.bracket,
-				"->": tags.separator,
-				"<-": tags.separator,
-				";": tags.separator,
-				"Namespace/Uri": tags.namespace,
-				namespace: tags.keyword,
-				type: tags.keyword,
-				class: tags.keyword,
-				edge: tags.keyword,
-				list: tags.keyword,
+				"Reference/Term": [tags.className, tags.strong],
+				Pointer: tags.derefOperator,
+				Optional: tags.typeOperator,
+				Export: tags.definitionOperator,
+				"OpenBrace CloseBrace": tags.brace,
+				"OpenBracket CloseBracket": tags.bracket,
+				"RightArrow LeftArrow": tags.separator,
+				NamespaceName: tags.name,
+				NamespaceURI: [tags.url, tags.link],
+				"namespace type class edge": tags.definitionKeyword,
 			}),
 		],
 	}),
 	languageData: {
-		closeBrackets: { brackets: ["[", "{", "<"] },
+		closeBrackets: { brackets: ["[", "{"] },
 		indentOnInput: /^\s*[\}\]]$/,
 		commentTokens: { line: "#" },
 	},

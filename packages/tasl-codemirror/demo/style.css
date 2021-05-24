@@ -1,4 +1,4 @@
-@import url(https://cdn.jsdelivr.net/gh/tonsky/FiraCode@4/distr/fira_code.css);
+/* @import url(https://cdn.jsdelivr.net/gh/tonsky/FiraCode@4/distr/fira_code.css); */
 
 #editor {
 	width: 640px;
@@ -10,9 +10,9 @@
 	border-radius: 1px;
 }
 
-#editor .cm-scroller {
+/* #editor .cm-scroller {
 	font-family: "Fira Code", monospace;
-}
+} */
 
 @supports (font-variation-settings: normal) {
 	#editor .cm-scroller {

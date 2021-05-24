@@ -1,48 +1,89 @@
-@top Schema { statement* }
+@top Schema { (statement? newline)* statement? }
 
 @tokens {
-  space { std.whitespace+ }
+  "::"[@name=Export]
+  "*"[@name=Pointer]
+  "?"[@name=Optional]
+  "{"[@name=OpenBrace]
+  "}"[@name=CloseBrace]
+  "["[@name=OpenBracket]
+  "]"[@name=CloseBracket]
+  "->"[@name=RightArrow]
+  "<-"[@name=LeftArrow]
+
+  newline { "\n" }
+  space { (" " | "\t")+ }
   Comment { "#" ![\n]* }
-  identifier { $[a-zA-Z] $[a-zA-Z0-9]* }
-  Uri { "<>" }
-  Pointer { "*" }
-  Term { $[a-zA-Z] $[a-zA-Z0-9]* (":" $[a-zA-Z0-9/_.:#\-]*)? }
+  identifier { std.asciiLetter (std.asciiLetter | std.digit)* }
+
+  hexDig { $[0-9A-Fa-f] }
+  subDelims { $[!$&'()*+,;=] }
+  unreserved { $[A-Za-z0-9\-._~] }
+  pctEncoded { "%" hexDig hexDig }
+  decOctet { "25" $[0-5] | "2" $[0-4] std.digit | $[01]? std.digit std.digit? }
+  ipv4address { decOctet "." decOctet "." decOctet "." decOctet }
+  h16 { hexDig (hexDig (hexDig hexDig?)?)? }
+  ls32 { h16 ":" h16 | ipv4address }
+  ipv6address {
+                                                                                    h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" ls32
+    |                                                                          "::" h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" ls32
+    | h16?                                                                     "::" h16 ":" h16 ":" h16 ":" h16 ":" ls32
+    | (h16 (":" h16)?)?                                                        "::" h16 ":" h16 ":" h16 ":" ls32
+    | (h16 (":" h16 (":" h16)?)?)?                                             "::" h16 ":" h16 ":" ls32
+    | (h16 (":" h16 (":" h16 (":" h16)?)?)?)?                                  "::" h16 ":" ls32
+    | (h16 (":" h16 (":" h16 (":" h16 (":" h16)?)?)?)?)?                       "::" ls32
+    | (h16 (":" h16 (":" h16 (":" h16 (":" h16 (":" h16)?)?)?)?)?)?            "::" h16
+    | (h16 (":" h16 (":" h16 (":" h16 (":" h16 (":" h16 (":" h16)?)?)?)?)?)?)? "::"
+  }
+  ipvFuture { $[Vv] hexDig+ "." (unreserved | subDelims | ":")+ }
+  ipLiteral { "[" (ipv6address | ipvFuture) "]" }
+  regName { (unreserved | pctEncoded | subDelims)* }
+  host { ipLiteral | ipv4address | regName }
+  userinfo { (unreserved | pctEncoded | subDelims | ":")* }
+  authority { (userinfo "@")? host (":" std.digit+)? }
+  pchar { unreserved | pctEncoded | subDelims | ":" | "@" }
+  scheme { std.asciiLetter $[A-Za-z0-9+\-.]* }
+
+  Term { identifier ":" (pchar | "/" | "?" | "#")* }
+  NamespaceURI { scheme ":" ("//" authority | "/"? pchar+) ("/" pchar*)* $[/?#] }
 }
 
 @skip { space | Comment }
 
-delimited<element> { "" | element (";" element)* ";"? }
-
-Literal { "<" Term ">" }
+delimited<element> { (newline element?)* newline }
 
 expression[@isGroup=Expression] {
-  Variable | Optional | Reference | Uri | Literal | Product | Coproduct
+  Variable | Optional | Reference | Literal | URI | Product | Coproduct
 }
 
 Variable { identifier }
 
 Optional { "?" expression }
 
-Reference { Pointer Term }
+Reference { "*" Term }
 
-Product { "{" delimited<Component> "}" }
+Literal { "<" Term ">" }
+
+URI { "<>" }
+
+Product { "{" delimited<Component>? "}" }
 Component { Term "->" expression }
 
-Coproduct { "[" delimited<Option> "]" }
-Option { Term (">-" expression)? }
+Coproduct { "[" delimited<Option>? "]" }
+Option { Term ("<-" expression)? }
 
-statement { Namespace | Type | Class | Edge | List }
+statement { Namespace | Type | Class | Edge }
 
-Prefix { identifier }
+NamespaceName { identifier }
 
-Namespace { @specialize[@name=namespace]<identifier, "namespace"> Prefix Term }
+Namespace { @specialize[@name=namespace]<identifier, "namespace"> NamespaceName NamespaceURI }
 
 TypeName { identifier }
 
 Type { @specialize[@name=type]<identifier, "type"> TypeName expression }
 
-Class { @specialize[@name=class]<identifier, "class"> Term expression }
+Class { @specialize[@name=class]<identifier, "class"> Term "::" expression }
 
-Edge { @specialize[@name=edge]<identifier, "edge"> Term "==/" Term expression? "/=>" Term }
-
-List { @specialize[@name=list]<identifier, "list"> Term "::" expression }
+Edge {
+  @specialize[@name=edge]<identifier, "edge"> Term "::" (Term "=>" Term | Term "=/" expression "/=>" Term)
+}

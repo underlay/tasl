@@ -3,13 +3,8 @@ import { Schema } from "@underlay/apg"
 import { ul } from "@underlay/namespaces"
 
 import { parser } from "../grammar/tasl.js"
-import {
-	LintError,
-	namespacePattern,
-	ParseState,
-	parseURI,
-	uriPattern,
-} from "./utils.js"
+
+import { LintError, ParseState, parseURI, printSyntax } from "./utils.js"
 import { defaultTypes } from "./stdlib.js"
 
 interface parseState extends ParseState {
@@ -27,11 +22,7 @@ export function parse(input: string): ParseResult {
 	const tree = parser.configure({ strict: true }).parse(input)
 	const cursor = tree.cursor()
 
-	if (cursor.name === "Schema") {
-		cursor.firstChild()
-	} else {
-		throw new LintError(cursor.from, cursor.to, "", "Invalid top-level node")
-	}
+	printSyntax(tree.topNode)
 
 	const slice = ({ from, to }: SyntaxNode) => input.slice(from, to)
 	const error = (node: SyntaxNode, message: string) =>
@@ -45,26 +36,25 @@ export function parse(input: string): ParseResult {
 		references: [],
 	}
 
+	if (cursor.name === "Schema") {
+		cursor.firstChild()
+	} else {
+		throw error(cursor.node, "Invalid top-level node")
+	}
+
 	do {
 		if (cursor.type.name === "Namespace") {
-			const term = cursor.node.getChild("Term")!
-			const namespace = state.slice(term)
-			if (!uriPattern.test(namespace)) {
-				throw state.error(
-					term,
-					`Invalid URI: URIs must match ${uriPattern.source}`
-				)
-			} else if (!namespacePattern.test(namespace)) {
-				throw state.error(
-					term,
-					"Invalid namespace: namespaces must end in / or #"
-				)
-			}
-
-			const identifier = cursor.node.getChild("Prefix")!
+			const identifier = cursor.node.getChild("NamespaceName")!
 			const prefix = state.slice(identifier)
+
+			const uri = cursor.node.getChild("NamespaceURI")!
+			const namespace = state.slice(uri)
+
 			if (prefix in state.namespaces) {
-				throw state.error(identifier, `Duplicate namespace: ${prefix}`)
+				throw state.error(
+					identifier,
+					`namespace ${prefix} has already been delared`
+				)
 			} else {
 				state.namespaces[prefix] = namespace
 			}
@@ -75,10 +65,7 @@ export function parse(input: string): ParseResult {
 
 			const name = state.slice(identifier)
 			if (name in state.types) {
-				throw state.error(
-					identifier,
-					`Invalid type declaration: type ${name} has already been declared`
-				)
+				throw state.error(identifier, `type ${name} has already been declared`)
 			} else {
 				state.types[name] = type
 			}
@@ -86,68 +73,44 @@ export function parse(input: string): ParseResult {
 			const node = cursor.node.getChild("Term")!
 			const term = parseURI(state, node)!
 			if (term in state.schema) {
-				throw state.error(
-					node,
-					`Invalid class declaration: class ${term} has already been declared`
-				)
+				throw state.error(node, `class ${term} has already been declared`)
 			} else {
 				const expression = cursor.node.getChild("Expression")!
 				state.schema[term] = parseType(state, expression)
 			}
 		} else if (cursor.type.name === "Edge") {
-			const terms = cursor.node.getChildren("Term")
-			const names = terms.map((uri) => parseURI(state, uri))
+			const [term, source, target] = cursor.node.getChildren("Term")!
+			const key = parseURI(state, term)
+			const sourceURI = parseURI(state, source)
+			const targetURI = parseURI(state, target)
 
 			const expression = cursor.node.getChild("Expression")
 			const value = expression && parseType(state, expression)
 
-			const [sourceNode, labelNode, targetNode] = terms
-			const [source, label, target] = names
-			if (label in state.schema) {
-				throw state.error(
-					labelNode,
-					`Invalid edge declaration: class ${label} has already been declared`
-				)
-			} else {
-				if (!(source in state.schema)) {
-					const { from, to } = sourceNode
-					state.references.push({ from, to, key: source })
-				}
-
-				if (!(target in state.schema)) {
-					const { from, to } = targetNode
-					state.references.push({ from, to, key: target })
-				}
-
-				const components: Record<string, Schema.Type> = {
-					[ul.source]: Schema.reference(source),
-					[ul.target]: Schema.reference(target),
-				}
-
-				if (value !== null) {
-					components[ul.value] = value
-				}
-
-				state.schema[label] = Schema.product(components)
+			if (key in state.schema) {
+				throw state.error(term, `class ${key} has already been declared`)
 			}
-		} else if (cursor.type.name === "List") {
-			const node = cursor.node.getChild("Term")!
-			const term = parseURI(state, node)!
-			if (term in state.schema) {
-				throw state.error(
-					node,
-					`Invalid list declaration: class ${term} has already been declared`
-				)
-			} else {
-				const expression = cursor.node.getChild("Expression")!
-				state.schema[term] = Schema.coproduct({
-					[ul.none]: Schema.product({}),
-					[ul.some]: Schema.product({
-						[ul.head]: parseType(state, expression),
-						[ul.tail]: Schema.reference(term),
-					}),
-				})
+
+			if (!(sourceURI in state.schema)) {
+				const { from, to } = source
+				state.references.push({ from, to, key: sourceURI })
 			}
+
+			if (!(targetURI in state.schema)) {
+				const { from, to } = target
+				state.references.push({ from, to, key: targetURI })
+			}
+
+			const components: Record<string, Schema.Type> = {
+				[ul.source]: Schema.reference(sourceURI),
+				[ul.target]: Schema.reference(targetURI),
+			}
+
+			if (value !== null) {
+				components[ul.value] = value
+			}
+
+			state.schema[key] = Schema.product(components)
 		}
 	} while (cursor.nextSibling())
 
@@ -155,7 +118,7 @@ export function parse(input: string): ParseResult {
 		if (key in state.schema) {
 			continue
 		} else {
-			const message = `Invalid reference: class ${key} is not defined`
+			const message = `class ${key} is not defined`
 			throw new LintError(from, to, key, message)
 		}
 	}
@@ -163,14 +126,14 @@ export function parse(input: string): ParseResult {
 	return { schema: Schema.schema(state.schema), namespaces: state.namespaces }
 }
 
-// Variable | Optional | Reference  | Uri | Literal | Product | Coproduct
+// Variable | Optional | Reference | URI | Literal | Product | Coproduct
 export function parseType(state: parseState, node: SyntaxNode): Schema.Type {
 	if (node.name === "Variable") {
 		const value = state.slice(node)
 		if (value in state.types) {
 			return state.types[value]
 		} else {
-			throw state.error(node, `Type ${value} is not defined`)
+			throw state.error(node, `type ${value} is not defined`)
 		}
 	} else if (node.name === "Optional") {
 		const expression = node.getChild("Expression")!
@@ -185,7 +148,7 @@ export function parseType(state: parseState, node: SyntaxNode): Schema.Type {
 		}
 
 		return Schema.reference(key)
-	} else if (node.name === "Uri") {
+	} else if (node.name === "URI") {
 		return Schema.uri()
 	} else if (node.name === "Literal") {
 		const term = node.getChild("Term")!
@@ -198,7 +161,7 @@ export function parseType(state: parseState, node: SyntaxNode): Schema.Type {
 
 			const key = parseURI(state, term)
 			if (key in components) {
-				throw state.error(term, `Duplicate product component key: ${key}`)
+				throw state.error(term, `duplicate product component key: ${key}`)
 			} else {
 				const expression = component.getChild("Expression")!
 				components[key] = parseType(state, expression)
@@ -212,7 +175,7 @@ export function parseType(state: parseState, node: SyntaxNode): Schema.Type {
 			const term = option.getChild("Term")!
 			const key = parseURI(state, term)
 			if (key in options) {
-				throw state.error(term, `Duplicate coproduct option key: ${key}`)
+				throw state.error(term, `duplicate coproduct option key: ${key}`)
 			} else {
 				const expression = option.getChild("Expression")
 				if (expression === null) {
@@ -224,6 +187,6 @@ export function parseType(state: parseState, node: SyntaxNode): Schema.Type {
 		}
 		return Schema.coproduct(options)
 	} else {
-		throw new Error("Unexpected Expression node")
+		throw state.error(node, "unexpected expression node")
 	}
 }

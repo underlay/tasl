@@ -3,36 +3,49 @@ import { EditorState } from "@codemirror/next/state"
 import { EditorView } from "@codemirror/next/view"
 import { editableConfig } from "../lib/index.js"
 
-const initialValue = `# Welcome to the schema editor!
-# If you're new, you probably want to read
-# the schema language documentation here:
-# http://r1.underlay.org/docs/schemas
+// import { parse } from "@underlay/tasl-lezer"
 
-namespace ex http://example.com#
-namespace ul http://underlay.org/ns/
+const initialValue = `namespace ex http://example.com/
 
-type foo {
-  ex:a -> ? uri ;
-  ex:b -> string ;
-  ex:c -> dateTime ;
+type location [
+  ex:coordinates <- {
+    ex:lat -> double
+    ex:long -> double
+  }
+  ex:address <- {
+    ex:street -> string
+    ex:city -> string
+    ex:state -> string
+    ex:zipCode -> string
+  }
+]
+
+class ex:BookStore :: {
+  ex:name -> string
+  ex:location -> ? location
 }
 
-edge ex:cool ==/ ex:map /=> ex:wau
-
-class ex:cool unit
-
-class ex:wau {
-  ex:bar -> foo ;
-  ex:age -> integer ;
-  ex:self -> * ex:wau ;
+class ex:Book :: {
+  ex:name -> string
+  ex:isbn -> <>
+  ex:store -> * ex:BookStore
+  ex:category -> [
+    ex:fiction
+    ex:nonFiction
+    ex:other <- string
+  ]
 }
 
-
-
+edge ex:Citation :: ex:Book => ex:Book
+edge ex:Citation2 :: ex:Book =/ {
+  ex:value -> string
+} /=> ex:Book
 
 
 
 `
+
+// const a = parse(initialValue)
 
 const state = EditorState.create({
 	doc: initialValue,

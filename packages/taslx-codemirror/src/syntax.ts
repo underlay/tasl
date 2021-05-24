@@ -8,7 +8,7 @@ import {
 import { styleTags, tags } from "@codemirror/next/highlight"
 import { SyntaxNode } from "lezer-tree"
 
-import { parser } from "@underlay/taslx-lezer/grammar/taslx.js"
+import { parser } from "@underlay/taslx-lezer"
 
 export const syntax = LezerLanguage.define({
 	parser: parser.configure({
