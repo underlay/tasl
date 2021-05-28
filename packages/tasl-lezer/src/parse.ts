@@ -22,8 +22,6 @@ export function parse(input: string): ParseResult {
 	const tree = parser.configure({ strict: true }).parse(input)
 	const cursor = tree.cursor()
 
-	printSyntax(tree.topNode)
-
 	const slice = ({ from, to }: SyntaxNode) => input.slice(from, to)
 	const error = (node: SyntaxNode, message: string) =>
 		new LintError(node.from, node.to, slice(node), message)

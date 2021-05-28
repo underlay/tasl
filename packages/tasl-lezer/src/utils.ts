@@ -19,12 +19,18 @@ export class LintError extends Error {
 
 export function parseURI(state: ParseState, node: SyntaxNode): string {
 	const value = state.slice(node)
-	const index = value.indexOf(":")
-	const prefix = value.slice(0, index)
-	if (prefix in state.namespaces) {
-		return state.namespaces[prefix] + value.slice(index + 1)
+	if (node.type.name === "AbsoluteTerm") {
+		return value.slice(1, -1)
+	} else if (node.type.name === "NamespaceTerm") {
+		const index = value.indexOf(":")
+		const prefix = value.slice(0, index)
+		if (prefix in state.namespaces) {
+			return state.namespaces[prefix] + value.slice(index + 1)
+		} else {
+			throw state.error(node, `namespace ${prefix} is not defined`)
+		}
 	} else {
-		throw state.error(node, `namespace ${prefix} is not defined`)
+		throw state.error(node, "unexpected syntax")
 	}
 }
 

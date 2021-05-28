@@ -3,8 +3,6 @@ import { EditorState } from "@codemirror/next/state"
 import { EditorView } from "@codemirror/next/view"
 import { editableConfig } from "../lib/index.js"
 
-// import { parse } from "@underlay/tasl-lezer"
-
 const initialValue = `namespace ex http://example.com/
 
 type location [
@@ -44,8 +42,6 @@ edge ex:Citation2 :: ex:Book =/ {
 
 
 `
-
-// const a = parse(initialValue)
 
 const state = EditorState.create({
 	doc: initialValue,

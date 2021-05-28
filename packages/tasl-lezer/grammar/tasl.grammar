@@ -47,10 +47,11 @@
   absoluteURI { scheme ":" ("//" authority | "/"? pchar+) ("/" pchar*)* }
   component<delimiter> { delimiter (pchar | $[/?])* }
   uri { absoluteURI component<"?">? component<"#">? }
-  Term { identifier ":" unreserved+ | "<" uri ">" }
+  AbsoluteTerm { "<" uri ">" }
+  NamespaceTerm { identifier ":" unreserved+ }
   NamespaceURI { absoluteURI $[/?#] }
 
-  @precedence { Term identifier }
+  @precedence { NamespaceTerm identifier }
 }
 
 @skip { space | Comment }
@@ -61,19 +62,21 @@ expression[@isGroup=Expression] {
   Variable | Optional | Reference | Literal | URI | Product | Coproduct
 }
 
+term[@isGroup=Term] { AbsoluteTerm | NamespaceTerm }
+
 Variable { identifier }
 
 Optional { Nullable expression }
 
-Reference { Pointer Term }
+Reference { Pointer term }
 
-Literal { Term }
+Literal { term }
 
 Product { OpenBrace delimited<Component>? CloseBrace }
-Component { Term RightArrow expression }
+Component { term RightArrow expression }
 
 Coproduct { OpenBracket delimited<Option>? CloseBracket }
-Option { Term (LeftArrow expression)? }
+Option { term (LeftArrow expression)? }
 
 statement { Namespace | Type | Class | Edge }
 
@@ -85,8 +88,8 @@ TypeName { identifier }
 
 Type { @specialize[@name=type]<identifier, "type"> TypeName expression }
 
-Class { @specialize[@name=class]<identifier, "class"> Term Export expression }
+Class { @specialize[@name=class]<identifier, "class"> term Export expression }
 
 Edge {
-  @specialize[@name=edge]<identifier, "edge"> Term Export (Term "=>" Term | Term "=/" expression "/=>" Term)
+  @specialize[@name=edge]<identifier, "edge"> term Export (term "=>" term | term "=/" expression "/=>" term)
 }
