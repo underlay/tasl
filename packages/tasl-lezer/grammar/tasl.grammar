@@ -1,15 +1,16 @@
 @top Schema { (statement? newline)* statement? }
 
 @tokens {
-  "::"[@name=Export]
-  "*"[@name=Pointer]
-  "?"[@name=Optional]
-  "{"[@name=OpenBrace]
-  "}"[@name=CloseBrace]
-  "["[@name=OpenBracket]
-  "]"[@name=CloseBracket]
-  "->"[@name=RightArrow]
-  "<-"[@name=LeftArrow]
+  Export { "::"}
+  Pointer { "*" }
+  Nullable { "?" }
+  OpenBrace { "{" }
+  CloseBrace { "}" }
+  OpenBracket { "[" }
+  CloseBracket { "]" }
+  RightArrow { "->" }
+  LeftArrow { "<-" }
+  URI { "<>" }
 
   newline { "\n" }
   space { (" " | "\t")+ }
@@ -43,9 +44,13 @@
   authority { (userinfo "@")? host (":" std.digit+)? }
   pchar { unreserved | pctEncoded | subDelims | ":" | "@" }
   scheme { std.asciiLetter $[A-Za-z0-9+\-.]* }
+  absoluteURI { scheme ":" ("//" authority | "/"? pchar+) ("/" pchar*)* }
+  component<delimiter> { delimiter (pchar | $[/?])* }
+  uri { absoluteURI component<"?">? component<"#">? }
+  Term { identifier ":" unreserved+ | "<" uri ">" }
+  NamespaceURI { absoluteURI $[/?#] }
 
-  Term { identifier ":" (pchar | "/" | "?" | "#")* }
-  NamespaceURI { scheme ":" ("//" authority | "/"? pchar+) ("/" pchar*)* $[/?#] }
+  @precedence { Term identifier }
 }
 
 @skip { space | Comment }
@@ -58,19 +63,17 @@ expression[@isGroup=Expression] {
 
 Variable { identifier }
 
-Optional { "?" expression }
+Optional { Nullable expression }
 
-Reference { "*" Term }
+Reference { Pointer Term }
 
-Literal { "<" Term ">" }
+Literal { Term }
 
-URI { "<>" }
+Product { OpenBrace delimited<Component>? CloseBrace }
+Component { Term RightArrow expression }
 
-Product { "{" delimited<Component>? "}" }
-Component { Term "->" expression }
-
-Coproduct { "[" delimited<Option>? "]" }
-Option { Term ("<-" expression)? }
+Coproduct { OpenBracket delimited<Option>? CloseBracket }
+Option { Term (LeftArrow expression)? }
 
 statement { Namespace | Type | Class | Edge }
 
@@ -82,8 +85,8 @@ TypeName { identifier }
 
 Type { @specialize[@name=type]<identifier, "type"> TypeName expression }
 
-Class { @specialize[@name=class]<identifier, "class"> Term "::" expression }
+Class { @specialize[@name=class]<identifier, "class"> Term Export expression }
 
 Edge {
-  @specialize[@name=edge]<identifier, "edge"> Term "::" (Term "=>" Term | Term "=/" expression "/=>" Term)
+  @specialize[@name=edge]<identifier, "edge"> Term Export (Term "=>" Term | Term "=/" expression "/=>" Term)
 }

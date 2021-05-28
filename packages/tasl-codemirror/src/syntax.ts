@@ -37,7 +37,7 @@ export const syntax = LezerLanguage.define({
 				"Literal/Term": tags.string,
 				"Reference/Term": [tags.className, tags.strong],
 				Pointer: tags.derefOperator,
-				Optional: tags.typeOperator,
+				"Optional/Nullable": tags.typeOperator,
 				Export: tags.definitionOperator,
 				"OpenBrace CloseBrace": tags.brace,
 				"OpenBracket CloseBracket": tags.bracket,

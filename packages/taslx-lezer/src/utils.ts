@@ -17,16 +17,7 @@ export class LintError extends Error {
 	}
 }
 
-export const uriPattern = /^[a-z]+:[a-zA-Z0-9-/_.:#]+$/
-export const namespacePattern = /[#/]$/
-
-export function parseURI(
-	state: {
-		namespaces: Record<string, string>
-		slice: (node: SyntaxNode) => string
-	},
-	node: SyntaxNode
-): string {
+export function parseURI(state: ParseState, node: SyntaxNode): string {
 	const value = state.slice(node)
 	const index = value.indexOf(":")
 	if (index === -1) {

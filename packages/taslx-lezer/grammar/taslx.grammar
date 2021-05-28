@@ -1,55 +1,107 @@
-@top Mapping { statement* }
+@top Mapping { (statement? newline)* statement? }
 
 @tokens {
-  space { std.whitespace+ }
-  Comment { "#" ![\n]* }
-  identifier { $[a-zA-Z] $[a-zA-Z0-9]* }
-  Term { $[a-zA-Z] $[a-zA-Z0-9]* (":" $[a-zA-Z0-9/_.:#\-]*)? }
+  Export { "::"}
   Pointer { "*" }
+  OpenBrace { "{" }
+  CloseBrace { "}" }
+  OpenBracket { "[" }
+  CloseBracket { "]" }
+  RightArrow { "->" }
+  LeftArrow { "<-" }
   Projector { "/" }
   Injector { "\\" }
+  Identity { "!" }
+
   String { '"' char* '"' }
   char { $[\u{20}\u{21}\u{23}-\u{5b}\u{5d}-\u{10ffff}] | "\\" esc }
   esc  { $["\\\/bfnrt] | "u" hex hex hex hex }
   hex  { $[0-9a-fA-F] }
+
+  newline { "\n" }
+  space { (" " | "\t")+ }
+  Comment { "#" ![\n]* }
+  identifier { std.asciiLetter (std.asciiLetter | std.digit)* }
+
+  hexDig { $[0-9A-Fa-f] }
+  subDelims { $[!$&'()*+,;=] }
+  unreserved { $[A-Za-z0-9\-._~] }
+  pctEncoded { "%" hexDig hexDig }
+  decOctet { "25" $[0-5] | "2" $[0-4] std.digit | $[01]? std.digit std.digit? }
+  ipv4address { decOctet "." decOctet "." decOctet "." decOctet }
+  h16 { hexDig (hexDig (hexDig hexDig?)?)? }
+  ls32 { h16 ":" h16 | ipv4address }
+  ipv6address {
+                                                                                    h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" ls32
+    |                                                                          "::" h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" ls32
+    | h16?                                                                     "::" h16 ":" h16 ":" h16 ":" h16 ":" ls32
+    | (h16 (":" h16)?)?                                                        "::" h16 ":" h16 ":" h16 ":" ls32
+    | (h16 (":" h16 (":" h16)?)?)?                                             "::" h16 ":" h16 ":" ls32
+    | (h16 (":" h16 (":" h16 (":" h16)?)?)?)?                                  "::" h16 ":" ls32
+    | (h16 (":" h16 (":" h16 (":" h16 (":" h16)?)?)?)?)?                       "::" ls32
+    | (h16 (":" h16 (":" h16 (":" h16 (":" h16 (":" h16)?)?)?)?)?)?            "::" h16
+    | (h16 (":" h16 (":" h16 (":" h16 (":" h16 (":" h16 (":" h16)?)?)?)?)?)?)? "::"
+  }
+  ipvFuture { $[Vv] hexDig+ "." (unreserved | subDelims | ":")+ }
+  ipLiteral { "[" (ipv6address | ipvFuture) "]" }
+  regName { (unreserved | pctEncoded | subDelims)* }
+  host { ipLiteral | ipv4address | regName }
+  userinfo { (unreserved | pctEncoded | subDelims | ":")* }
+  authority { (userinfo "@")? host (":" std.digit+)? }
+  pchar { unreserved | pctEncoded | subDelims | ":" | "@" }
+  scheme { std.asciiLetter $[A-Za-z0-9+\-.]* }
+
+  segment { pchar* }
+  segmentNz { pchar+ } 
+  pathAbEmpty { ("/" segment)* }
+  pathAbsolute { "/" (segmentNz ("/" segment)*)? }
+  pathRootless { segmentNz ("/" segment)* }
+  heirPart { "//" authority pathAbEmpty | pathAbsolute | pathRootless }
+  query { (pchar | "/" | "?")* }
+  fragment { (pchar | "/" | "?")* }
+  URI { scheme ":" heirPart? ("?" query)? ("#" fragment)? }
+
+  term { identifier ":" (pchar | "/" | "?" | "#")* }
+  NamespaceURI { scheme ":" ("//" authority | "/"? pchar+) ("/" pchar*)* $[/?#] }
 }
 
 @skip { space | Comment }
 
-delimited<element> { "" | element (";" element)* ";"? }
+delimited<element> { (newline element?)* newline }
 
 expression[@isGroup=Expression] {
-  Variable | Dereference | Projection | Injection | Identifier | Constant | Tuple | Match
+  Tuple | Injection | lambda
 }
 
-expressions { "|"? expression ("|" expression)* }
+lambda[@isGroup=Terminal] {
+  Identity | Identifier | Constant | Dereference | Projection | Match
+}
 
-Variable { identifier }
+Component { term }
+Option { term }
+Key { term }
+Dereference { Pointer Key lambda? }
 
-Dereference { Pointer Term }
+Projection { Projector Component lambda? }
 
-Projection { Projector Term }
+Injection { expression Injector Option }
 
-Injection { Injector Term }
+Identifier { URI }
 
-Identifier { "<" Term ">" }
+Constant { String }
 
-Constant { String "<" Term ">" }
+Tuple { OpenBrace delimited<Slot> CloseBrace }
+Slot { Component (RightArrow expression)? }
 
-Tuple { "{" delimited<Slot> "}" }
-Slot { Term ("->" expressions)? }
+Match { OpenBracket delimited<Case> CloseBracket }
+Case { Option (LeftArrow lambda)? }
 
-Match { "[" delimited<Case> "]" }
-Case { Term (">-" expressions)? }
+statement { Namespace | Map }
 
-statement { Namespace | Expr | Map }
+NamespaceName { identifier }
 
-Prefix { identifier }
+Namespace { @specialize[@name=namespace]<identifier, "namespace"> NamespaceName NamespaceURI }
 
-Namespace { @specialize[@name=namespace]<identifier, "namespace"> Prefix Term }
-
-ExprName { identifier }
-
-Expr { @specialize[@name=expr]<identifier, "expr"> ExprName expressions }
-
-Map { @specialize[@name=map]<identifier, "map"> Term ("::" Term)? expressions }
+Target { term }
+Source { term }
+Map { @specialize[@name=map]<identifier, "map"> Target (Export Source)? expression? }

@@ -9,10 +9,8 @@ import { Mapping } from "@underlay/apg"
 import {
 	defaultNamespaces,
 	LintError,
-	namespacePattern,
 	ParseState,
 	parseURI,
-	uriPattern,
 } from "@underlay/taslx-lezer"
 
 export interface MappingProps {
@@ -72,15 +70,6 @@ export function lintView(
 			const term = cursor.node.getChild("Term")
 			if (term !== null) {
 				namespace = state.slice(term)
-				if (!uriPattern.test(namespace)) {
-					const { from, to } = term
-					const message = `Invalid URI: URIs must match ${uriPattern.source}`
-					state.diagnostics.push({ from, to, message, severity: "error" })
-				} else if (!namespacePattern.test(namespace)) {
-					const { from, to } = term
-					const message = "Invalid namespace: namespaces must end in / or #"
-					state.diagnostics.push({ from, to, message, severity: "error" })
-				}
 			}
 
 			const identifier = cursor.node.getChild("Prefix")
@@ -88,7 +77,7 @@ export function lintView(
 				const prefix = state.slice(identifier)
 				if (prefix in state.namespaces) {
 					const { from, to } = identifier
-					const message = `Duplicate namespace: ${prefix}`
+					const message = `namespace ${prefix} has already been declared`
 					state.diagnostics.push({ from, to, message, severity: "error" })
 				} else {
 					state.namespaces[prefix] = namespace
@@ -103,7 +92,7 @@ export function lintView(
 				const name = state.slice(identifier)
 				if (name in state.exprs) {
 					const { from, to } = identifier
-					const message = `Invalid expression declaration: expression ${name} has already been declared`
+					const message = `expression ${name} has already been declared`
 					state.diagnostics.push({ from, to, message, severity: "error" })
 				} else {
 					state.exprs[name] = exprs
@@ -116,7 +105,7 @@ export function lintView(
 				if (key !== null) {
 					if (key in state.mapping) {
 						const { from, to } = terms[0]
-						const message = `Invalid map declaration: map ${key} has already been declared`
+						const message = `map ${key} has already been declared`
 						state.diagnostics.push({ from, to, message, severity: "error" })
 					} else {
 						const expressions = cursor.node.getChildren("Expression")
