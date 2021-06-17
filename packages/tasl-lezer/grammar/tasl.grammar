@@ -45,51 +45,43 @@
   pchar { unreserved | pctEncoded | subDelims | ":" | "@" }
   scheme { std.asciiLetter $[A-Za-z0-9+\-.]* }
   absoluteURI { scheme ":" ("//" authority | "/"? pchar+) ("/" pchar*)* }
-  component<delimiter> { delimiter (pchar | $[/?])* }
-  uri { absoluteURI component<"?">? component<"#">? }
-  AbsoluteTerm { "<" uri ">" }
-  NamespaceTerm { identifier ":" unreserved+ }
+
+  Term { identifier ":" (pchar | "/" | "?")+ }
   NamespaceURI { absoluteURI $[/?#] }
 
-  @precedence { NamespaceTerm identifier }
+  @precedence { Term identifier }
 }
 
 @skip { space | Comment }
 
 delimited<element> { (newline element?)* newline }
 
+Identifier { identifier }
+
 expression[@isGroup=Expression] {
-  Variable | Optional | Reference | Literal | URI | Product | Coproduct
+  Identifier | Optional | Reference | URI | Product | Coproduct
 }
-
-term[@isGroup=Term] { AbsoluteTerm | NamespaceTerm }
-
-Variable { identifier }
 
 Optional { Nullable expression }
 
-Reference { Pointer term }
-
-Literal { term }
+Reference { Pointer Term }
 
 Product { OpenBrace delimited<Component>? CloseBrace }
-Component { term RightArrow expression }
+Component { Term RightArrow expression }
 
 Coproduct { OpenBracket delimited<Option>? CloseBracket }
-Option { term (LeftArrow expression)? }
+Option { Term (LeftArrow expression)? }
 
-statement { Namespace | Type | Class | Edge }
+statement { NamespaceDefinition | LiteralDefinition | TypeDefinition | ClassDeclaration | EdgeDeclaration }
 
-NamespaceName { identifier }
+NamespaceDefinition { @specialize[@name=namespace]<identifier, "namespace"> Identifier NamespaceURI }
 
-Namespace { @specialize[@name=namespace]<identifier, "namespace"> NamespaceName NamespaceURI }
+LiteralDefinition { @specialize[@name=literal]<identifier, "literal"> Identifier Term }
 
-TypeName { identifier }
+TypeDefinition { @specialize[@name=type]<identifier, "type"> Identifier expression }
 
-Type { @specialize[@name=type]<identifier, "type"> TypeName expression }
+ClassDeclaration { @specialize[@name=class]<identifier, "class"> Term Export expression }
 
-Class { @specialize[@name=class]<identifier, "class"> term Export expression }
-
-Edge {
-  @specialize[@name=edge]<identifier, "edge"> term Export (term "=>" term | term "=/" expression "/=>" term)
+EdgeDeclaration {
+  @specialize[@name=edge]<identifier, "edge"> Term Export (Term "=>" Term | Term "=/" expression "/=>" Term)
 }

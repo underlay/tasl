@@ -1,0 +1,10 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"include": ["src"],
+	"exclude": ["test"],
+	"compilerOptions": {
+		"rootDir": "./src",
+		"outDir": "./lib"
+	},
+	"references": [{ "path": "../schema" }]
+}
