@@ -1,4 +1,12 @@
 {
-	"files": [],
-	"references": [{ "path": "./packages" }]
+	"include": ["src"],
+	"compilerOptions": {
+		"outDir": "lib",
+		"strict": true,
+		"module": "ES6",
+		"target": "ESNext",
+		"declaration": true,
+		"moduleResolution": "node",
+		"esModuleInterop": true
+	}
 }

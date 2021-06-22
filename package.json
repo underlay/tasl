@@ -1,10 +1,19 @@
 {
 	"name": "tasl",
 	"version": "0.0.1",
-	"description": "",
+	"type": "module",
+	"description": "a tiny algebraic schema language",
+	"main": "lib/index.js",
+	"types": "lib/index.d.ts",
+	"files": [
+		"lib"
+	],
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
+	"keywords": [
+		"tasl"
+	],
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/underlay/tasl.git"
@@ -15,8 +24,16 @@
 		"url": "https://github.com/underlay/tasl/issues"
 	},
 	"homepage": "https://github.com/underlay/tasl#readme",
-	"devDependencies": {
-		"lerna": "^3.22.1",
-		"lerna-update-wizard": "^0.17.8"
+	"dependencies": {
+		"@types/bignumber.js": "^5.0.0",
+		"@types/signed-varint": "gist:b46025b5175e06c1586d714dc0960443",
+		"@types/varint": "^6.0.0",
+		"@underlay/namespaces": "^0.0.3",
+		"buffer": "^6.0.3",
+		"cbor": "^7.0.5",
+		"cbor-web": "^7.0.5",
+		"lezer-tasl": "^0.0.2",
+		"signed-varint": "^2.0.1",
+		"varint": "^6.0.0"
 	}
 }

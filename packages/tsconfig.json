@@ -1,9 +1,0 @@
-{
-	"files": [],
-	"references": [
-		{ "path": "./tasl-lezer" },
-		{ "path": "./taslx-lezer" },
-		{ "path": "./tasl-codemirror" },
-		{ "path": "./taslx-codemirror" }
-	]
-}
