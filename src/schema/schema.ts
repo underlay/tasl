@@ -1,9 +1,8 @@
-import type { Type } from "./type.js"
+import type { Type } from "../types/index.js"
 
-export type Schema<
-	S extends { [key in string]: Type } = { [key in string]: Type }
-> = Readonly<S>
+type Types = { [key in string]: Type }
 
-export const schema = <S extends { [key in string]: Type }>(
-	labels: S
-): Schema<S> => Object.freeze(labels)
+export type Schema<S extends Types = Types> = Readonly<S>
+
+export const schema = <S extends Types>(classes: S): Schema<S> =>
+	Object.freeze(classes)

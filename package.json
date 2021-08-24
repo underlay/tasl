@@ -2,17 +2,18 @@
 	"name": "tasl",
 	"version": "0.0.1",
 	"type": "module",
-	"description": "a tiny algebraic schema language",
+	"description": "An algebraic data model designed for datasets",
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
 	"files": [
 		"lib"
 	],
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "ava"
 	},
 	"keywords": [
-		"tasl"
+		"tasl",
+		"underlay"
 	],
 	"repository": {
 		"type": "git",
@@ -26,14 +27,18 @@
 	"homepage": "https://github.com/underlay/tasl#readme",
 	"dependencies": {
 		"@types/bignumber.js": "^5.0.0",
-		"@types/signed-varint": "gist:b46025b5175e06c1586d714dc0960443",
+		"@types/cbor-web": "gist:bf856730f8181b6a8e655107f40d1b1f",
 		"@types/varint": "^6.0.0",
-		"@underlay/namespaces": "^0.0.3",
+		"@underlay/namespaces": "^0.1.1",
+		"big-varint": "^0.1.0",
 		"buffer": "^6.0.3",
-		"cbor": "^7.0.5",
-		"cbor-web": "^7.0.5",
-		"lezer-tasl": "^0.0.2",
-		"signed-varint": "^2.0.1",
+		"cbor": "^8.0.0",
+		"cbor-web": "^8.0.1",
 		"varint": "^6.0.0"
+	},
+	"devDependencies": {
+		"ava": "^4.0.0-alpha.2",
+		"ts-node": "^10.0.0",
+		"typescript": "^4.3.4"
 	}
 }
