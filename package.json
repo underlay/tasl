@@ -1,6 +1,6 @@
 {
 	"name": "tasl",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"type": "module",
 	"description": "An algebraic data model designed for datasets",
 	"main": "lib/index.js",
