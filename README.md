@@ -1,6 +1,6 @@
 # tiny algebraic schema language _(tasl)_
 
-[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
+[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg)](https://github.com/RichardLitt/standard-readme) [![license](https://img.shields.io/github/license/joeltg/big-varint)](https://opensource.org/licenses/MIT) [![NPM version](https://img.shields.io/npm/v/big-varint)](https://www.npmjs.com/package/big-varint) ![install size](https://badgen.net/packagephobia/install/big-varint) ![TypeScript types](https://img.shields.io/npm/types/big-varint)
 
 An algebraic data model designed for datasets.
 
