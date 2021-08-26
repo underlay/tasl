@@ -7,6 +7,7 @@ An algebraic data model designed for datasets.
 ## Table of Contents
 
 - [Install](#install)
+- [Testing](#testing)
 - [Contributing](#contributing)
 - [License](#license)
 
