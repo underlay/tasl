@@ -5,8 +5,6 @@ import type { Literal } from "../types/index.js"
 const integerPattern = /^(\+|\-)?[0-9]+$/
 const floatPattern = /^(\+|-)?([0-9]+(\.[0-9]*)?|\.[0-9]+)([Ee](\+|-)?[0-9]+)?$/
 const hexPattern = /^([0-9a-fA-F]{2})*$/
-const base64Pattern =
-	/((([A-Za-z0-9+/][\r\n\t ]*){4})*(([A-Za-z0-9+/][\r\n\t ]*){3}[A-Za-z0-9+/]|([A-Za-z0-9+/][\r\n\t ]*){2}[AEIMQUYcgkosw048][\r\n\t ]*=|[A-Za-z0-9+/][\r\n\t ]*[AQgw][\r\n\t ]*=[\r\n\t ]*=))?/
 
 export function parseBoolean(value: string) {
 	if (value === "true" || value === "1") {
@@ -109,25 +107,6 @@ export const integerValidators: Record<string, (i: BigInt) => void> = {
 	},
 }
 
-export const binaryValidators: Record<string, (f: string) => void> = {
-	[xsd.hexBinary](value: string) {
-		if (hexPattern.test(value)) {
-			return
-		} else {
-			console.error(value)
-			throw new Error(`invalid xsd:hexBinary value`)
-		}
-	},
-	[xsd.base64Binary](value: string) {
-		if (base64Pattern.test(value)) {
-			return
-		} else {
-			console.error(value)
-			throw new Error(`invalid xsd:base64Binary value`)
-		}
-	},
-}
-
 export function validateLiteral(type: Literal, value: string) {
 	if (type.datatype === xsd.boolean) {
 		parseBoolean(value)
@@ -137,8 +116,13 @@ export function validateLiteral(type: Literal, value: string) {
 	} else if (type.datatype in integerValidators) {
 		const i = parseInteger(value)
 		integerValidators[type.datatype](i)
-	} else if (type.datatype in binaryValidators) {
-		binaryValidators[type.datatype](value)
+	} else if (type.datatype === xsd.hexBinary) {
+		if (hexPattern.test(value)) {
+			return
+		} else {
+			console.error(value)
+			throw new Error(`invalid xsd:hexBinary value`)
+		}
 	} else if (type.datatype === rdf.JSON) {
 		const _ = JSON.parse(value)
 	} else {

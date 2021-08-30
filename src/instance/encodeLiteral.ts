@@ -13,7 +13,6 @@ import {
 	parseInteger,
 	integerValidators,
 	floatValidators,
-	binaryValidators,
 } from "./validate.js"
 
 export function encodeLiteral(
@@ -107,7 +106,6 @@ export function encodeLiteral(
 		view.setUint8(0, Number(i))
 		return buffer
 	} else if (datatype === xsd.hexBinary) {
-		binaryValidators[xsd.hexBinary](value)
 		const data = Buffer.from(value, "hex")
 		const prefixLength = varint.encodingLength(data.length)
 		const buffer = new ArrayBuffer(prefixLength + data.length)
@@ -115,18 +113,13 @@ export function encodeLiteral(
 		varint.encode(length, array, 0)
 		data.copy(array, prefixLength)
 		return buffer
-	} else if (datatype === xsd.base64Binary) {
-		binaryValidators[xsd.base64Binary](value)
-		const data = Buffer.from(value, "base64")
+	} else if (datatype === rdf.JSON) {
+		const data = CBOR.encode(JSON.parse(value))
 		const prefixLength = varint.encodingLength(data.length)
 		const buffer = new ArrayBuffer(prefixLength + data.length)
 		const array = new Uint8Array(buffer)
 		varint.encode(length, array, 0)
 		data.copy(array, prefixLength)
-		return buffer
-	} else if (datatype === rdf.JSON) {
-		const data = JSON.parse(value)
-		const { buffer } = new Uint8Array(CBOR.encode(data))
 		return buffer
 	} else {
 		return encodeString(value)

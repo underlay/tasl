@@ -40,7 +40,7 @@ export function toSchema(instance: Instance<SchemaSchema>): Schema {
 		const { index } = element.components[ul.source]
 		const components = productMaps.get(index)
 		if (components === undefined) {
-			throw new Error("broken product element reference")
+			throw new Error("broken reference value")
 		} else if (components.has(key)) {
 			throw new Error("duplicate component key")
 		} else {
@@ -59,7 +59,7 @@ export function toSchema(instance: Instance<SchemaSchema>): Schema {
 		const { index } = element.components[ul.source]
 		const coproductMap = coproductMaps.get(index)
 		if (coproductMap === undefined) {
-			throw new Error("broken coproduct element reference")
+			throw new Error("broken reference value")
 		} else if (coproductMap.has(key)) {
 			throw new Error("duplicate option key")
 		} else {

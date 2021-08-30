@@ -66,7 +66,7 @@ export class Instance<S extends Types> {
 			mapKeys(schema, (type, key) => {
 				const elements = new Array<Uint8Array>(classes[key].length)
 				for (const [i, value] of classes[key].entries()) {
-					elements[i] = pack(fromJSON(type, value))
+					elements[i] = pack(fromJSON(schema, classes, type, value))
 				}
 				return elements
 			})
@@ -145,16 +145,26 @@ function pack(iter: Iterable<ArrayBuffer>): Buffer {
 	return buffer
 }
 
-function* fromJSON<A extends Type>(
-	type: A,
+function* fromJSON<S extends Schema, T extends Type>(
+	schema: S,
+	elements: { [Key in keyof S]: Value<S[Key]>[] },
+	type: T,
 	value: Value
 ): Iterable<ArrayBuffer> {
 	if (type.kind === "reference") {
-		if (value.kind === "reference") {
-			const { buffer } = new Uint8Array(varint.encode(value.index))
-			yield buffer
+		if (type.key in schema && type.key in elements) {
+			if (value.kind === "reference") {
+				if (0 <= value.index && value.index < elements[type.key].length) {
+					const { buffer } = new Uint8Array(varint.encode(value.index))
+					yield buffer
+				} else {
+					throw new Error("broken reference value")
+				}
+			} else {
+				throw new Error("expected a reference value")
+			}
 		} else {
-			throw new Error("expected a reference value")
+			throw new Error("broken reference type")
 		}
 	} else if (type.kind === "uri") {
 		if (value.kind === "uri") {
@@ -173,7 +183,7 @@ function* fromJSON<A extends Type>(
 		if (value.kind == "product") {
 			for (const [key, component] of forEntries(type.components)) {
 				if (key in value.components) {
-					yield* fromJSON(component, value.components[key])
+					yield* fromJSON(schema, elements, component, value.components[key])
 				}
 			}
 		} else {
@@ -184,7 +194,7 @@ function* fromJSON<A extends Type>(
 			const index = getIndexOfKey(type.options, value.key)
 			const { buffer } = new Uint8Array(varint.encode(index))
 			yield buffer
-			yield* fromJSON(type.options[value.key], value.value)
+			yield* fromJSON(schema, elements, type.options[value.key], value.value)
 		} else {
 			throw new Error("expected a coproduct value")
 		}

@@ -74,18 +74,10 @@ export function decodeLiteral(state: State, { datatype }: Literal): string {
 		const value = Buffer.from(array).toString("hex")
 		state.offset += byteLength
 		return value
-	} else if (datatype === xsd.base64Binary) {
-		const byteLength = getUnsignedVarint(state)
-		const array = state.data.slice(state.offset, state.offset + byteLength)
-		const value = Buffer.from(array).toString("base64")
-		state.offset += byteLength
-		return value
 	} else if (datatype === rdf.JSON) {
 		const byteLength = getUnsignedVarint(state)
-		const { buffer } = new Uint8Array(
-			state.data.slice(state.offset, state.offset + byteLength)
-		)
-		const value = CBOR.decodeFirstSync(buffer)
+		const array = state.data.slice(state.offset, state.offset + byteLength)
+		const value = CBOR.decodeFirstSync(array)
 		state.offset += byteLength
 		return JSON.stringify(value)
 	} else {
