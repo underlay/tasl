@@ -1,5 +1,5 @@
 export default {
-	files: ["./test/**/*"],
+	files: ["./test/*.test.ts"],
 	extensions: {
 		ts: "module",
 	},

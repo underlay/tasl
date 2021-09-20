@@ -1,5 +1,5 @@
 import { rdf, xsd } from "@underlay/namespaces"
-
+import { getFloat32Precision } from "fp16"
 import type { Literal } from "../types/index.js"
 
 const integerPattern = /^(\+|\-)?[0-9]+$/
@@ -42,7 +42,7 @@ export function parseInteger(value: string) {
 export const floatValidators: Record<string, (f: number) => void> = {
 	[xsd.double](f: number) {},
 	[xsd.float](f: number) {
-		if (Math.fround(f) !== f) {
+		if (getFloat32Precision(f) !== "exact") {
 			throw new Error(`xsd:float value ${f} out of precision`)
 		}
 	},

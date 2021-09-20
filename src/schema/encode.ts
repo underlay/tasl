@@ -30,10 +30,6 @@ export function fromSchema(schema: Schema): Instance<SchemaSchema> {
 		[ul.option]: [],
 	}
 
-	// function parseType(type: Type): Value<TypeType> {
-
-	// }
-
 	for (const [key, type] of forEntries(schema)) {
 		const value = parseType(schema, elements, type)
 		elements[ul.class].push({
@@ -119,7 +115,7 @@ function parseType(
 	}
 }
 
-export function encodeSchema(schema: Schema): Buffer {
+export function encodeSchema(schema: Schema): Uint8Array {
 	const instance = fromSchema(schema)
 	return instance.encode()
 }

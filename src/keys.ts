@@ -62,6 +62,7 @@ export function getKeyAtIndex<K extends string>(
 	if (0 <= index && index < keys.length) {
 		return keys[index]
 	} else {
+		console.error(object, index, keys)
 		throw new Error("index out of range")
 	}
 }

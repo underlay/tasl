@@ -14,6 +14,10 @@ export const typeType = coproduct({
 export type TypeType = typeof typeType
 
 export const schemaSchema = schema({
+	[ul.class]: product({
+		[ul.key]: uri(),
+		[ul.value]: typeType,
+	}),
 	[ul.product]: product({}),
 	[ul.component]: product({
 		[ul.source]: reference(ul.product),
@@ -23,10 +27,6 @@ export const schemaSchema = schema({
 	[ul.coproduct]: product({}),
 	[ul.option]: product({
 		[ul.source]: reference(ul.coproduct),
-		[ul.key]: uri(),
-		[ul.value]: typeType,
-	}),
-	[ul.class]: product({
 		[ul.key]: uri(),
 		[ul.value]: typeType,
 	}),

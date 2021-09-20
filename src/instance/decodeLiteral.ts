@@ -1,17 +1,20 @@
 import { Buffer } from "buffer"
-import CBOR from "cbor-web"
+import * as microcbor from "microcbor"
 import { signed, unsigned } from "big-varint"
 
 import { rdf, xsd } from "@underlay/namespaces"
 
-import { State, getUnsignedVarint } from "./utils.js"
+import { decodeUnsignedVarint, DecodeState } from "./utils.js"
 
 import type { Literal } from "../types/index.js"
 
-export function decodeLiteral(state: State, { datatype }: Literal): string {
+export function decodeLiteral(
+	state: DecodeState,
+	{ datatype }: Literal
+): string {
 	if (datatype === xsd.boolean) {
-		const view = getView(state, 1)
-		const value = view.getUint8(0)
+		const value = state.view.getUint8(state.offset)
+		state.offset += 1
 		if (value === 0) {
 			return "false"
 		} else if (value === 1) {
@@ -20,13 +23,13 @@ export function decodeLiteral(state: State, { datatype }: Literal): string {
 			console.error(value)
 			throw new Error(`invalid boolean value`)
 		}
-	} else if (datatype === xsd.double) {
-		const view = getView(state, 8)
-		const value = view.getFloat64(0)
-		return floatToString(value)
 	} else if (datatype === xsd.float) {
-		const view = getView(state, 4)
-		const value = view.getFloat32(0)
+		const value = state.view.getFloat32(state.offset)
+		state.offset += 4
+		return floatToString(value)
+	} else if (datatype === xsd.double) {
+		const value = state.view.getFloat64(state.offset)
+		state.offset += 8
 		return floatToString(value)
 	} else if (datatype === xsd.integer) {
 		const i = signed.decode(state.data, state.offset)
@@ -37,81 +40,65 @@ export function decodeLiteral(state: State, { datatype }: Literal): string {
 		state.offset += unsigned.encodingLength(i)
 		return i.toString()
 	} else if (datatype === xsd.long) {
-		const view = getView(state, 8)
-		const value = view.getBigInt64(0)
+		const value = state.view.getBigInt64(state.offset)
+		state.offset += 8
 		return value.toString()
 	} else if (datatype === xsd.int) {
-		const view = getView(state, 4)
-		const value = view.getInt32(0)
+		const value = state.view.getInt32(state.offset)
+		state.offset += 4
 		return value.toString()
 	} else if (datatype === xsd.short) {
-		const view = getView(state, 2)
-		const value = view.getInt16(0)
+		const value = state.view.getInt16(state.offset)
+		state.offset += 2
 		return value.toString()
 	} else if (datatype === xsd.byte) {
-		const view = getView(state, 1)
-		const value = view.getInt8(0)
+		const value = state.view.getInt8(state.offset)
+		state.offset += 1
 		return value.toString()
 	} else if (datatype === xsd.unsignedLong) {
-		const view = getView(state, 8)
-		const value = view.getBigUint64(0)
+		const value = state.view.getBigUint64(state.offset)
+		state.offset += 8
 		return value.toString()
 	} else if (datatype === xsd.unsignedInt) {
-		const view = getView(state, 4)
-		const value = view.getUint32(0)
+		const value = state.view.getUint32(state.offset)
+		state.offset += 4
 		return value.toString()
 	} else if (datatype === xsd.unsignedShort) {
-		const view = getView(state, 2)
-		const value = view.getUint16(0)
+		const value = state.view.getUint16(state.offset)
+		state.offset += 2
 		return value.toString()
 	} else if (datatype === xsd.unsignedByte) {
-		const view = getView(state, 1)
-		const value = view.getUint8(0)
+		const value = state.view.getUint8(state.offset)
+		state.offset += 1
 		return value.toString()
 	} else if (datatype === xsd.hexBinary) {
-		const byteLength = getUnsignedVarint(state)
+		const byteLength = decodeUnsignedVarint(state)
 		const array = state.data.slice(state.offset, state.offset + byteLength)
 		const value = Buffer.from(array).toString("hex")
 		state.offset += byteLength
 		return value
 	} else if (datatype === rdf.JSON) {
-		const byteLength = getUnsignedVarint(state)
+		const byteLength = decodeUnsignedVarint(state)
 		const array = state.data.slice(state.offset, state.offset + byteLength)
-		const value = CBOR.decodeFirstSync(array)
 		state.offset += byteLength
-		return JSON.stringify(value)
+		return JSON.stringify(microcbor.decode(array))
 	} else {
 		return decodeString(state)
 	}
 }
 
-export function decodeString(state: {
-	data: Uint8Array
-	offset: number
-}): string {
-	const byteLength = getUnsignedVarint(state)
-	const value = new TextDecoder().decode(getView(state, byteLength))
-	return value
-}
-
-function getView(
-	state: { data: Uint8Array; offset: number },
-	byteLength: number
-): DataView {
-	const view = new DataView(
-		state.data.buffer,
-		state.data.byteOffset + state.offset,
-		byteLength
-	)
+export function decodeString(state: DecodeState): string {
+	const byteLength = decodeUnsignedVarint(state)
+	const source = state.data.subarray(state.offset, state.offset + byteLength)
 	state.offset += byteLength
-	return view
+	return new TextDecoder().decode(source)
 }
 
 function floatToString(value: number) {
 	if (isNaN(value)) {
 		return "NaN"
 	} else if (value === 0) {
-		return 1 / value > 0 ? "0.0E0" : "-0.0E0"
+		return 1 / value > 0 ? "0" : "-0"
 	} else if (value === Infinity) {
 		return "INF"
 	} else if (value === -Infinity) {
