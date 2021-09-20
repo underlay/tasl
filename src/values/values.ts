@@ -39,14 +39,14 @@ namespace V {
 	}>
 }
 
-export type Value<A extends Type = Type> = A extends URI
+export type Value<T extends Type = Type> = T extends URI
 	? V.URI
-	: A extends Literal<infer Datatype>
+	: T extends Literal<infer Datatype>
 	? V.Literal<Datatype>
-	: A extends Product<infer Components>
+	: T extends Product<infer Components>
 	? V.Product<Components>
-	: A extends Coproduct<infer Options>
+	: T extends Coproduct<infer Options>
 	? V.Coproduct<Options>
-	: A extends Reference<infer Key>
+	: T extends Reference<infer Key>
 	? V.Reference<Key>
 	: never
