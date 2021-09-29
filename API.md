@@ -1,6 +1,6 @@
 # API
 
-## Table of contents
+## Table of Contents
 
 - [Types](#types)
   - [`types.Type`](#typestype)
