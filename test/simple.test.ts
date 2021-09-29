@@ -6,7 +6,7 @@ import * as tasl from "../src/index.js"
 
 test("encode nano instance", (t) => {
 	const schema = tasl.schema({
-		"http://example.com/foo": tasl.literal(xsd.boolean),
+		"http://example.com/foo": tasl.types.boolean,
 	})
 
 	const instance = tasl.Instance.fromJSON(schema, {
@@ -29,13 +29,13 @@ test("encode nano instance", (t) => {
 
 test("encode micro instance", (t) => {
 	const schema = tasl.schema({
-		"http://example.com/a": tasl.product({
-			"http://example.com/a/a": tasl.literal(xsd.unsignedByte),
-			"http://example.com/a/b": tasl.literal(xsd.integer),
+		"http://example.com/a": tasl.types.product({
+			"http://example.com/a/a": tasl.types.uint8,
+			"http://example.com/a/b": tasl.types.int,
 		}),
-		"http://example.com/b": tasl.coproduct({
-			"http://example.com/b/a": tasl.literal(xsd.hexBinary),
-			"http://example.com/b/b": tasl.product({}),
+		"http://example.com/b": tasl.types.coproduct({
+			"http://example.com/b/a": tasl.types.bytes,
+			"http://example.com/b/b": tasl.types.unit,
 		}),
 	})
 

@@ -5,14 +5,16 @@ import { xsd } from "@underlay/namespaces"
 import * as tasl from "../src/index.js"
 
 const schema = tasl.schema({
-	"http://example.com/foo": tasl.product({
-		"http://example.com/foo/1": tasl.uri(),
+	"http://example.com/foo": tasl.types.product({
+		"http://example.com/foo/1": tasl.types.uri(),
 	}),
-	"http://example.com/bar": tasl.coproduct({
-		"http://example.com/bar/1": tasl.literal(xsd.string),
-		"http://example.com/bar/2": tasl.product({
-			"http://example.com/bar/2/1": tasl.uri(),
-			"http://example.com/bar/2/2": tasl.reference("http://example.com/foo"),
+	"http://example.com/bar": tasl.types.coproduct({
+		"http://example.com/bar/1": tasl.types.string,
+		"http://example.com/bar/2": tasl.types.product({
+			"http://example.com/bar/2/1": tasl.types.uri(),
+			"http://example.com/bar/2/2": tasl.types.reference(
+				"http://example.com/foo"
+			),
 		}),
 	}),
 })
@@ -66,7 +68,7 @@ test("round-trip to instance to binary and back", (t) => {
 	for (const [key, type] of tasl.forEntries(schema)) {
 		for (const [n, e1] of instance.elements(key)) {
 			const e2 = i2.get(key, n)
-			t.true(tasl.isValueEqualTo(type, e1, e2))
+			t.true(tasl.values.isEqualTo(type, e1, e2))
 		}
 	}
 })
@@ -76,7 +78,7 @@ test("round-trip schema to in-memory instance and back", (t) => {
 	const s = tasl.toSchema(i)
 	for (const key of tasl.forKeys(schema)) {
 		if (key in s) {
-			t.true(tasl.isTypeEqualTo(schema[key], s[key]))
+			t.true(tasl.types.isEqualTo(schema[key], s[key]))
 		} else {
 			t.fail("key missing from result schema")
 		}
@@ -90,7 +92,7 @@ test("round-trip schema to binary instance and back", (t) => {
 	const s = tasl.toSchema(i)
 	for (const key of tasl.forKeys(schema)) {
 		if (key in s) {
-			t.true(tasl.isTypeEqualTo(schema[key], s[key]))
+			t.true(tasl.types.isEqualTo(schema[key], s[key]))
 		} else {
 			t.fail("key missing from result schema")
 		}
@@ -102,7 +104,7 @@ test("round-trip schema schema to in-memory instance and back", (t) => {
 	const s = tasl.toSchema(i)
 	for (const key of tasl.forKeys(tasl.schemaSchema)) {
 		if (key in s) {
-			t.true(tasl.isTypeEqualTo(tasl.schemaSchema[key], s[key]))
+			t.true(tasl.types.isEqualTo(tasl.schemaSchema[key], s[key]))
 		} else {
 			t.fail("key missing from result schema schema")
 		}
@@ -116,7 +118,7 @@ test("round-trip schema schema to binary instance and back", (t) => {
 	const s = tasl.toSchema(i)
 	for (const key of tasl.forKeys(tasl.schemaSchema)) {
 		if (key in s) {
-			t.true(tasl.isTypeEqualTo(tasl.schemaSchema[key], s[key]))
+			t.true(tasl.types.isEqualTo(tasl.schemaSchema[key], s[key]))
 		} else {
 			t.fail("key missing from result schema schema")
 		}
