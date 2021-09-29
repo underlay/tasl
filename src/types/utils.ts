@@ -1,15 +1,24 @@
-import { Type, Product, Coproduct, product, coproduct } from "./types.js"
+import {
+	Type,
+	Product,
+	Coproduct,
+	product,
+	coproduct,
+	uri,
+	literal,
+	reference,
+} from "./types.js"
 
 import { forKeys } from "../keys.js"
 
 /**
  * Check whether the type X is equal to the type Y.
- * Equality is associative, commutative, and symmetric.
- * @param x
- * @param y
- * @returns true if X and Y are equal to each other, false otherwise
+ * Equality is reflexive, transitive, and symmetric.
+ * @param x any type
+ * @param y any type
+ * @returns {boolean} true if X and Y are equal to each other, false otherwise
  */
-export function isTypeEqual<T extends Type>(x: T, y: Type): y is T {
+export function isTypeEqualTo<T extends Type>(x: T, y: Type): y is T {
 	if (x.kind === "uri" && y.kind === "uri") {
 		return true
 	} else if (x.kind === "literal" && y.kind === "literal") {
@@ -18,7 +27,7 @@ export function isTypeEqual<T extends Type>(x: T, y: Type): y is T {
 		for (const key of forKeys(x.components)) {
 			if (
 				key in y.components &&
-				isTypeEqual(x.components[key], y.components[key])
+				isTypeEqualTo(x.components[key], y.components[key])
 			) {
 				continue
 			} else {
@@ -29,7 +38,7 @@ export function isTypeEqual<T extends Type>(x: T, y: Type): y is T {
 		for (const key of forKeys(y.components)) {
 			if (
 				key in x.components &&
-				isTypeEqual(x.components[key], y.components[key])
+				isTypeEqualTo(x.components[key], y.components[key])
 			) {
 				continue
 			} else {
@@ -40,7 +49,7 @@ export function isTypeEqual<T extends Type>(x: T, y: Type): y is T {
 		return true
 	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
 		for (const key of forKeys(x.options)) {
-			if (key in y.options && isTypeEqual(x.options[key], y.options[key])) {
+			if (key in y.options && isTypeEqualTo(x.options[key], y.options[key])) {
 				continue
 			} else {
 				return false
@@ -48,7 +57,7 @@ export function isTypeEqual<T extends Type>(x: T, y: Type): y is T {
 		}
 
 		for (const key of forKeys(y.options)) {
-			if (key in x.options && isTypeEqual(x.options[key], y.options[key])) {
+			if (key in x.options && isTypeEqualTo(x.options[key], y.options[key])) {
 				continue
 			} else {
 				return false
@@ -64,46 +73,76 @@ export function isTypeEqual<T extends Type>(x: T, y: Type): y is T {
 }
 
 /**
- * Check whether the type X is assignable to the type Y.
- * Intuitively, assignability means that X is a "superset" of Y,
- * or that you can freely use values of type X as if they were values of type Y.
- * URIs, literals, and references are assignable if they are strictly equal.
- * A product type X is assignable to the product type Y if for every key K in Y,
- * X has a component with key K and the type X(K) is assignable to the type Y(K).
- * A coproduct type X is assignable to the coproduct type Y if for every key K in X,
- * Y has a component with key K and the type X(K) is assignable to the type Y(K).
- * Types of different kinds are never assignable.
- * Assignability is associative and commutative, but not symmetric.
- * @param x
- * @param y
- * @returns true if X is assignable to Y, false otherwise
+ * Check whether the type X is a subtype of the type Y.
+ * The subtype relation is reflexive, transitive, and antisymmetric.
+ * @param x any type
+ * @param y any type
+ * @returns {boolean} true if X ≤ Y, false otherwise
  */
-export function isTypeAssignable(x: Type, y: Type): boolean {
+export function isTypeSubtypeOf(x: Type, y: Type): boolean {
+	if (x.kind === "uri" && y.kind === "uri") {
+		return true
+	} else if (x.kind === "literal" && y.kind === "literal") {
+		return x.datatype === y.datatype
+	} else if (x.kind === "product" && y.kind === "product") {
+		for (const key of forKeys(x.components)) {
+			if (
+				key in y.components &&
+				isTypeSubtypeOf(x.components[key], y.components[key])
+			) {
+				continue
+			} else {
+				return false
+			}
+		}
+		return true
+	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
+		for (const key of forKeys(y.options)) {
+			if (key in x.options && isTypeSubtypeOf(x.options[key], y.options[key])) {
+				continue
+			} else {
+				return false
+			}
+		}
+		return true
+	} else if (x.kind === "reference" && y.kind === "reference") {
+		return x.key === y.key
+	} else {
+		return false
+	}
+}
+
+/**
+ * Check whether the type X is comparable with the type Y.
+ * The comparability relation is reflexive and symmetric, but not necessarily transitive.
+ * @param x a type
+ * @param y a type
+ * @returns {boolean} true if X and Y are comparavle, false otherwise
+ */
+export function isTypeComparableWith(x: Type, y: Type): boolean {
 	if (x.kind === "uri" && y.kind === "uri") {
 		return true
 	} else if (x.kind === "literal" && y.kind === "literal") {
 		return x.datatype === y.datatype
 	} else if (x.kind === "product" && y.kind === "product") {
 		for (const key of forKeys(y.components)) {
-			if (
-				key in x.components &&
-				isTypeAssignable(x.components[key], y.components[key])
-			) {
-				continue
-			} else {
-				return false
+			if (key in x.components) {
+				if (isTypeComparableWith(x.components[key], y.components[key])) {
+					continue
+				} else {
+					return false
+				}
 			}
 		}
 		return true
 	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
-		for (const key of forKeys(x.options)) {
-			if (
-				key in y.options &&
-				isTypeAssignable(x.options[key], y.options[key])
-			) {
-				continue
-			} else {
-				return false
+		for (const key of forKeys(y.options)) {
+			if (key in x.options) {
+				if (isTypeComparableWith(x.options[key], y.options[key])) {
+					continue
+				} else {
+					return false
+				}
 			}
 		}
 		return true
@@ -115,56 +154,143 @@ export function isTypeAssignable(x: Type, y: Type): boolean {
 }
 
 /**
- *
- * @param x
- * @param y
- * @returns
+ * Get the supremum of types X and Y.
+ * The supremum operation is associative and commutative.
+ * @param x any type
+ * @param y any type
+ * @throws an error if X and Y are not comparable
+ * @returns {Type} a type Z such that both X and Y are subtypes of Z
  */
-export function unifyTypes(x: Type, y: Type): Type {
+export function leastCommonSupertype(x: Type, y: Type): Type {
 	if (x.kind === "uri" && y.kind === "uri") {
-		return y
+		return uri()
 	} else if (x.kind === "literal" && y.kind === "literal") {
 		if (x.datatype === y.datatype) {
-			return y
+			return literal(y.datatype)
 		} else {
-			throw new Error("cannot unify unassignable types")
+			throw new Error("cannot unify unequal literal types")
 		}
 	} else if (x.kind === "product" && y.kind === "product") {
-		return product(Object.fromEntries(unifyComponents(x, y)))
+		return product(Object.fromEntries(forComponentSuprema(x, y)))
 	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
-		return coproduct(Object.fromEntries(unifyOptions(x, y)))
+		return coproduct(Object.fromEntries(forOptionSuprema(x, y)))
 	} else if (x.kind === "reference" && y.kind === "reference") {
 		if (x.key === y.key) {
-			return y
+			return reference(y.key)
 		} else {
-			throw new Error("cannot unify unassignable types")
+			throw new Error("cannot unify unequal reference types")
 		}
 	} else {
-		throw new Error("cannot unify unassignable types")
+		throw new Error("cannot unify types of different kinds")
 	}
 }
 
-function* unifyComponents(x: Product, y: Product): Iterable<[string, Type]> {
-	for (const key of forKeys(y.components)) {
-		if (key in x.components) {
-			yield [key, unifyTypes(x.components[key], y.components[key])]
-		} else {
-			throw new Error("cannot unify unassignable types")
+/**
+ * @param x a product type
+ * @param y a product type
+ * @throws an error if X and Y are not comparable
+ * @yields entries of the supremum of X and Y
+ */
+function* forComponentSuprema(
+	x: Product,
+	y: Product
+): Iterable<[string, Type]> {
+	// these do *not* need to be in sort order since they
+	// are directly passed into Object.fromEntries
+	const keys = new Set([...forKeys(y.components), ...forKeys(x.components)])
+	for (const key of keys) {
+		if (key in x.components && key in y.components) {
+			yield [key, leastCommonSupertype(x.components[key], y.components[key])]
+		} else if (key in x.components) {
+			yield [key, x.components[key]]
+		} else if (key in y.components) {
+			yield [key, y.components[key]]
 		}
 	}
 }
 
-function* unifyOptions(x: Coproduct, y: Coproduct): Iterable<[string, Type]> {
-	const A = new Set(forKeys(x.options))
-	const B = new Set(forKeys(y.options))
-	const K = new Set([...A, ...B])
-	const keys = Array.from(K).sort()
+/**
+ * @param x a coproduct type
+ * @param y a coproduct type
+ * @throws an error if X and Y are not comparable
+ * @yields entries of the supremum of X and Y
+ */
+function* forOptionSuprema(
+	x: Coproduct,
+	y: Coproduct
+): Iterable<[string, Type]> {
+	for (const key of forKeys(y.options)) {
+		if (key in x.options) {
+			yield [key, leastCommonSupertype(x.options[key], y.options[key])]
+		}
+	}
+}
+
+/**
+ * Get the infimum of types X and Y.
+ * The infimum operation is associative and commutative.
+ * @param x any type
+ * @param y any type
+ * @throws an error if X and Y are not comparable
+ * @returns {Type} a type Z such that both X and Y are assignable to Z
+ */
+export function greatestCommonSubtype(x: Type, y: Type): Type {
+	if (x.kind === "uri" && y.kind === "uri") {
+		return uri()
+	} else if (x.kind === "literal" && y.kind === "literal") {
+		if (x.datatype === y.datatype) {
+			return literal(y.datatype)
+		} else {
+			throw new Error("cannot unify unequal literal types")
+		}
+	} else if (x.kind === "product" && y.kind === "product") {
+		return product(Object.fromEntries(forComponentInfima(x, y)))
+	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
+		return coproduct(Object.fromEntries(forOptionInfima(x, y)))
+	} else if (x.kind === "reference" && y.kind === "reference") {
+		if (x.key === y.key) {
+			return reference(y.key)
+		} else {
+			throw new Error("cannot unify unequal reference types")
+		}
+	} else {
+		throw new Error("cannot unify types of different kinds")
+	}
+}
+
+/**
+ * @param x a product type
+ * @param y a product type
+ * @throws an error if X and Y are not unifiable
+ * @yields entries of the infimum of X and Y
+ */
+function* forComponentInfima(x: Product, y: Product): Iterable<[string, Type]> {
+	for (const key of forKeys(y.components)) {
+		if (key in x.components) {
+			yield [key, greatestCommonSubtype(x.components[key], y.components[key])]
+		}
+	}
+}
+
+/**
+ * @param x a coproduct type
+ * @param y a coproduct type
+ * @throws an error if X and Y are not unifiable
+ * @yields entries of the infimum of X and Y
+ */
+function* forOptionInfima(
+	x: Coproduct,
+	y: Coproduct
+): Iterable<[string, Type]> {
+	// these do *not* need to be in sort order since they
+	// are directly passed into Object.fromEntries
+	const keys = new Set([...forKeys(y.options), ...forKeys(x.options)])
 	for (const key of keys) {
-		if (A.has(key) && B.has(key)) {
-			yield [key, unifyTypes(x.options[key], y.options[key])]
-		} else if (A.has(key)) {
+		if (key in x.options && key in y.options) {
+			yield [key, greatestCommonSubtype(x.options[key], y.options[key])]
+		} else if (key in x.options) {
 			yield [key, x.options[key]]
-		} else if (B.has(key)) {
+		} else if (key in y.options) {
 			yield [key, y.options[key]]
 		}
 	}

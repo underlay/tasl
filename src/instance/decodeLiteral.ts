@@ -4,9 +4,11 @@ import { signed, unsigned } from "big-varint"
 
 import { rdf, xsd } from "@underlay/namespaces"
 
-import { decodeUnsignedVarint, DecodeState } from "./utils.js"
-
 import type { Literal } from "../types/index.js"
+
+import { floatToString } from "../utils.js"
+
+import { decodeUnsignedVarint, DecodeState } from "./utils.js"
 
 export function decodeLiteral(
 	state: DecodeState,
@@ -92,18 +94,4 @@ export function decodeString(state: DecodeState): string {
 	const source = state.data.subarray(state.offset, state.offset + byteLength)
 	state.offset += byteLength
 	return new TextDecoder().decode(source)
-}
-
-function floatToString(value: number) {
-	if (isNaN(value)) {
-		return "NaN"
-	} else if (value === 0) {
-		return 1 / value > 0 ? "0" : "-0"
-	} else if (value === Infinity) {
-		return "INF"
-	} else if (value === -Infinity) {
-		return "-INF"
-	} else {
-		return value.toString()
-	}
 }

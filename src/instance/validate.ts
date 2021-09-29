@@ -129,7 +129,3 @@ export function validateLiteral(type: Literal, value: string) {
 		return
 	}
 }
-
-export function validateURI(value: string) {
-	const _ = new URL(value)
-}

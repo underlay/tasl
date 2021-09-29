@@ -17,9 +17,9 @@ type SchemaInstanceElements = {
 }
 
 /**
- *
- * @param schema a schema
- * @returns an instance of the schema schema
+ * Convert a schema to an instance of the schema schema
+ * @param {Schema} schema a schema
+ * @returns {Instance} an instance of the schema schema
  */
 export function fromSchema(schema: Schema): Instance<SchemaSchema> {
 	const elements: SchemaInstanceElements = {
@@ -115,6 +115,11 @@ function parseType(
 	}
 }
 
+/**
+ * Convert a schema to an encoded instance of the schema schema
+ * @param {Schema} schema a schema
+ * @returns {Uint8Array} an encoded instance of the schema schema
+ */
 export function encodeSchema(schema: Schema): Uint8Array {
 	const instance = fromSchema(schema)
 	return instance.encode()

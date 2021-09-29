@@ -18,9 +18,9 @@ import { iota } from "../instance/utils.js"
 import { signalInvalidType } from "../utils.js"
 
 /**
- *
- * @param instance an instance of the schema schema
- * @returns a schema
+ * Convert an instance of the schema schema to a schema
+ * @param {Instance} instance an instance of the schema schema
+ * @returns {Schema} a schema
  */
 export function toSchema(instance: Instance<SchemaSchema>): Schema {
 	// this is also responsible for validating the schema constraints:
@@ -133,6 +133,11 @@ export function toSchema(instance: Instance<SchemaSchema>): Schema {
 	return schema(classes)
 }
 
+/**
+ * Convert an encoded instance of the schema schema to a schema
+ * @param {Uint8Array} data
+ * @returns {Schema} a schema
+ */
 export function decodeSchema(data: Uint8Array): Schema {
 	const instance = Instance.decode<SchemaSchema>(schemaSchema, data)
 	return toSchema(instance)

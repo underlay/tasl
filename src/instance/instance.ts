@@ -11,12 +11,11 @@ import {
 	getKeyAtIndex,
 	mapKeys,
 } from "../keys.js"
-import { signalInvalidType } from "../utils.js"
+import { signalInvalidType, validateURI } from "../utils.js"
 import { version } from "../version.js"
 
 import { decodeLiteral, decodeString } from "./decodeLiteral.js"
 import { encodeLiteral } from "./encodeLiteral.js"
-import { validateURI } from "./validate.js"
 import {
 	decodeUnsignedVarint,
 	DecodeState,
@@ -28,12 +27,7 @@ import {
 
 type Types = { [key in string]: Type }
 
-export interface Instance2<S extends Types> {
-	count<K extends keyof S>(key: K): number
-	get<K extends keyof S>(key: K, index: number): Value<S[K]>
-}
-
-export class Instance<S extends Types> implements Instance2<S> {
+export class Instance<S extends Types> {
 	private constructor(
 		public readonly schema: Schema<S>,
 		private readonly offsets: { [K in keyof S]: number[] },
@@ -66,7 +60,7 @@ export class Instance<S extends Types> implements Instance2<S> {
 
 	static fromJSON<S extends Types>(
 		schema: Schema<S>,
-		classes: { [Key in keyof S]: Value<S[Key]>[] }
+		classes: { [K in keyof S]: Value<S[K]>[] }
 	): Instance<S> {
 		const chunks: Uint8Array[] = []
 
@@ -179,7 +173,7 @@ export class Instance<S extends Types> implements Instance2<S> {
 function* fromJSON<S extends Schema, T extends Type>(
 	state: EncodeState,
 	schema: S,
-	elements: { [Key in keyof S]: Value<S[Key]>[] },
+	elements: { [K in keyof S]: Value<S[K]>[] },
 	type: T,
 	value: Value
 ): Iterable<Uint8Array> {
