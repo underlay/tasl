@@ -402,7 +402,7 @@ declare function isSubtypeOf(x: types.Type, y: types.Type): boolean
  * The comparability relation is reflexive and symmetric, but not necessarily transitive.
  * @param x a type
  * @param y a type
- * @returns {boolean} true if X and Y are comparable, false otherwise
+ * @returns {boolean} true if X ≤ Y or Y ≤ X, false otherwise
  */
 declare function isComparableWith(x: types.Type, y: types.Type): boolean
 ```

@@ -117,7 +117,7 @@ export function isSubtypeOf(x: Type, y: Type): boolean {
  * The comparability relation is reflexive and symmetric, but not necessarily transitive.
  * @param x a type
  * @param y a type
- * @returns {boolean} true if X and Y are comparavle, false otherwise
+ * @returns {boolean} true if X ≤ Y or Y ≤ X, false otherwise
  */
 export function isComparableWith(x: Type, y: Type): boolean {
 	if (x.kind === "uri" && y.kind === "uri") {
