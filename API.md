@@ -108,7 +108,7 @@
 ### `types.Type`
 
 ```ts
-export type Type =
+type Type =
 	| types.URI
 	| types.Literal
 	| types.Product
@@ -121,19 +121,19 @@ export type Type =
 #### `types.URI`
 
 ```ts
-export type URI = Readonly<{ kind: "uri" }>
+type URI = Readonly<{ kind: "uri" }>
 ```
 
 #### `types.uri`
 
 ```ts
-export declare function uri(): types.URI
+declare function uri(): types.URI
 ```
 
 #### `types.isURI`
 
 ```ts
-export declare function isURI(type: types.Type): type is types.URI
+declare function isURI(type: types.Type): type is types.URI
 ```
 
 ### Literal types
@@ -141,7 +141,7 @@ export declare function isURI(type: types.Type): type is types.URI
 #### `types.Literal`
 
 ```ts
-export type Literal<Datatype extends string = string> = Readonly<{
+type Literal<Datatype extends string = string> = Readonly<{
 	kind: "literal"
 	datatype: Datatype
 }>
@@ -150,7 +150,7 @@ export type Literal<Datatype extends string = string> = Readonly<{
 #### `types.literal`
 
 ```ts
-export declare function literal<Datatype extends string>(
+declare function literal<Datatype extends string>(
 	datatype: Datatype
 ): types.Literal<Datatype>
 ```
@@ -158,13 +158,13 @@ export declare function literal<Datatype extends string>(
 #### `types.isLiteral`
 
 ```ts
-export declare function isLiteral(type: types.Type): type is types.Literal
+declare function isLiteral(type: types.Type): type is types.Literal
 ```
 
 #### `types.isLiteralDatatype`
 
 ```ts
-export declare function isLiteralDatatype<Datatype extends string>(
+declare function isLiteralDatatype<Datatype extends string>(
 	type: types.Type,
 	datatype: Datatype
 ): type is types.Literal<Datatype>
@@ -175,7 +175,7 @@ export declare function isLiteralDatatype<Datatype extends string>(
 #### `types.Product`
 
 ```ts
-export type Product<
+type Product<
 	Components extends Record<string, types.Type> = Record<string, types.Type>
 > = Readonly<{
 	kind: "product"
@@ -186,7 +186,7 @@ export type Product<
 #### `types.product`
 
 ```ts
-export declare function product<Components extends Record<string, types.Type>>(
+declare function product<Components extends Record<string, types.Type>>(
 	components: Components
 ): Product<Components>
 ```
@@ -194,7 +194,7 @@ export declare function product<Components extends Record<string, types.Type>>(
 #### `types.isProduct`
 
 ```ts
-export declare function isProduct(type: types.Type): type is types.Product
+declare function isProduct(type: types.Type): type is types.Product
 ```
 
 ### Coproduct types
@@ -202,7 +202,7 @@ export declare function isProduct(type: types.Type): type is types.Product
 #### `types.Coproduct`
 
 ```ts
-export type Coproduct<
+type Coproduct<
 	Options extends Record<string, types.Type> = Record<string, types.Type>
 > = Readonly<{
 	kind: "coproduct"
@@ -213,7 +213,7 @@ export type Coproduct<
 #### `types.coproduct`
 
 ```ts
-export declare function coproduct<Options extends Record<string, types.Type>>(
+declare function coproduct<Options extends Record<string, types.Type>>(
 	options: Options
 ): Coproduct<Options>
 ```
@@ -221,7 +221,7 @@ export declare function coproduct<Options extends Record<string, types.Type>>(
 #### `types.isCoproduct`
 
 ```ts
-export declare function isCoproduct(type: types.Type): type is types.Coproduct
+declare function isCoproduct(type: types.Type): type is types.Coproduct
 ```
 
 ### Reference types
@@ -229,7 +229,7 @@ export declare function isCoproduct(type: types.Type): type is types.Coproduct
 ### `types.Reference`
 
 ```ts
-export type Reference<Key extends string = string> = Readonly<{
+type Reference<Key extends string = string> = Readonly<{
 	kind: "reference"
 	key: Key
 }>
@@ -238,21 +238,19 @@ export type Reference<Key extends string = string> = Readonly<{
 #### `types.reference`
 
 ```ts
-export declare function reference<Key extends string>(
-	key: Key
-): types.Reference<Key>
+declare function reference<Key extends string>(key: Key): types.Reference<Key>
 ```
 
 #### `types.isReference`
 
 ```ts
-export declare function isReference(type: types.Type): type is types.Reference
+declare function isReference(type: types.Type): type is types.Reference
 ```
 
 #### `types.isReferenceKey`
 
 ```ts
-export declare function isReferenceKey<Key extends string>(
+declare function isReferenceKey<Key extends string>(
 	type: types.Type,
 	key: Key
 ): type is types.Reference<Key>
@@ -263,109 +261,109 @@ export declare function isReferenceKey<Key extends string>(
 #### `types.unit`
 
 ```ts
-export declare const unit: types.Product<{}>
+declare const unit: types.Product<{}>
 ```
 
 #### `types.uri`
 
 ```ts
-export declare const uri: types.URI
+declare const uri: types.URI
 ```
 
 #### `types.string`
 
 ```ts
-export declare const string: types.Literal<"http://www.w3.org/2001/XMLSchema#string">
+declare const string: types.Literal<"http://www.w3.org/2001/XMLSchema#string">
 ```
 
 #### `types.boolean`
 
 ```ts
-export declare const boolean: types.Literal<"http://www.w3.org/2001/XMLSchema#boolean">
+declare const boolean: types.Literal<"http://www.w3.org/2001/XMLSchema#boolean">
 ```
 
 #### `types.float32`
 
 ```ts
-export declare const float32: types.Literal<"http://www.w3.org/2001/XMLSchema#float">
+declare const float32: types.Literal<"http://www.w3.org/2001/XMLSchema#float">
 ```
 
 #### `types.float64`
 
 ```ts
-export declare const float64: types.Literal<"http://www.w3.org/2001/XMLSchema#double">
+declare const float64: types.Literal<"http://www.w3.org/2001/XMLSchema#double">
 ```
 
 #### `types.int`
 
 ```ts
-export declare const int: types.Literal<"http://www.w3.org/2001/XMLSchema#integer">
+declare const int: types.Literal<"http://www.w3.org/2001/XMLSchema#integer">
 ```
 
 #### `types.uint`
 
 ```ts
-export declare const uint: types.Literal<"http://www.w3.org/2001/XMLSchema#nonNegativeInteger">
+declare const uint: types.Literal<"http://www.w3.org/2001/XMLSchema#nonNegativeInteger">
 ```
 
 #### `types.int64`
 
 ```ts
-export declare const int64: types.Literal<"http://www.w3.org/2001/XMLSchema#long">
+declare const int64: types.Literal<"http://www.w3.org/2001/XMLSchema#long">
 ```
 
 #### `types.int32`
 
 ```ts
-export declare const int32: types.Literal<"http://www.w3.org/2001/XMLSchema#int">
+declare const int32: types.Literal<"http://www.w3.org/2001/XMLSchema#int">
 ```
 
 #### `types.int16`
 
 ```ts
-export declare const int16: types.Literal<"http://www.w3.org/2001/XMLSchema#short">
+declare const int16: types.Literal<"http://www.w3.org/2001/XMLSchema#short">
 ```
 
 #### `types.int8`
 
 ```ts
-export declare const int8: types.Literal<"http://www.w3.org/2001/XMLSchema#byte">
+declare const int8: types.Literal<"http://www.w3.org/2001/XMLSchema#byte">
 ```
 
 #### `types.uint64`
 
 ```ts
-export declare const uint64: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedLong">
+declare const uint64: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedLong">
 ```
 
 #### `types.uint32`
 
 ```ts
-export declare const uint32: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedInt">
+declare const uint32: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedInt">
 ```
 
 #### `types.uint16`
 
 ```ts
-export declare const uint16: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedShort">
+declare const uint16: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedShort">
 ```
 
 #### `types.uint8`
 
 ```ts
-export declare const uint8: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedByte">
+declare const uint8: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedByte">
 ```
 
 #### `types.bytes`
 
 ```ts
-export declare const bytes: types.Literal<"http://www.w3.org/2001/XMLSchema#hexBinary">
+declare const bytes: types.Literal<"http://www.w3.org/2001/XMLSchema#hexBinary">
 ```
 
 #### `types.JSON`
 
 ```ts
-export declare const JSON: types.Literal<"http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON">
+declare const JSON: types.Literal<"http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON">
 ```
 
 ### Type utilities
@@ -380,10 +378,7 @@ export declare const JSON: types.Literal<"http://www.w3.org/1999/02/22-rdf-synta
  * @param y any type
  * @returns {boolean} true if X = Y, false otherwise
  */
-export declare function isEqualTo<T extends types.Type>(
-	x: T,
-	y: types.Type
-): y is T
+declare function isEqualTo<T extends types.Type>(x: T, y: types.Type): y is T
 ```
 
 #### `types.isSubtypeOf`
@@ -396,7 +391,7 @@ export declare function isEqualTo<T extends types.Type>(
  * @param y any type
  * @returns {boolean} true if X ≤ Y, false otherwise
  */
-export declare function isSubtypeOf(x: types.Type, y: types.Type): boolean
+declare function isSubtypeOf(x: types.Type, y: types.Type): boolean
 ```
 
 #### `types.isComparableWith`
@@ -409,7 +404,7 @@ export declare function isSubtypeOf(x: types.Type, y: types.Type): boolean
  * @param y a type
  * @returns {boolean} true if X and Y are comparable, false otherwise
  */
-export declare function isComparableWith(x: types.Type, y: types.Type): boolean
+declare function isComparableWith(x: types.Type, y: types.Type): boolean
 ```
 
 #### `types.greatestCommonSubtype`
@@ -423,10 +418,7 @@ export declare function isComparableWith(x: types.Type, y: types.Type): boolean
  * @throws an error if X and Y are not comparable
  * @returns {Type} a type Z such that both X and Y are assignable to Z
  */
-export declare function greatestCommonSubtype(
-	x: types.Type,
-	y: types.Type
-): types.Type
+declare function greatestCommonSubtype(x: types.Type, y: types.Type): types.Type
 ```
 
 #### `types.leastCommonSupertype`
@@ -440,10 +432,7 @@ export declare function greatestCommonSubtype(
  * @throws an error if X and Y are not comparable
  * @returns {Type} a type Z such that both X and Y are subtypes of Z
  */
-export declare function leastCommonSupertype(
-	x: types.Type,
-	y: types.Type
-): types.Type
+declare function leastCommonSupertype(x: types.Type, y: types.Type): types.Type
 ```
 
 ## Schemas
@@ -452,7 +441,7 @@ export declare function leastCommonSupertype(
 type Schema<S extends Record<string, types.Type> = Record<string, types.Type>> =
 	Readonly<S>
 
-export declare function schema<S extends Record<string, types.Type>>(
+declare function schema<S extends Record<string, types.Type>>(
 	classes: S
 ): Schema<S>
 ```
@@ -462,7 +451,7 @@ export declare function schema<S extends Record<string, types.Type>>(
 #### `typeType`
 
 ```ts
-export declare const typeType: types.Coproduct<{
+declare const typeType: types.Coproduct<{
 	"http://underlay.org/ns/uri": types.Product<{}>
 	"http://underlay.org/ns/literal": types.URI
 	"http://underlay.org/ns/product": types.Reference<"http://underlay.org/ns/product">
@@ -474,13 +463,13 @@ export declare const typeType: types.Coproduct<{
 #### `TypeType`
 
 ```ts
-export type TypeType = typeof typeType
+type TypeType = typeof typeType
 ```
 
 #### `schemaSchema`
 
 ```ts
-export declare const schemaSchema: Readonly<{
+declare const schemaSchema: Readonly<{
 	"http://underlay.org/ns/class": types.Product<{
 		"http://underlay.org/ns/key": types.URI
 		"http://underlay.org/ns/value": TypeType
@@ -503,7 +492,7 @@ export declare const schemaSchema: Readonly<{
 #### `SchemaSchema`
 
 ```ts
-export type SchemaSchema = typeof schemaSchema
+type SchemaSchema = typeof schemaSchema
 ```
 
 ### Encoding schemas
@@ -516,7 +505,7 @@ export type SchemaSchema = typeof schemaSchema
  * @param {Schema} schema a schema
  * @returns {Instance} an instance of the schema schema
  */
-export declare function fromSchema(schema: Schema): Instance<SchemaSchema>
+declare function fromSchema(schema: Schema): Instance<SchemaSchema>
 ```
 
 #### `encodeSchema`
@@ -527,7 +516,7 @@ export declare function fromSchema(schema: Schema): Instance<SchemaSchema>
  * @param {Schema} schema a schema
  * @returns {Uint8Array} an encoded instance of the schema schema
  */
-export declare function encodeSchema(schema: Schema): Uint8Array
+declare function encodeSchema(schema: Schema): Uint8Array
 ```
 
 ### Decoding schemas
@@ -540,7 +529,7 @@ export declare function encodeSchema(schema: Schema): Uint8Array
  * @param {Instance} instance an instance of the schema schema
  * @returns {Schema} a schema
  */
-export declare function toSchema(instance: Instance<SchemaSchema>): Schema
+declare function toSchema(instance: Instance<SchemaSchema>): Schema
 ```
 
 #### `decodeSchema`
@@ -551,7 +540,7 @@ export declare function toSchema(instance: Instance<SchemaSchema>): Schema
  * @param {Uint8Array} data
  * @returns {Schema} a schema
  */
-export declare function decodeSchema(data: Uint8Array): Schema
+declare function decodeSchema(data: Uint8Array): Schema
 ```
 
 ## Values
@@ -559,7 +548,7 @@ export declare function decodeSchema(data: Uint8Array): Schema
 ### `values.Value`
 
 ```ts
-export type Value<T extends types.Type = types.Type> = T extends types.URI
+type Value<T extends types.Type = types.Type> = T extends types.URI
 	? values.URI
 	: T extends types.Literal<infer Datatype>
 	? values.Literal<Datatype>
@@ -577,13 +566,13 @@ export type Value<T extends types.Type = types.Type> = T extends types.URI
 #### `values.URI`
 
 ```ts
-export type URI = Readonly<{ kind: "uri"; value: string }>
+type URI = Readonly<{ kind: "uri"; value: string }>
 ```
 
 #### `values.uri`
 
 ```ts
-export declare function uri(type: types.URI, value: string): values.URI
+declare function uri(type: types.URI, value: string): values.URI
 ```
 
 ### Literal values
@@ -591,7 +580,7 @@ export declare function uri(type: types.URI, value: string): values.URI
 #### `values.Literal`
 
 ```ts
-export declare type Literal<Datatype extends string> = Readonly<{
+declare type Literal<Datatype extends string> = Readonly<{
 	kind: "literal"
 	value: string
 }>
@@ -611,7 +600,7 @@ declare function literal<Datatype extends string>(
 #### `values.Product`
 
 ```ts
-export type Product<Components extends Record<string, types.Type>> = Readonly<{
+type Product<Components extends Record<string, types.Type>> = Readonly<{
 	kind: "product"
 	components: { readonly [K in keyof Components]: values.Value<Components[K]> }
 }>
@@ -620,7 +609,7 @@ export type Product<Components extends Record<string, types.Type>> = Readonly<{
 #### `values.product`
 
 ```ts
-export declare function product<Components extends Record<string, types.Type>>(
+declare function product<Components extends Record<string, types.Type>>(
 	type: types.Product<Components>,
 	components: { [K in keyof Components]: values.Value<Components[K]> }
 ): values.Product<Components>
@@ -646,7 +635,7 @@ type Coproduct<
 #### `values.coproduct`
 
 ```ts
-export declare function coproduct<
+declare function coproduct<
 	Options extends Record<string, types.Type>,
 	Key extends keyof Options
 >(
@@ -661,7 +650,7 @@ export declare function coproduct<
 #### `values.Reference`
 
 ```ts
-export type Reference<Key extends string> = Readonly<{
+type Reference<Key extends string> = Readonly<{
 	kind: "reference"
 	index: number
 }>
@@ -670,7 +659,7 @@ export type Reference<Key extends string> = Readonly<{
 #### `values.reference`
 
 ```ts
-export declare function reference<Key extends string>(
+declare function reference<Key extends string>(
 	type: types.Reference<Key>,
 	index: number
 ): values.Reference<key>
@@ -701,19 +690,19 @@ namespace Values {
 #### `values.unit`
 
 ```ts
-export declare function unit(): values.Product<{}>
+declare function unit(): values.Product<{}>
 ```
 
 #### `values.uri`
 
 ```ts
-export declare function uri(value: string): values.URI
+declare function uri(value: string): values.URI
 ```
 
 #### `values.string`
 
 ```ts
-export declare function string(
+declare function string(
 	value: string
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#string">
 ```
@@ -721,7 +710,7 @@ export declare function string(
 #### `values.boolean`
 
 ```ts
-export declare function boolean(
+declare function boolean(
 	value: boolean
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#boolean">
 ```
@@ -729,7 +718,7 @@ export declare function boolean(
 #### `values.float32`
 
 ```ts
-export declare function float32(
+declare function float32(
 	value: number
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#float">
 ```
@@ -737,7 +726,7 @@ export declare function float32(
 #### `values.float64`
 
 ```ts
-export declare function float64(
+declare function float64(
 	value: number
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#double">
 ```
@@ -745,7 +734,7 @@ export declare function float64(
 #### `values.int`
 
 ```ts
-export declare function int(
+declare function int(
 	value: bigint
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#integer">
 ```
@@ -753,7 +742,7 @@ export declare function int(
 #### `values.uint`
 
 ```ts
-export declare function uint(
+declare function uint(
 	value: bigint
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#nonNegativeInteger">
 ```
@@ -761,7 +750,7 @@ export declare function uint(
 #### `values.int64`
 
 ```ts
-export declare function int64(
+declare function int64(
 	value: bigint
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#long">
 ```
@@ -769,7 +758,7 @@ export declare function int64(
 #### `values.int32`
 
 ```ts
-export declare function int32(
+declare function int32(
 	value: number
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#int">
 ```
@@ -777,7 +766,7 @@ export declare function int32(
 #### `values.int16`
 
 ```ts
-export declare function int16(
+declare function int16(
 	value: number
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#short">
 ```
@@ -785,7 +774,7 @@ export declare function int16(
 #### `values.int8`
 
 ```ts
-export declare function int8(
+declare function int8(
 	value: number
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#byte">
 ```
@@ -793,7 +782,7 @@ export declare function int8(
 #### `values.uint64`
 
 ```ts
-export declare function uint64(
+declare function uint64(
 	value: number
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#unsignedLong">
 ```
@@ -801,7 +790,7 @@ export declare function uint64(
 #### `values.uint32`
 
 ```ts
-export declare function uint32(
+declare function uint32(
 	value: number
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#unsignedInt">
 ```
@@ -809,7 +798,7 @@ export declare function uint32(
 #### `values.uint16`
 
 ```ts
-export declare function uint16(
+declare function uint16(
 	value: number
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#unsignedShort">
 ```
@@ -817,7 +806,7 @@ export declare function uint16(
 #### `values.uint8`
 
 ```ts
-export declare function uint8(
+declare function uint8(
 	value: number
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#unsignedByte">
 ```
@@ -825,7 +814,7 @@ export declare function uint8(
 #### `values.bytes`
 
 ```ts
-export declare function bytes(
+declare function bytes(
 	value: Uint8Array
 ): values.Literal<"http://www.w3.org/2001/XMLSchema#hexBinary">
 ```
@@ -833,7 +822,7 @@ export declare function bytes(
 #### `values.JSON`
 
 ```ts
-export declare function JSON(
+declare function JSON(
 	value: any
 ): values.Literal<"http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON">
 ```
@@ -851,7 +840,7 @@ export declare function JSON(
  * @throws an error if either of X or Y are not of type T
  * @returns {boolean} true if X is equal to Y, false otherwise
  */
-export declare function isEqualTo<T extends types.Type>(
+declare function isEqualTo<T extends types.Type>(
 	type: T,
 	x: values.Value<T>,
 	y: values.Value<T>
@@ -863,7 +852,7 @@ export declare function isEqualTo<T extends types.Type>(
 ### `Instance`
 
 ```ts
-export declare class Instance<S extends Record<string, types.Type>> {
+declare class Instance<S extends Record<string, types.Type>> {
 	readonly schema: Schema<S>
 
 	static decode<S extends Record<string, types.Type>>(
