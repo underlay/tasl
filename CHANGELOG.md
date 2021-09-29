@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 - Fixed std type and value export configuration
+- Fix test imports
 
 ## [0.2.0]
 
