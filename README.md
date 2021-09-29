@@ -21,8 +21,97 @@ npm i tasl
 
 ## Usage
 
-```typescript
+```ts
 import * as tasl from "tasl"
+
+const person = tasl.types.product({
+  "http://schema.org/name": tasl.types.string,
+  "http://schema.org/gender": tasl.types.coproduct({
+    "http://schema.org/Male": tasl.types.unit,
+    "http://schema.org/Female": tasl.types.unit,
+    "http://schema.org/value": tasl.types.string,
+  })
+})
+
+const schema = tasl.schema({
+  "http://schema.org/Person": person,
+})
+
+const instance = tasl.Instance.fromJSON(schema, {
+  "http://schema.org/Person": [
+    {
+      kind: "product",
+      components: {
+        "http://schema.org/name": { kind: "literal", value: "Alyssa P. Hacker" },
+        "http://schema.org/gender": {
+          kind: "coproduct",
+          key: "http://schema.org/Female",
+          value: { kind: "product", components: {} },
+        },
+      },
+    },
+    {
+      kind: "product",
+      components: {
+        "http://schema.org/name": { kind: "literal", value: "Ben Bitdiddle" },
+        "http://schema.org/gender": {
+          kind: "coproduct",
+          key: "http://schema.org/Male",
+          value: { kind: "product", components: {} },
+        },
+      },
+    },
+  ],
+})
+
+const data = instance.encode()
+console.log(data)
+// Uint8Array(35) [
+//     1,   2,   0,  16,  65, 108, 121, 115, 115,
+//    97,  32,  80,  46,  32,  72,  97,  99, 107,
+//   101, 114,   1,  13,  66, 101, 110,  32,  66,
+//   105, 116, 100, 105, 100, 100, 108, 101
+// ]
+
+console.log(tasl.Instance.decode(schema, data).toJSON())
+// {
+//   "http://schema.org/Person": [
+//     {
+//       "kind": "product",
+//       "components": {
+//         "http://schema.org/gender": {
+//           "kind": "coproduct",
+//           "key": "http://schema.org/Female",
+//           "value": {
+//             "kind": "product",
+//             "components": {}
+//           }
+//         },
+//         "http://schema.org/name": {
+//           "kind": "literal",
+//           "value": "Alyssa P. Hacker"
+//         }
+//       }
+//     },
+//     {
+//       "kind": "product",
+//       "components": {
+//         "http://schema.org/gender": {
+//           "kind": "coproduct",
+//           "key": "http://schema.org/Male",
+//           "value": {
+//             "kind": "product",
+//             "components": {}
+//           }
+//         },
+//         "http://schema.org/name": {
+//           "kind": "literal",
+//           "value": "Ben Bitdiddle"
+//         }
+//       }
+//     }
+//   ]
+// }
 ```
 
 ## API
