@@ -84,7 +84,7 @@ import { forKeys } from "../keys.js"
  * @throws an error if either of X or Y are not of type T
  * @returns {boolean} true if X is equal to Y, false otherwise
  */
-export function isValueEqualTo<T extends Type>(
+export function isEqualTo<T extends Type>(
 	type: T,
 	x: Value<T>,
 	y: Value<T>
@@ -105,11 +105,7 @@ export function isValueEqualTo<T extends Type>(
 		for (const key of forKeys(type.components)) {
 			if (key in x.components && key in y.components) {
 				if (
-					isValueEqualTo(
-						type.components[key],
-						x.components[key],
-						y.components[key]
-					)
+					isEqualTo(type.components[key], x.components[key], y.components[key])
 				) {
 					continue
 				} else {
@@ -126,9 +122,7 @@ export function isValueEqualTo<T extends Type>(
 		y.kind === "coproduct"
 	) {
 		if (x.key in type.options && y.key in type.options) {
-			return (
-				x.key === y.key && isValueEqualTo(type.options[x.key], x.value, y.value)
-			)
+			return x.key === y.key && isEqualTo(type.options[x.key], x.value, y.value)
 		} else {
 			throw new Error("one of the values is not of the provided type")
 		}

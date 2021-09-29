@@ -1,12 +1,11 @@
 import { rdf, xsd } from "@underlay/namespaces"
 import { getFloat32Precision } from "fp16"
-import type { Literal } from "../types/index.js"
 
 const integerPattern = /^(\+|\-)?[0-9]+$/
 const floatPattern = /^(\+|-)?([0-9]+(\.[0-9]*)?|\.[0-9]+)([Ee](\+|-)?[0-9]+)?$/
 const hexPattern = /^([0-9a-fA-F]{2})*$/
 
-export function parseBoolean(value: string) {
+export function parseBoolean(value: string): boolean {
 	if (value === "true" || value === "1") {
 		return true
 	} else if (value === "false" || value === "0") {
@@ -16,7 +15,7 @@ export function parseBoolean(value: string) {
 	}
 }
 
-export function parseFloat(value: string) {
+export function parseFloat(value: string): number {
 	if (value === "NaN") {
 		return NaN
 	} else if (value === "INF" || value === "+INF") {
@@ -31,7 +30,7 @@ export function parseFloat(value: string) {
 	}
 }
 
-export function parseInteger(value: string) {
+export function parseInteger(value: string): bigint {
 	if (integerPattern.test(value)) {
 		return BigInt(value)
 	} else {
@@ -48,57 +47,57 @@ export const floatValidators: Record<string, (f: number) => void> = {
 	},
 }
 
-export const integerValidators: Record<string, (i: BigInt) => void> = {
-	[xsd.integer](i: BigInt) {},
-	[xsd.nonNegativeInteger](i: BigInt) {
+export const integerValidators: Record<string, (i: bigint) => void> = {
+	[xsd.integer](i: bigint) {},
+	[xsd.nonNegativeInteger](i: bigint) {
 		if (i < 0n) {
 			throw new Error(
 				`integer value ${i} out of range for xsd:nonNegativeInteger datatype`
 			)
 		}
 	},
-	[xsd.long](i: BigInt) {
+	[xsd.long](i: bigint) {
 		if (i < -9223372036854775808n || 9223372036854775807n < i) {
 			throw new Error(`integer value ${i} out of range for xsd:long datatype`)
 		}
 	},
-	[xsd.int](i: BigInt) {
+	[xsd.int](i: bigint) {
 		if (i < -2147483648n || 2147483647n < i) {
 			throw new Error(`integer value ${i} out of range for xsd:int datatype`)
 		}
 	},
-	[xsd.short](i: BigInt) {
+	[xsd.short](i: bigint) {
 		if (i < -32768n || 32767n < i) {
 			throw new Error(`integer value ${i} out of range for xsd:short datatype`)
 		}
 	},
-	[xsd.byte](i: BigInt) {
+	[xsd.byte](i: bigint) {
 		if (i < -128n || 127n < i) {
 			throw new Error(`integer value ${i} out of range for xsd:byte datatype`)
 		}
 	},
-	[xsd.unsignedLong](i: BigInt) {
+	[xsd.unsignedLong](i: bigint) {
 		if (i < 0n || 18446744073709551615n < i) {
 			throw new Error(
 				`integer value ${i} out of range for xsd:unsignedLong datatype`
 			)
 		}
 	},
-	[xsd.unsignedInt](i: BigInt) {
+	[xsd.unsignedInt](i: bigint) {
 		if (i < 0n || 4294967295n < i) {
 			throw new Error(
 				`integer value ${i} out of range for xsd:unsignedInt datatype`
 			)
 		}
 	},
-	[xsd.unsignedShort](i: BigInt) {
+	[xsd.unsignedShort](i: bigint) {
 		if (i < 0n || 65535n < i) {
 			throw new Error(
 				`integer value ${i} out of range for xsd:unsignedShort datatype`
 			)
 		}
 	},
-	[xsd.unsignedByte](i: BigInt) {
+	[xsd.unsignedByte](i: bigint) {
 		if (i < 0n || 255n < i) {
 			throw new Error(
 				`integer value ${i} out of range for xsd:unsignedByte datatype`
@@ -107,23 +106,23 @@ export const integerValidators: Record<string, (i: BigInt) => void> = {
 	},
 }
 
-export function validateLiteral(type: Literal, value: string) {
-	if (type.datatype === xsd.boolean) {
+export function validateLiteral(datatype: string, value: string) {
+	if (datatype === xsd.boolean) {
 		parseBoolean(value)
-	} else if (type.datatype in floatValidators) {
+	} else if (datatype in floatValidators) {
 		const f = parseFloat(value)
-		floatValidators[type.datatype](f)
-	} else if (type.datatype in integerValidators) {
+		floatValidators[datatype](f)
+	} else if (datatype in integerValidators) {
 		const i = parseInteger(value)
-		integerValidators[type.datatype](i)
-	} else if (type.datatype === xsd.hexBinary) {
+		integerValidators[datatype](i)
+	} else if (datatype === xsd.hexBinary) {
 		if (hexPattern.test(value)) {
 			return
 		} else {
 			console.error(value)
 			throw new Error(`invalid xsd:hexBinary value`)
 		}
-	} else if (type.datatype === rdf.JSON) {
+	} else if (datatype === rdf.JSON) {
 		const _ = JSON.parse(value)
 	} else {
 		return

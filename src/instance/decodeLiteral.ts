@@ -4,7 +4,7 @@ import { signed, unsigned } from "big-varint"
 
 import { rdf, xsd } from "@underlay/namespaces"
 
-import type { Literal } from "../types/index.js"
+import type * as types from "../types/index.js"
 
 import { floatToString } from "../utils.js"
 
@@ -12,7 +12,7 @@ import { decodeUnsignedVarint, DecodeState } from "./utils.js"
 
 export function decodeLiteral(
 	state: DecodeState,
-	{ datatype }: Literal
+	{ datatype }: types.Literal
 ): string {
 	if (datatype === xsd.boolean) {
 		const value = state.view.getUint8(state.offset)

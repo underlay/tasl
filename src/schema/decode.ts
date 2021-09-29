@@ -1,16 +1,11 @@
 import { ul } from "@underlay/namespaces"
 
-import type { Value } from "../values/index.js"
+import * as types from "../types/index.js"
+
+import type * as values from "../values/index.js"
+
 import { Instance } from "../instance/instance.js"
 
-import {
-	Type,
-	uri,
-	literal,
-	product,
-	coproduct,
-	reference,
-} from "../types/index.js"
 import { Schema, schema } from "./schema.js"
 import { schemaSchema, SchemaSchema, TypeType } from "./schemaSchema.js"
 
@@ -30,7 +25,7 @@ export function toSchema(instance: Instance<SchemaSchema>): Schema {
 	// - no re-use of product/coproduct elements
 
 	const productCount = instance.count(ul.product)
-	const productMaps = new Map<number, Map<string, Value<TypeType>>>(
+	const productMaps = new Map<number, Map<string, values.Value<TypeType>>>(
 		iota(productCount, (i) => [i, new Map()])
 	)
 
@@ -49,7 +44,7 @@ export function toSchema(instance: Instance<SchemaSchema>): Schema {
 	}
 
 	const coproductCount = instance.count(ul.coproduct)
-	const coproductMaps = new Map<number, Map<string, Value<TypeType>>>(
+	const coproductMaps = new Map<number, Map<string, values.Value<TypeType>>>(
 		iota(coproductCount, (i) => [i, new Map()])
 	)
 
@@ -67,11 +62,11 @@ export function toSchema(instance: Instance<SchemaSchema>): Schema {
 		}
 	}
 
-	function parseValue(value: Value<TypeType>): Type {
+	function parseValue(value: values.Value<TypeType>): types.Type {
 		if (value.key === ul.uri) {
-			return uri()
+			return types.uri()
 		} else if (value.key === ul.literal) {
-			return literal(value.value.value)
+			return types.literal(value.value.value)
 		} else if (value.key === ul.product) {
 			const { index } = value.value
 			const productMap = productMaps.get(index)
@@ -87,12 +82,12 @@ export function toSchema(instance: Instance<SchemaSchema>): Schema {
 				productMaps.delete(index)
 			}
 
-			const components: Record<string, Type> = {}
+			const components: Record<string, types.Type> = {}
 			for (const [key, component] of productMap.entries()) {
 				components[key] = parseValue(component)
 			}
 
-			return product(components)
+			return types.product(components)
 		} else if (value.key === ul.coproduct) {
 			const { index } = value.value
 			const coproductMap = coproductMaps.get(index)
@@ -104,23 +99,23 @@ export function toSchema(instance: Instance<SchemaSchema>): Schema {
 				coproductMaps.delete(index)
 			}
 
-			const options: Record<string, Type> = {}
+			const options: Record<string, types.Type> = {}
 			for (const [key, option] of coproductMap.entries()) {
 				options[key] = parseValue(option)
 			}
 
-			return coproduct(options)
+			return types.coproduct(options)
 		} else if (value.key === ul.reference) {
 			const { index } = value.value
 			const element = instance.get(ul.class, index)
 			const { value: key } = element.components[ul.key]
-			return reference(key)
+			return types.reference(key)
 		} else {
 			signalInvalidType(value)
 		}
 	}
 
-	const classes: Record<string, Type> = {}
+	const classes: Record<string, types.Type> = {}
 	for (const [_, element] of instance.elements(ul.class)) {
 		const { value: key } = element.components[ul.key]
 		if (key in classes) {

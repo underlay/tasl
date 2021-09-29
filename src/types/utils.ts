@@ -18,7 +18,7 @@ import { forKeys } from "../keys.js"
  * @param y any type
  * @returns {boolean} true if X and Y are equal to each other, false otherwise
  */
-export function isTypeEqualTo<T extends Type>(x: T, y: Type): y is T {
+export function isEqualTo<T extends Type>(x: T, y: Type): y is T {
 	if (x.kind === "uri" && y.kind === "uri") {
 		return true
 	} else if (x.kind === "literal" && y.kind === "literal") {
@@ -27,7 +27,7 @@ export function isTypeEqualTo<T extends Type>(x: T, y: Type): y is T {
 		for (const key of forKeys(x.components)) {
 			if (
 				key in y.components &&
-				isTypeEqualTo(x.components[key], y.components[key])
+				isEqualTo(x.components[key], y.components[key])
 			) {
 				continue
 			} else {
@@ -38,7 +38,7 @@ export function isTypeEqualTo<T extends Type>(x: T, y: Type): y is T {
 		for (const key of forKeys(y.components)) {
 			if (
 				key in x.components &&
-				isTypeEqualTo(x.components[key], y.components[key])
+				isEqualTo(x.components[key], y.components[key])
 			) {
 				continue
 			} else {
@@ -49,7 +49,7 @@ export function isTypeEqualTo<T extends Type>(x: T, y: Type): y is T {
 		return true
 	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
 		for (const key of forKeys(x.options)) {
-			if (key in y.options && isTypeEqualTo(x.options[key], y.options[key])) {
+			if (key in y.options && isEqualTo(x.options[key], y.options[key])) {
 				continue
 			} else {
 				return false
@@ -57,7 +57,7 @@ export function isTypeEqualTo<T extends Type>(x: T, y: Type): y is T {
 		}
 
 		for (const key of forKeys(y.options)) {
-			if (key in x.options && isTypeEqualTo(x.options[key], y.options[key])) {
+			if (key in x.options && isEqualTo(x.options[key], y.options[key])) {
 				continue
 			} else {
 				return false
@@ -79,7 +79,7 @@ export function isTypeEqualTo<T extends Type>(x: T, y: Type): y is T {
  * @param y any type
  * @returns {boolean} true if X ≤ Y, false otherwise
  */
-export function isTypeSubtypeOf(x: Type, y: Type): boolean {
+export function isSubtypeOf(x: Type, y: Type): boolean {
 	if (x.kind === "uri" && y.kind === "uri") {
 		return true
 	} else if (x.kind === "literal" && y.kind === "literal") {
@@ -88,7 +88,7 @@ export function isTypeSubtypeOf(x: Type, y: Type): boolean {
 		for (const key of forKeys(x.components)) {
 			if (
 				key in y.components &&
-				isTypeSubtypeOf(x.components[key], y.components[key])
+				isSubtypeOf(x.components[key], y.components[key])
 			) {
 				continue
 			} else {
@@ -98,7 +98,7 @@ export function isTypeSubtypeOf(x: Type, y: Type): boolean {
 		return true
 	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
 		for (const key of forKeys(y.options)) {
-			if (key in x.options && isTypeSubtypeOf(x.options[key], y.options[key])) {
+			if (key in x.options && isSubtypeOf(x.options[key], y.options[key])) {
 				continue
 			} else {
 				return false
@@ -119,7 +119,7 @@ export function isTypeSubtypeOf(x: Type, y: Type): boolean {
  * @param y a type
  * @returns {boolean} true if X and Y are comparavle, false otherwise
  */
-export function isTypeComparableWith(x: Type, y: Type): boolean {
+export function isComparableWith(x: Type, y: Type): boolean {
 	if (x.kind === "uri" && y.kind === "uri") {
 		return true
 	} else if (x.kind === "literal" && y.kind === "literal") {
@@ -127,7 +127,7 @@ export function isTypeComparableWith(x: Type, y: Type): boolean {
 	} else if (x.kind === "product" && y.kind === "product") {
 		for (const key of forKeys(y.components)) {
 			if (key in x.components) {
-				if (isTypeComparableWith(x.components[key], y.components[key])) {
+				if (isComparableWith(x.components[key], y.components[key])) {
 					continue
 				} else {
 					return false
@@ -138,7 +138,7 @@ export function isTypeComparableWith(x: Type, y: Type): boolean {
 	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
 		for (const key of forKeys(y.options)) {
 			if (key in x.options) {
-				if (isTypeComparableWith(x.options[key], y.options[key])) {
+				if (isComparableWith(x.options[key], y.options[key])) {
 					continue
 				} else {
 					return false

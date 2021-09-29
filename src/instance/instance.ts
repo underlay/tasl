@@ -1,7 +1,7 @@
 import varint from "varint"
 
-import type { Type } from "../types/index.js"
-import type { Value } from "../values/index.js"
+import type * as types from "../types/index.js"
+import type * as values from "../values/index.js"
 import type { Schema } from "../schema/schema.js"
 
 import {
@@ -25,7 +25,7 @@ import {
 	makeEncodeState,
 } from "./utils.js"
 
-type Types = { [key in string]: Type }
+type Types = { [key in string]: types.Type }
 
 export class Instance<S extends Types> {
 	private constructor(
@@ -60,7 +60,7 @@ export class Instance<S extends Types> {
 
 	static fromJSON<S extends Types>(
 		schema: Schema<S>,
-		classes: { [K in keyof S]: Value<S[K]>[] }
+		classes: { [K in keyof S]: values.Value<S[K]>[] }
 	): Instance<S> {
 		const chunks: Uint8Array[] = []
 
@@ -109,7 +109,7 @@ export class Instance<S extends Types> {
 		return new Instance(schema, offsets, data)
 	}
 
-	toJSON(): { [K in keyof S]: Value<S[K]>[] } {
+	toJSON(): { [K in keyof S]: values.Value<S[K]>[] } {
 		return mapKeys(this.offsets, (offsets, key) =>
 			offsets.map((byteOffset) => {
 				const data = this.data.subarray(byteOffset)
@@ -130,7 +130,7 @@ export class Instance<S extends Types> {
 		return this.offsets[key].length
 	}
 
-	get<K extends keyof S>(key: K, index: number): Value<S[K]> {
+	get<K extends keyof S>(key: K, index: number): values.Value<S[K]> {
 		const type = this.schema[key]
 		if (type === undefined) {
 			throw new Error("key not found in schema")
@@ -153,7 +153,7 @@ export class Instance<S extends Types> {
 		yield* forKeys(this.schema)
 	}
 
-	*elements<K extends keyof S>(key: K): Iterable<[number, Value<S[K]>]> {
+	*elements<K extends keyof S>(key: K): Iterable<[number, values.Value<S[K]>]> {
 		const type = this.schema[key]
 		if (type === undefined) {
 			throw new Error("key not found in schema")
@@ -170,12 +170,12 @@ export class Instance<S extends Types> {
 	}
 }
 
-function* fromJSON<S extends Schema, T extends Type>(
+function* fromJSON<S extends Schema, T extends types.Type>(
 	state: EncodeState,
 	schema: S,
-	elements: { [K in keyof S]: Value<S[K]>[] },
+	elements: { [K in keyof S]: values.Value<S[K]>[] },
 	type: T,
-	value: Value
+	value: values.Value
 ): Iterable<Uint8Array> {
 	if (type.kind === "reference") {
 		if (type.key in schema && type.key in elements) {
@@ -238,32 +238,35 @@ function* fromJSON<S extends Schema, T extends Type>(
 	}
 }
 
-function toJSON<A extends Type>(type: A, state: DecodeState): Value<A> {
+function toJSON<A extends types.Type>(
+	type: A,
+	state: DecodeState
+): values.Value<A> {
 	if (type.kind === "uri") {
 		const value = decodeString(state)
-		return { kind: "uri", value } as Value<A>
+		return { kind: "uri", value } as values.Value<A>
 	} else if (type.kind === "literal") {
 		const value = decodeLiteral(state, type)
-		return { kind: "literal", value } as Value<A>
+		return { kind: "literal", value } as values.Value<A>
 	} else if (type.kind === "product") {
 		const components = mapKeys(type.components, (component) =>
 			toJSON(component, state)
 		)
-		return { kind: "product", components } as Value<A>
+		return { kind: "product", components } as values.Value<A>
 	} else if (type.kind === "coproduct") {
 		const index = decodeUnsignedVarint(state)
 		const key = getKeyAtIndex(type.options, index)
 		const value = toJSON(type.options[key], state)
-		return { kind: "coproduct", key, value } as Value<A>
+		return { kind: "coproduct", key, value } as values.Value<A>
 	} else if (type.kind === "reference") {
 		const index = decodeUnsignedVarint(state)
-		return { kind: "reference", index } as Value<A>
+		return { kind: "reference", index } as values.Value<A>
 	} else {
 		signalInvalidType(type)
 	}
 }
 
-function scan(state: DecodeState, type: Type) {
+function scan(state: DecodeState, type: types.Type) {
 	if (type.kind === "uri") {
 		const value = decodeString(state)
 		validateURI(value)

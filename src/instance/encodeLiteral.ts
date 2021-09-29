@@ -1,18 +1,21 @@
 import { Buffer } from "buffer"
 import * as microcbor from "microcbor"
+
 import { signed, unsigned } from "big-varint"
 
 import { xsd, rdf } from "@underlay/namespaces"
 
-import type { Literal } from "../types/index.js"
-import type { Value } from "../values/index.js"
+import type * as types from "../types/index.js"
+import type * as values from "../values/index.js"
+
 import {
 	parseBoolean,
 	parseFloat,
 	parseInteger,
 	integerValidators,
 	floatValidators,
-} from "./validate.js"
+} from "../instance/validate.js"
+
 import {
 	allocate,
 	EncodeState,
@@ -22,8 +25,8 @@ import {
 
 export function* encodeLiteral(
 	state: EncodeState,
-	{ datatype }: Literal,
-	{ value }: Value<Literal>
+	{ datatype }: types.Literal,
+	{ value }: values.Value<types.Literal>
 ): Iterable<Uint8Array> {
 	if (datatype === xsd.boolean) {
 		yield* allocate(state, 1)
