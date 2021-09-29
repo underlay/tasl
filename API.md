@@ -416,7 +416,7 @@ declare function isComparableWith(x: types.Type, y: types.Type): boolean
  * @param x any type
  * @param y any type
  * @throws an error if X and Y are not comparable
- * @returns {Type} a type Z such that both X and Y are assignable to Z
+ * @returns {Type} a type Z such that Z is a subtype of both X and Y
  */
 declare function greatestCommonSubtype(x: types.Type, y: types.Type): types.Type
 ```
