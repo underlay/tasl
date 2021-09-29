@@ -47,7 +47,7 @@
   - [Type utilities](#type-utilities)
     - [`types.isEqualTo`](#typesisequalto)
     - [`types.isSubtypeOf`](#typesissubtypeof)
-    - [`types.isComparableWith](#typesiscomparablewith)
+    - [`types.isComparableWith`](#typesiscomparablewith)
     - [`types.greatestCommonSubtype`](#typesgreatestcommonsubtype)
     - [`types.leastCommonSupertype`](#typesleastcommonsupertype)
 - [Schemas](#schemas)
@@ -399,7 +399,7 @@ export declare function isEqualTo<T extends types.Type>(
 export declare function isSubtypeOf(x: types.Type, y: types.Type): boolean
 ```
 
-#### Type comparablility
+#### `types.isComparableWith`
 
 ```ts
 /**
@@ -409,10 +409,7 @@ export declare function isSubtypeOf(x: types.Type, y: types.Type): boolean
  * @param y a type
  * @returns {boolean} true if X and Y are comparable, false otherwise
  */
-export declare function isTypeComparableWith(
-	x: types.Type,
-	y: types.Type
-): boolean
+export declare function isComparableWith(x: types.Type, y: types.Type): boolean
 ```
 
 #### `types.greatestCommonSubtype`
