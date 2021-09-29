@@ -2,22 +2,20 @@ import { xsd, rdf } from "@underlay/namespaces"
 
 import { product, literal } from "./types.js"
 
-export default {
-	unit: product({}),
-	string: literal(xsd.string),
-	boolean: literal(xsd.boolean),
-	float32: literal(xsd.float),
-	float64: literal(xsd.double),
-	int: literal(xsd.integer),
-	uint: literal(xsd.nonNegativeInteger),
-	int64: literal(xsd.long),
-	int32: literal(xsd.int),
-	int16: literal(xsd.short),
-	int8: literal(xsd.byte),
-	uint64: literal(xsd.unsignedLong),
-	uint32: literal(xsd.unsignedInt),
-	uint16: literal(xsd.unsignedShort),
-	uint8: literal(xsd.unsignedByte),
-	bytes: literal(xsd.hexBinary),
-	JSON: literal(rdf.JSON),
-}
+export const unit = product({})
+export const string = literal(xsd.string)
+export const boolean = literal(xsd.boolean)
+export const float32 = literal(xsd.float)
+export const float64 = literal(xsd.double)
+export const int = literal(xsd.integer)
+export const uint = literal(xsd.nonNegativeInteger)
+export const int64 = literal(xsd.long)
+export const int32 = literal(xsd.int)
+export const int16 = literal(xsd.short)
+export const int8 = literal(xsd.byte)
+export const uint64 = literal(xsd.unsignedLong)
+export const uin32 = literal(xsd.unsignedInt)
+export const uint16 = literal(xsd.unsignedShort)
+export const uint8 = literal(xsd.unsignedByte)
+export const bytes = literal(xsd.hexBinary)
+export const JSON = literal(rdf.JSON)
