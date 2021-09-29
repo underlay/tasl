@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
-- Type-level code is now contained within a separate `.types` namespaces (`tasl.types.Type`, `tasl.types.isEqualTo`, ...)
-- Value-level code is now contained within a separate `.values` namespaces (`tasl.values.Value`, `tasl.values.isEqualTo`, ...)
+- Type-level code is now contained within a separate `.types` namespace (`tasl.types.Type`, `tasl.types.isEqualTo`, ...)
+- Value-level code is now contained within a separate `.values` namespace (`tasl.values.Value`, `tasl.values.isEqualTo`, ...)
 
 ## [0.1.0]
 
