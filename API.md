@@ -105,38 +105,15 @@
 
 ## Types
 
-All type-level types, methods, and constants are exported under the `types.` namespace. You can import this directly:
-
-```ts
-import { types } from "tasl"
-
-function foo(type: types.Type) {
-	if (types.isURI(type)) {
-		// ...
-	} else {
-		// ...
-	}
-}
-```
-
-... or access it as a submodule of a global import:
-
-```ts
-import * as tasl from "tasl"
-
-function foo(type: tasl.types.Type) {
-	if (tasl.types.isURI(type)) {
-		// ...
-	} else {
-		// ...
-	}
-}
-```
-
 ### `types.Type`
 
 ```ts
-export type Type = URI | Literal | Product | Coproduct | Reference
+export type Type =
+	| types.URI
+	| types.Literal
+	| types.Product
+	| types.Coproduct
+	| types.Reference
 ```
 
 ### The URI type
@@ -150,13 +127,13 @@ export type URI = Readonly<{ kind: "uri" }>
 #### `types.uri`
 
 ```ts
-export declare function uri(): URI
+export declare function uri(): types.URI
 ```
 
 #### `types.isURI`
 
 ```ts
-export declare function isURI(type: Type): type is URI
+export declare function isURI(type: types.Type): type is types.URI
 ```
 
 ### Literal types
@@ -175,22 +152,22 @@ export type Literal<Datatype extends string = string> = Readonly<{
 ```ts
 export declare function literal<Datatype extends string>(
 	datatype: Datatype
-): Literal<Datatype>
+): types.Literal<Datatype>
 ```
 
 #### `types.isLiteral`
 
 ```ts
-export declare function isLiteral(type: Type): type is Literal
+export declare function isLiteral(type: types.Type): type is types.Literal
 ```
 
 #### `types.isLiteralDatatype`
 
 ```ts
 export declare function isLiteralDatatype<Datatype extends string>(
-	type: Type,
+	type: types.Type,
 	datatype: Datatype
-): type is Literal<Datatype>
+): type is types.Literal<Datatype>
 ```
 
 ### Product types
@@ -217,7 +194,7 @@ export declare function product<Components extends Record<string, types.Type>>(
 #### `types.isProduct`
 
 ```ts
-export declare function isProduct(type: Type): type is Product
+export declare function isProduct(type: types.Type): type is types.Product
 ```
 
 ### Coproduct types
@@ -244,7 +221,7 @@ export declare function coproduct<Options extends Record<string, types.Type>>(
 #### `types.isCoproduct`
 
 ```ts
-export declare function isCoproduct(type: Type): type is Coproduct
+export declare function isCoproduct(type: types.Type): type is types.Coproduct
 ```
 
 ### Reference types
@@ -261,22 +238,24 @@ export type Reference<Key extends string = string> = Readonly<{
 #### `types.reference`
 
 ```ts
-export declare function reference<Key extends string>(key: Key): Reference<Key>
+export declare function reference<Key extends string>(
+	key: Key
+): types.Reference<Key>
 ```
 
 #### `types.isReference`
 
 ```ts
-export declare function isReference(type: Type): type is Reference
+export declare function isReference(type: types.Type): type is types.Reference
 ```
 
 #### `types.isReferenceKey`
 
 ```ts
 export declare function isReferenceKey<Key extends string>(
-	type: Type,
+	type: types.Type,
 	key: Key
-): type is Reference<Key>
+): type is types.Reference<Key>
 ```
 
 ### Standard library type constants
@@ -284,109 +263,109 @@ export declare function isReferenceKey<Key extends string>(
 #### `types.unit`
 
 ```ts
-export declare const unit: Product<{}>
+export declare const unit: types.Product<{}>
 ```
 
 #### `types.uri`
 
 ```ts
-export declare const uri: URI
+export declare const uri: types.URI
 ```
 
 #### `types.string`
 
 ```ts
-export declare const string: Literal<"http://www.w3.org/2001/XMLSchema#string">
+export declare const string: types.Literal<"http://www.w3.org/2001/XMLSchema#string">
 ```
 
 #### `types.boolean`
 
 ```ts
-export declare const boolean: Literal<"http://www.w3.org/2001/XMLSchema#boolean">
+export declare const boolean: types.Literal<"http://www.w3.org/2001/XMLSchema#boolean">
 ```
 
 #### `types.float32`
 
 ```ts
-export declare const float32: Literal<"http://www.w3.org/2001/XMLSchema#float">
+export declare const float32: types.Literal<"http://www.w3.org/2001/XMLSchema#float">
 ```
 
 #### `types.float64`
 
 ```ts
-export declare const float64: Literal<"http://www.w3.org/2001/XMLSchema#double">
+export declare const float64: types.Literal<"http://www.w3.org/2001/XMLSchema#double">
 ```
 
 #### `types.int`
 
 ```ts
-export declare const int: Literal<"http://www.w3.org/2001/XMLSchema#integer">
+export declare const int: types.Literal<"http://www.w3.org/2001/XMLSchema#integer">
 ```
 
 #### `types.uint`
 
 ```ts
-export declare const uint: Literal<"http://www.w3.org/2001/XMLSchema#nonNegativeInteger">
+export declare const uint: types.Literal<"http://www.w3.org/2001/XMLSchema#nonNegativeInteger">
 ```
 
 #### `types.int64`
 
 ```ts
-export declare const int64: Literal<"http://www.w3.org/2001/XMLSchema#long">
+export declare const int64: types.Literal<"http://www.w3.org/2001/XMLSchema#long">
 ```
 
 #### `types.int32`
 
 ```ts
-export declare const int32: Literal<"http://www.w3.org/2001/XMLSchema#int">
+export declare const int32: types.Literal<"http://www.w3.org/2001/XMLSchema#int">
 ```
 
 #### `types.int16`
 
 ```ts
-export declare const int16: Literal<"http://www.w3.org/2001/XMLSchema#short">
+export declare const int16: types.Literal<"http://www.w3.org/2001/XMLSchema#short">
 ```
 
 #### `types.int8`
 
 ```ts
-export declare const int8: Literal<"http://www.w3.org/2001/XMLSchema#byte">
+export declare const int8: types.Literal<"http://www.w3.org/2001/XMLSchema#byte">
 ```
 
 #### `types.uint64`
 
 ```ts
-export declare const uint64: Literal<"http://www.w3.org/2001/XMLSchema#unsignedLong">
+export declare const uint64: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedLong">
 ```
 
 #### `types.uint32`
 
 ```ts
-export declare const uint32: Literal<"http://www.w3.org/2001/XMLSchema#unsignedInt">
+export declare const uint32: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedInt">
 ```
 
 #### `types.uint16`
 
 ```ts
-export declare const uint16: Literal<"http://www.w3.org/2001/XMLSchema#unsignedShort">
+export declare const uint16: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedShort">
 ```
 
 #### `types.uint8`
 
 ```ts
-export declare const uint8: Literal<"http://www.w3.org/2001/XMLSchema#unsignedByte">
+export declare const uint8: types.Literal<"http://www.w3.org/2001/XMLSchema#unsignedByte">
 ```
 
 #### `types.bytes`
 
 ```ts
-export declare const bytes: Literal<"http://www.w3.org/2001/XMLSchema#hexBinary">
+export declare const bytes: types.Literal<"http://www.w3.org/2001/XMLSchema#hexBinary">
 ```
 
 #### `types.JSON`
 
 ```ts
-export declare const JSON: Literal<"http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON">
+export declare const JSON: types.Literal<"http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON">
 ```
 
 ### Type utilities
@@ -401,7 +380,10 @@ export declare const JSON: Literal<"http://www.w3.org/1999/02/22-rdf-syntax-ns#J
  * @param y any type
  * @returns {boolean} true if X = Y, false otherwise
  */
-export declare function isEqualTo<T extends Type>(x: T, y: Type): y is T
+export declare function isEqualTo<T extends types.Type>(
+	x: T,
+	y: types.Type
+): y is T
 ```
 
 #### `types.isSubtypeOf`
@@ -414,7 +396,7 @@ export declare function isEqualTo<T extends Type>(x: T, y: Type): y is T
  * @param y any type
  * @returns {boolean} true if X ≤ Y, false otherwise
  */
-export declare function isSubtypeOf(x: Type, y: Type): boolean
+export declare function isSubtypeOf(x: types.Type, y: types.Type): boolean
 ```
 
 #### Type comparablility
@@ -427,7 +409,10 @@ export declare function isSubtypeOf(x: Type, y: Type): boolean
  * @param y a type
  * @returns {boolean} true if X and Y are comparable, false otherwise
  */
-export declare function isTypeComparableWith(x: Type, y: Type): boolean
+export declare function isTypeComparableWith(
+	x: types.Type,
+	y: types.Type
+): boolean
 ```
 
 #### `types.greatestCommonSubtype`
@@ -441,7 +426,10 @@ export declare function isTypeComparableWith(x: Type, y: Type): boolean
  * @throws an error if X and Y are not comparable
  * @returns {Type} a type Z such that both X and Y are assignable to Z
  */
-export declare function greatestCommonSubtype(x: Type, y: Type): Type
+export declare function greatestCommonSubtype(
+	x: types.Type,
+	y: types.Type
+): types.Type
 ```
 
 #### `types.leastCommonSupertype`
@@ -455,16 +443,21 @@ export declare function greatestCommonSubtype(x: Type, y: Type): Type
  * @throws an error if X and Y are not comparable
  * @returns {Type} a type Z such that both X and Y are subtypes of Z
  */
-export declare function leastCommonSupertype(x: Type, y: Type): Type
+export declare function leastCommonSupertype(
+	x: types.Type,
+	y: types.Type
+): types.Type
 ```
 
 ## Schemas
 
 ```ts
-type Schema<S extends { [key in string]: Type } = { [key in string]: Type }> =
+type Schema<S extends Record<string, types.Type> = Record<string, types.Type>> =
 	Readonly<S>
 
-export declare function schema<S extends Types>(classes: S): Schema<S>
+export declare function schema<S extends Record<string, types.Type>>(
+	classes: S
+): Schema<S>
 ```
 
 ### Schema schema
@@ -472,12 +465,12 @@ export declare function schema<S extends Types>(classes: S): Schema<S>
 #### `typeType`
 
 ```ts
-export declare const typeType: Coproduct<{
-	"http://underlay.org/ns/uri": Product<{}>
-	"http://underlay.org/ns/literal": URI
-	"http://underlay.org/ns/product": Reference<"http://underlay.org/ns/product">
-	"http://underlay.org/ns/coproduct": Reference<"http://underlay.org/ns/coproduct">
-	"http://underlay.org/ns/reference": Reference<"http://underlay.org/ns/class">
+export declare const typeType: types.Coproduct<{
+	"http://underlay.org/ns/uri": types.Product<{}>
+	"http://underlay.org/ns/literal": types.URI
+	"http://underlay.org/ns/product": types.Reference<"http://underlay.org/ns/product">
+	"http://underlay.org/ns/coproduct": types.Reference<"http://underlay.org/ns/coproduct">
+	"http://underlay.org/ns/reference": types.Reference<"http://underlay.org/ns/class">
 }>
 ```
 
@@ -491,20 +484,20 @@ export type TypeType = typeof typeType
 
 ```ts
 export declare const schemaSchema: Readonly<{
-	"http://underlay.org/ns/class": Produce<{
-		"http://underlay.org/ns/key": URI
+	"http://underlay.org/ns/class": types.Product<{
+		"http://underlay.org/ns/key": types.URI
 		"http://underlay.org/ns/value": TypeType
 	}>
-	"http://underlay.org/ns/product": Produce<{}>
-	"http://underlay.org/ns/component": Product<{
-		"http://underlay.org/ns/source": Reference<"http://underlay.org/ns/product">
-		"http://underlay.org/ns/key": URI
+	"http://underlay.org/ns/product": types.Product<{}>
+	"http://underlay.org/ns/component": types.Product<{
+		"http://underlay.org/ns/source": types.Reference<"http://underlay.org/ns/product">
+		"http://underlay.org/ns/key": types.URI
 		"http://underlay.org/ns/value": TypeType
 	}>
-	"http://underlay.org/ns/coproduct": Product<{}>
-	"http://underlay.org/ns/option": Product<{
-		"http://underlay.org/ns/source": Reference<"http://underlay.org/ns/coproduct">
-		"http://underlay.org/ns/key": URI
+	"http://underlay.org/ns/coproduct": types.Product<{}>
+	"http://underlay.org/ns/option": types.Product<{
+		"http://underlay.org/ns/source": types.Reference<"http://underlay.org/ns/coproduct">
+		"http://underlay.org/ns/key": types.URI
 		"http://underlay.org/ns/value": TypeType
 	}>
 }>
