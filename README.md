@@ -2,7 +2,7 @@
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg)](https://github.com/RichardLitt/standard-readme) [![license](https://img.shields.io/github/license/underlay/tasl)](https://opensource.org/licenses/MIT) [![NPM version](https://img.shields.io/npm/v/tasl)](https://www.npmjs.com/package/tasl) ![TypeScript types](https://img.shields.io/npm/types/tasl) ![lines of code](https://img.shields.io/tokei/lines/github/underlay/tasl)
 
-An algebraic data model designed for datasets.
+A data model for strongly typed semantic data.
 
 ## Table of Contents
 
@@ -25,43 +25,46 @@ npm i tasl
 import * as tasl from "tasl"
 
 const person = tasl.types.product({
-  "http://schema.org/name": tasl.types.string,
-  "http://schema.org/gender": tasl.types.coproduct({
-    "http://schema.org/Male": tasl.types.unit,
-    "http://schema.org/Female": tasl.types.unit,
-    "http://schema.org/value": tasl.types.string,
-  })
+	"http://schema.org/name": tasl.types.string,
+	"http://schema.org/gender": tasl.types.coproduct({
+		"http://schema.org/Male": tasl.types.unit,
+		"http://schema.org/Female": tasl.types.unit,
+		"http://schema.org/value": tasl.types.string,
+	}),
 })
 
 const schema = tasl.schema({
-  "http://schema.org/Person": person,
+	"http://schema.org/Person": person,
 })
 
 const instance = tasl.Instance.fromJSON(schema, {
-  "http://schema.org/Person": [
-    {
-      kind: "product",
-      components: {
-        "http://schema.org/name": { kind: "literal", value: "Alyssa P. Hacker" },
-        "http://schema.org/gender": {
-          kind: "coproduct",
-          key: "http://schema.org/Female",
-          value: { kind: "product", components: {} },
-        },
-      },
-    },
-    {
-      kind: "product",
-      components: {
-        "http://schema.org/name": { kind: "literal", value: "Ben Bitdiddle" },
-        "http://schema.org/gender": {
-          kind: "coproduct",
-          key: "http://schema.org/Male",
-          value: { kind: "product", components: {} },
-        },
-      },
-    },
-  ],
+	"http://schema.org/Person": [
+		{
+			kind: "product",
+			components: {
+				"http://schema.org/name": {
+					kind: "literal",
+					value: "Alyssa P. Hacker",
+				},
+				"http://schema.org/gender": {
+					kind: "coproduct",
+					key: "http://schema.org/Female",
+					value: { kind: "product", components: {} },
+				},
+			},
+		},
+		{
+			kind: "product",
+			components: {
+				"http://schema.org/name": { kind: "literal", value: "Ben Bitdiddle" },
+				"http://schema.org/gender": {
+					kind: "coproduct",
+					key: "http://schema.org/Male",
+					value: { kind: "product", components: {} },
+				},
+			},
+		},
+	],
 })
 
 const data = instance.encode()

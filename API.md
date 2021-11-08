@@ -14,10 +14,12 @@
     - [`types.isLiteral`](#typesisliteral)
     - [`types.isLiteralDatatype`](#typesisliteraldatatype)
   - [Product types](#product-types)
+    - [`types.Components](#typescomponents)
     - [`types.Product`](#typesproduct)
     - [`types.product`](#typesproduct)
     - [`types.isProduct`](#typesisproduct)
   - [Coproduct types](#coproduct-types)
+    - [`types.Options](#typesoptions)
     - [`types.Coproduct`](#typescoproduct)
     - [`types.coproduct`](#typescoproduct)
     - [`types.isCoproduct`](#typesiscoproduct)
@@ -51,6 +53,8 @@
     - [`types.greatestCommonSubtype`](#typesgreatestcommonsubtype)
     - [`types.leastCommonSupertype`](#typesleastcommonsupertype)
 - [Schemas](#schemas)
+  - [`Schema`](#schema)
+  - [`schema`](#schema)
   - [Schema schema](#schema-schema)
     - [`typeType`](#typetype)
     - [`TypeType`](#typetype)
@@ -81,7 +85,6 @@
     - [`values.reference`](#valuesreference)
   - [Standard library value constructors](#standard-library-value-constructors)
     - [`values.unit`](#valuesunit)
-    - [`values.uri`](#valuesuri)
     - [`values.string`](#valuesstring)
     - [`values.boolean`](#valuesboolean)
     - [`values.float32`](#valuesfloat32)
@@ -102,6 +105,7 @@
     - [`values.isEqualTo`](#valuesisequalto)
 - [Instances](#instances)
   - [`Instance`](#instance)
+- [Mappings](#mappings)
 
 ## Types
 
@@ -121,7 +125,7 @@ type Type =
 #### `types.URI`
 
 ```ts
-type URI = Readonly<{ kind: "uri" }>
+type URI = { kind: "uri" }
 ```
 
 #### `types.uri`
@@ -141,10 +145,10 @@ declare function isURI(type: types.Type): type is types.URI
 #### `types.Literal`
 
 ```ts
-type Literal<Datatype extends string = string> = Readonly<{
+type Literal<Datatype extends string = string> = {
 	kind: "literal"
 	datatype: Datatype
-}>
+}
 ```
 
 #### `types.literal`
@@ -172,23 +176,25 @@ declare function isLiteralDatatype<Datatype extends string>(
 
 ### Product types
 
+#### `types.Components`
+
+```ts
+type Components = { [K in string]: types.Type }
+```
+
 #### `types.Product`
 
 ```ts
-type Product<
-	Components extends Record<string, types.Type> = Record<string, types.Type>
-> = Readonly<{
+type Product<T extends Components = Components> = {
 	kind: "product"
-	components: Readonly<Components>
-}>
+	components: T
+}
 ```
 
 #### `types.product`
 
 ```ts
-declare function product<Components extends Record<string, types.Type>>(
-	components: Components
-): Product<Components>
+declare function product<T extends Components>(components: T): Product<T>
 ```
 
 #### `types.isProduct`
@@ -199,23 +205,25 @@ declare function isProduct(type: types.Type): type is types.Product
 
 ### Coproduct types
 
+#### `types.Options`
+
+```ts
+type Options = { [K in string]: types.Type }
+```
+
 #### `types.Coproduct`
 
 ```ts
-type Coproduct<
-	Options extends Record<string, types.Type> = Record<string, types.Type>
-> = Readonly<{
+type Coproduct<T extends Options = Options> = {
 	kind: "coproduct"
-	options: Readonly<Options>
-}>
+	options: T
+}
 ```
 
 #### `types.coproduct`
 
 ```ts
-declare function coproduct<Options extends Record<string, types.Type>>(
-	options: Options
-): Coproduct<Options>
+declare function coproduct<T extends Options>(options: T): Coproduct<T>
 ```
 
 #### `types.isCoproduct`
@@ -229,10 +237,10 @@ declare function isCoproduct(type: types.Type): type is types.Coproduct
 ### `types.Reference`
 
 ```ts
-type Reference<Key extends string = string> = Readonly<{
+type Reference<Key extends string = string> = {
 	kind: "reference"
 	key: Key
-}>
+}
 ```
 
 #### `types.reference`
@@ -437,13 +445,16 @@ declare function leastCommonSupertype(x: types.Type, y: types.Type): types.Type
 
 ## Schemas
 
-```ts
-type Schema<S extends Record<string, types.Type> = Record<string, types.Type>> =
-	Readonly<S>
+#### `Schema`
 
-declare function schema<S extends Record<string, types.Type>>(
-	classes: S
-): Schema<S>
+```ts
+type Schema = Record<string, types.Type>>
+```
+
+#### `schema`
+
+```ts
+declare function schema<S extends Schema>(classes: S): S
 ```
 
 ### Schema schema
@@ -469,7 +480,7 @@ type TypeType = typeof typeType
 #### `schemaSchema`
 
 ```ts
-declare const schemaSchema: Readonly<{
+declare const schemaSchema: {
 	"http://underlay.org/ns/class": types.Product<{
 		"http://underlay.org/ns/key": types.URI
 		"http://underlay.org/ns/value": TypeType
@@ -486,7 +497,7 @@ declare const schemaSchema: Readonly<{
 		"http://underlay.org/ns/key": types.URI
 		"http://underlay.org/ns/value": TypeType
 	}>
-}>
+}
 ```
 
 #### `SchemaSchema`
@@ -545,7 +556,7 @@ declare function decodeSchema(data: Uint8Array): Schema
 
 ## Values
 
-### `values.Value`
+#### `values.Value`
 
 ```ts
 type Value<T extends types.Type = types.Type> = T extends types.URI
@@ -566,7 +577,7 @@ type Value<T extends types.Type = types.Type> = T extends types.URI
 #### `values.URI`
 
 ```ts
-type URI = Readonly<{ kind: "uri"; value: string }>
+type URI = { kind: "uri"; value: string }
 ```
 
 #### `values.uri`
@@ -580,10 +591,10 @@ declare function uri(type: types.URI, value: string): values.URI
 #### `values.Literal`
 
 ```ts
-declare type Literal<Datatype extends string> = Readonly<{
+declare type Literal<Datatype extends string> = {
 	kind: "literal"
 	value: string
-}>
+}
 ```
 
 #### `values.literal`
@@ -600,19 +611,19 @@ declare function literal<Datatype extends string>(
 #### `values.Product`
 
 ```ts
-type Product<Components extends Record<string, types.Type>> = Readonly<{
+type Product<T extends types.Components> = Readonly<{
 	kind: "product"
-	components: { readonly [K in keyof Components]: values.Value<Components[K]> }
+	components: { [K in keyof T]: values.Value<T[K]> }
 }>
 ```
 
 #### `values.product`
 
 ```ts
-declare function product<Components extends Record<string, types.Type>>(
-	type: types.Product<Components>,
-	components: { [K in keyof Components]: values.Value<Components[K]> }
-): values.Product<Components>
+declare function product<T extends types.Components>(
+	type: types.Product<T>,
+	components: { [K in keyof T]: values.Value<T[K]> }
+): values.Product<T>
 ```
 
 ### Coproduct values
@@ -620,29 +631,23 @@ declare function product<Components extends Record<string, types.Type>>(
 #### `values.Coproduct`
 
 ```ts
-type Coproduct<
-	Options extends Record<string, types.Type>,
-	Key extends keyof Options = keyof Options
-> = {
-	[k in keyof Options]: Readonly<{
+type Coproduct<T extends types.Options, K extends keyof T = keyof T> = {
+	[k in keyof T]: {
 		kind: "coproduct"
 		key: k
-		value: values.Value<Options[k]>
-	}>
-}[Key]
+		value: values.Value<T[k]>
+	}
+}[K]
 ```
 
 #### `values.coproduct`
 
 ```ts
-declare function coproduct<
-	Options extends Record<string, types.Type>,
-	Key extends keyof Options
->(
-	type: types.Coproduct<Options>,
-	key: Key,
-	value: values.Value<Options[Key]>
-): values.Coproduct<Options, Key>
+declare function coproduct<T extends types.Options, K extends keyof T>(
+	type: types.Coproduct<T>,
+	key: K,
+	value: values.Value<T[K]>
+): values.Coproduct<T, K>
 ```
 
 ### Reference values
@@ -650,10 +655,10 @@ declare function coproduct<
 #### `values.Reference`
 
 ```ts
-type Reference<Key extends string> = Readonly<{
+type Reference<Key extends string> = {
 	kind: "reference"
 	index: number
-}>
+}
 ```
 
 #### `values.reference`
@@ -665,38 +670,12 @@ declare function reference<Key extends string>(
 ): values.Reference<key>
 ```
 
-```ts
-namespace Values {
-	type Literal<Datatype extends string> = Readonly<{
-		kind: "literal"
-		value: string
-	}>
-
-	type Coproduct<
-		Options extends { [key in string]: Type },
-		Key extends keyof Options = keyof Options
-	> = {
-		[k in keyof Options]: Readonly<{
-			kind: "coproduct"
-			key: k
-			value: Value<Options[k]>
-		}>
-	}[Key]
-}
-```
-
 ### Standard library value constructors
 
 #### `values.unit`
 
 ```ts
 declare function unit(): values.Product<{}>
-```
-
-#### `values.uri`
-
-```ts
-declare function uri(value: string): values.URI
 ```
 
 #### `values.string`
@@ -849,32 +828,123 @@ declare function isEqualTo<T extends types.Type>(
 
 ## Instances
 
-### `Instance`
+#### `Instance`
 
 ```ts
-declare class Instance<S extends Record<string, types.Type>> {
-	readonly schema: Schema<S>
+type Instance<S extends Schema> = { [K in keyof S]: values.Value<S[K]>[] }
+```
 
-	static decode<S extends Record<string, types.Type>>(
-		schema: Schema<S>,
-		data: Uint8Array
-	): Instance<S>
+#### `instance`
 
-	static fromJSON<S extends Record<string, types.Type>>(
-		schema: Schema<S>,
-		classes: { [K in keyof S]: values.Value<S[K]>[] }
-	): Instance<S>
+```ts
+declare function instance<S extends Schema>(
+	schema: S,
+	classes: Instance<S>
+): Instance<S>
+```
 
-	encode(): Uint8Array
+## Mappings
 
-	toJSON(): { [K in keyof S]: values.Value<S[K]>[] }
+#### `Mapping`
 
-	count<K extends keyof S>(key: K): number
+```ts
+type Mapping = { [K in string]: Map }
+```
 
-	get<K extends keyof S>(key: K, index: number): values.Value<S[K]>
+#### `Map`
 
-	keys(): Iterable<string>
+```ts
+type Map = {
+	source: string
+	id: string
+	expression: Expression
+}
+```
 
-	elements<K extends keyof S>(key: K): Iterable<[number, values.Value<S[K]>]>
+#### `mappings.Expression`
+
+```ts
+type Expression = URI | Literal | Value | Match | Construction | Injection
+```
+
+### `mappings.URI`
+
+```ts
+type URI = { kind: "uri"; value: string }
+```
+
+### `mappings.Literal`
+
+```ts
+type Literal = { kind: "literal"; value: string }
+```
+
+#### `Value`
+
+```ts
+type Value = {
+	kind: "value"
+	id: string
+	path: Path
+}
+```
+
+#### `Path`
+
+```ts
+type Path = (Projection | Dereference)[]
+```
+
+#### `Projection`
+
+```ts
+type Projection = {
+	kind: "projection"
+	key: string
+}
+```
+
+#### `Dereference`
+
+```ts
+type Dereference = {
+	kind: "dereference"
+	key: string
+}
+```
+
+#### `Match`
+
+```ts
+type Match = {
+	kind: "match"
+	id: string
+	path: Path
+	cases: Record<string, Case>
+}
+```
+
+#### `Case`
+
+```ts
+type Case = { id: string; expression: Expression }
+```
+
+#### `Construction`
+
+```ts
+type Construction = {
+	kind: "construction"
+	slots: Record<string, Expression>
+}
+```
+
+#### `Injection`
+
+```ts
+type Injection = {
+	kind: "injection"
+	key: string
+	expression: Expression
 }
 ```
