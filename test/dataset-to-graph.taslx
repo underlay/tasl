@@ -1,0 +1,10 @@
+# dataset-to-graph.taslx
+namespace ex http://example.com/
+
+map ex:BlankNode <= ex:BlankNode (x) => x
+
+map ex:Statement <= ex:Statement (x) => {
+  ex:subject   <= x / ex:subject
+  ex:predicate <= x / ex:predicate
+  ex:object    <= x / ex:object
+}

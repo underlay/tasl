@@ -1,4 +1,5 @@
 import {
+	Schema,
 	Type,
 	Product,
 	Coproduct,
@@ -7,9 +8,29 @@ import {
 	uri,
 	literal,
 	reference,
-} from "./types.js"
+} from "./schema.js"
 
 import { forKeys } from "../keys.js"
+
+export function isSchemaEqualTo(a: Schema, b: Schema): boolean {
+	for (const key of forKeys(a)) {
+		if (key in b) {
+			continue
+		} else {
+			return false
+		}
+	}
+
+	for (const key of forKeys(b)) {
+		if (key in a && isTypeEqualTo(a[key], b[key])) {
+			continue
+		} else {
+			return false
+		}
+	}
+
+	return true
+}
 
 /**
  * Check whether the type X is equal to the type Y.
@@ -18,7 +39,7 @@ import { forKeys } from "../keys.js"
  * @param y any type
  * @returns {boolean} true if X and Y are equal to each other, false otherwise
  */
-export function isEqualTo<T extends Type>(x: T, y: Type): y is T {
+export function isTypeEqualTo<T extends Type>(x: T, y: Type): y is T {
 	if (x.kind === "uri" && y.kind === "uri") {
 		return true
 	} else if (x.kind === "literal" && y.kind === "literal") {
@@ -27,7 +48,7 @@ export function isEqualTo<T extends Type>(x: T, y: Type): y is T {
 		for (const key of forKeys(x.components)) {
 			if (
 				key in y.components &&
-				isEqualTo(x.components[key], y.components[key])
+				isTypeEqualTo(x.components[key], y.components[key])
 			) {
 				continue
 			} else {
@@ -38,7 +59,7 @@ export function isEqualTo<T extends Type>(x: T, y: Type): y is T {
 		for (const key of forKeys(y.components)) {
 			if (
 				key in x.components &&
-				isEqualTo(x.components[key], y.components[key])
+				isTypeEqualTo(x.components[key], y.components[key])
 			) {
 				continue
 			} else {
@@ -49,7 +70,7 @@ export function isEqualTo<T extends Type>(x: T, y: Type): y is T {
 		return true
 	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
 		for (const key of forKeys(x.options)) {
-			if (key in y.options && isEqualTo(x.options[key], y.options[key])) {
+			if (key in y.options && isTypeEqualTo(x.options[key], y.options[key])) {
 				continue
 			} else {
 				return false
@@ -57,7 +78,7 @@ export function isEqualTo<T extends Type>(x: T, y: Type): y is T {
 		}
 
 		for (const key of forKeys(y.options)) {
-			if (key in x.options && isEqualTo(x.options[key], y.options[key])) {
+			if (key in x.options && isTypeEqualTo(x.options[key], y.options[key])) {
 				continue
 			} else {
 				return false
@@ -79,7 +100,7 @@ export function isEqualTo<T extends Type>(x: T, y: Type): y is T {
  * @param y any type
  * @returns {boolean} true if X ≤ Y, false otherwise
  */
-export function isSubtypeOf(x: Type, y: Type): boolean {
+export function isTypeSubtypeOf(x: Type, y: Type): boolean {
 	if (x.kind === "uri" && y.kind === "uri") {
 		return true
 	} else if (x.kind === "literal" && y.kind === "literal") {
@@ -88,7 +109,7 @@ export function isSubtypeOf(x: Type, y: Type): boolean {
 		for (const key of forKeys(x.components)) {
 			if (
 				key in y.components &&
-				isSubtypeOf(x.components[key], y.components[key])
+				isTypeSubtypeOf(x.components[key], y.components[key])
 			) {
 				continue
 			} else {
@@ -98,7 +119,7 @@ export function isSubtypeOf(x: Type, y: Type): boolean {
 		return true
 	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
 		for (const key of forKeys(y.options)) {
-			if (key in x.options && isSubtypeOf(x.options[key], y.options[key])) {
+			if (key in x.options && isTypeSubtypeOf(x.options[key], y.options[key])) {
 				continue
 			} else {
 				return false
@@ -119,7 +140,7 @@ export function isSubtypeOf(x: Type, y: Type): boolean {
  * @param y a type
  * @returns {boolean} true if X ≤ Y or Y ≤ X, false otherwise
  */
-export function isComparableWith(x: Type, y: Type): boolean {
+export function isTypeComparableWith(x: Type, y: Type): boolean {
 	if (x.kind === "uri" && y.kind === "uri") {
 		return true
 	} else if (x.kind === "literal" && y.kind === "literal") {
@@ -127,7 +148,7 @@ export function isComparableWith(x: Type, y: Type): boolean {
 	} else if (x.kind === "product" && y.kind === "product") {
 		for (const key of forKeys(y.components)) {
 			if (key in x.components) {
-				if (isComparableWith(x.components[key], y.components[key])) {
+				if (isTypeComparableWith(x.components[key], y.components[key])) {
 					continue
 				} else {
 					return false
@@ -138,7 +159,7 @@ export function isComparableWith(x: Type, y: Type): boolean {
 	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
 		for (const key of forKeys(y.options)) {
 			if (key in x.options) {
-				if (isComparableWith(x.options[key], y.options[key])) {
+				if (isTypeComparableWith(x.options[key], y.options[key])) {
 					continue
 				} else {
 					return false

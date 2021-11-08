@@ -1,0 +1,13 @@
+namespace ex http://example.com/
+
+map ex:a <= ex:0 (x) => {
+  ex:a/a <= {
+    ex:a/a/a <= x / ex:0.0 / ex:0.0.0
+  }
+  ex:a/b <= x / ex:0.1 % ex:a/b/b
+}
+
+map ex:b <= ex:1 (y) => {
+  ex:b/a <= y / ex:1.0
+  ex:b/b <= y / ex:1.1
+}

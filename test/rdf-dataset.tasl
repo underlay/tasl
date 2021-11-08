@@ -1,0 +1,28 @@
+# rdf-dataset.tasl
+namespace ex http://example.com/
+
+class ex:BlankNode {}
+
+class ex:Statement {
+  ex:subject -> [
+    ex:blankNode <- * ex:BlankNode
+    ex:iri <- uri
+  ]
+  ex:predicate -> uri
+  ex:object -> [
+    ex:blankNode <- * ex:BlankNode
+    ex:iri <- uri
+    ex:literal <- {
+      ex:value -> string
+      ex:languageOrDatatype -> [
+        ex:language <- string
+        ex:datatype <- uri
+      ]
+    }
+  ]
+  ex:graph -> [
+    ex:defaultGraph
+    ex:blankNode <- * ex:BlankNode
+    ex:iri <- uri
+  ]
+}

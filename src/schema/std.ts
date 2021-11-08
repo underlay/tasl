@@ -1,6 +1,6 @@
 import { xsd, rdf } from "@underlay/namespaces"
 
-import { product, literal } from "./types.js"
+import { product, literal } from "./schema.js"
 
 export const unit = product({})
 export const string = literal(xsd.string)

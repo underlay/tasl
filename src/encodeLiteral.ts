@@ -5,8 +5,8 @@ import { signed, unsigned } from "big-varint"
 
 import { xsd, rdf } from "@underlay/namespaces"
 
-import type * as types from "../types/index.js"
-import type * as values from "../values/index.js"
+import type * as Schema from "./schema/index.js"
+import type * as Instance from "./instance/index.js"
 
 import {
 	parseBoolean,
@@ -14,7 +14,7 @@ import {
 	parseInteger,
 	integerValidators,
 	floatValidators,
-} from "../instance/validate.js"
+} from "./literals/index.js"
 
 import {
 	allocate,
@@ -25,8 +25,8 @@ import {
 
 export function* encodeLiteral(
 	state: EncodeState,
-	{ datatype }: types.Literal,
-	{ value }: values.Value<types.Literal>
+	{ datatype }: Schema.Literal,
+	{ value }: Instance.Value<Schema.Literal>
 ): Iterable<Uint8Array> {
 	if (datatype === xsd.boolean) {
 		yield* allocate(state, 1)

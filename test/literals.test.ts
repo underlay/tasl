@@ -2,10 +2,10 @@ import test from "ava"
 import varint from "varint"
 import { xsd } from "@underlay/namespaces"
 
-import { literal } from "../src/types/index.js"
-import { decodeLiteral } from "../src/instance/decodeLiteral.js"
-import { encodeLiteral } from "../src/instance/encodeLiteral.js"
-import { DecodeState, makeEncodeState } from "../src/instance/utils.js"
+import { literal } from "../src/schema/index.js"
+import { decodeLiteral } from "../src/decodeLiteral.js"
+import { encodeLiteral } from "../src/encodeLiteral.js"
+import { DecodeState, makeEncodeState } from "../src/utils.js"
 
 // dd if=/dev/urandom bs=1 count=1020 | xxd -p
 const randomHexBinary = [

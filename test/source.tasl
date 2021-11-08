@@ -1,0 +1,15 @@
+# source.tasl
+namespace ex http://example.com/
+
+class ex:0 {
+  ex:0.0 -> {
+    ex:0.0.0 -> uri
+    ex:0.0.1 -> uri
+  }
+  ex:0.1 -> * ex:1
+}
+
+class ex:1 {
+  ex:1.0 -> * ex:0
+  ex:1.1 -> uri
+}

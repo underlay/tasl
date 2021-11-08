@@ -1,0 +1,38 @@
+{
+	"http://example.com/0": [
+		{
+			"kind": "product",
+			"components": {
+				"http://example.com/0.0": {
+					"kind": "product",
+					"components": {
+						"http://example.com/0.0.0": {
+							"kind": "uri",
+							"value": "http://foo.com/neat"
+						},
+						"http://example.com/0.0.1": {
+							"kind": "uri",
+							"value": "http://foo.com/wow"
+						}
+					}
+				},
+				"http://example.com/0.1": {
+					"kind": "reference",
+					"index": 0
+				}
+			}
+		}
+	],
+	"http://example.com/1": [
+		{
+			"kind": "product",
+			"components": {
+				"http://example.com/1.0": { "kind": "reference", "index": 0 },
+				"http://example.com/1.1": {
+					"kind": "uri",
+					"value": "http://bar.org/fantastic"
+				}
+			}
+		}
+	]
+}

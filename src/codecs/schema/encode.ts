@@ -1,19 +1,22 @@
 import { ul } from "@underlay/namespaces"
 
-import { Instance } from "../instance/instance.js"
-import type { Value } from "../values/index.js"
+import type * as Schema from "../../schema/index.js"
+import * as Instance from "../../instance/index.js"
 
-import type { Type } from "../types/index.js"
+import { SchemaSchema, TypeType, schemaSchema } from "./schema.js"
 
-import type { Schema } from "./schema.js"
-import { SchemaSchema, TypeType, schemaSchema } from "./schemaSchema.js"
+import { encode } from "../../encode.js"
+import { forEntries, getIndexOfKey } from "../../keys.js"
+import { signalInvalidType } from "../../utils.js"
 
-import { forEntries, getIndexOfKey } from "../keys.js"
-
-import { signalInvalidType } from "../utils.js"
-
-type SchemaInstanceElements = {
-	[k in keyof SchemaSchema]: Value<SchemaSchema[k]>[]
+/**
+ * Convert a schema to an encoded instance of the schema schema
+ * @param {Schema} schema a schema
+ * @returns {Uint8Array} an encoded instance of the schema schema
+ */
+export function encodeSchema(schema: Schema.Schema): Uint8Array {
+	const instance = fromSchema(schema)
+	return encode(schemaSchema, instance)
 }
 
 /**
@@ -21,8 +24,10 @@ type SchemaInstanceElements = {
  * @param {Schema} schema a schema
  * @returns {Instance} an instance of the schema schema
  */
-export function fromSchema(schema: Schema): Instance<SchemaSchema> {
-	const elements: SchemaInstanceElements = {
+export function fromSchema(
+	schema: Schema.Schema
+): Instance.Instance<SchemaSchema> {
+	const instance: Instance.Instance<SchemaSchema> = {
 		[ul.class]: [],
 		[ul.product]: [],
 		[ul.component]: [],
@@ -31,8 +36,8 @@ export function fromSchema(schema: Schema): Instance<SchemaSchema> {
 	}
 
 	for (const [key, type] of forEntries(schema)) {
-		const value = parseType(schema, elements, type)
-		elements[ul.class].push({
+		const value = parseType(schema, instance, type)
+		instance[ul.class].push({
 			kind: "product",
 			components: {
 				[ul.key]: { kind: "uri", value: key },
@@ -41,14 +46,14 @@ export function fromSchema(schema: Schema): Instance<SchemaSchema> {
 		})
 	}
 
-	return Instance.fromJSON(schemaSchema, elements)
+	return instance
 }
 
 function parseType(
-	schema: Schema,
-	elements: SchemaInstanceElements,
-	type: Type
-): Value<TypeType> {
+	schema: Schema.Schema,
+	instance: Instance.Instance<SchemaSchema>,
+	type: Schema.Type
+): Instance.Value<TypeType> {
 	if (type.kind === "uri") {
 		return {
 			kind: "coproduct",
@@ -62,12 +67,12 @@ function parseType(
 			value: { kind: "uri", value: type.datatype },
 		}
 	} else if (type.kind === "product") {
-		const index = elements[ul.product].length
-		elements[ul.product].push({ kind: "product", components: {} })
+		const index = instance[ul.product].length
+		instance[ul.product].push({ kind: "product", components: {} })
 
 		for (const [key, component] of forEntries(type.components)) {
-			const value = parseType(schema, elements, component)
-			elements[ul.component].push({
+			const value = parseType(schema, instance, component)
+			instance[ul.component].push({
 				kind: "product",
 				components: {
 					[ul.source]: { kind: "reference", index },
@@ -83,12 +88,12 @@ function parseType(
 			value: { kind: "reference", index },
 		}
 	} else if (type.kind === "coproduct") {
-		const index = elements[ul.coproduct].length
-		elements[ul.coproduct].push({ kind: "product", components: {} })
+		const index = instance[ul.coproduct].length
+		instance[ul.coproduct].push({ kind: "product", components: {} })
 
 		for (const [key, option] of forEntries(type.options)) {
-			const value = parseType(schema, elements, option)
-			elements[ul.option].push({
+			const value = parseType(schema, instance, option)
+			instance[ul.option].push({
 				kind: "product",
 				components: {
 					[ul.source]: { kind: "reference", index },
@@ -113,14 +118,4 @@ function parseType(
 	} else {
 		signalInvalidType(type)
 	}
-}
-
-/**
- * Convert a schema to an encoded instance of the schema schema
- * @param {Schema} schema a schema
- * @returns {Uint8Array} an encoded instance of the schema schema
- */
-export function encodeSchema(schema: Schema): Uint8Array {
-	const instance = fromSchema(schema)
-	return instance.encode()
 }

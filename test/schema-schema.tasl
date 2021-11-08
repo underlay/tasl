@@ -1,0 +1,30 @@
+namespace ul http://underlay.org/ns/
+
+type value [
+  ul:uri
+  ul:literal <- uri
+  ul:product <- * ul:product
+  ul:coproduct <- * ul:coproduct
+  ul:reference <- * ul:class
+]
+
+class ul:product {}
+
+class ul:component {
+  ul:source -> * ul:product
+  ul:key -> uri
+  ul:value -> value
+}
+
+class ul:coproduct {}
+
+class ul:option {
+  ul:source -> * ul:coproduct
+  ul:key -> uri
+  ul:value -> value
+}
+
+class ul:class {
+  ul:key -> uri
+  ul:value -> value
+}

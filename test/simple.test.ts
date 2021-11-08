@@ -1,23 +1,21 @@
 import test from "ava"
 
-import { xsd } from "@underlay/namespaces"
-
 import * as tasl from "../src/index.js"
 
 test("encode nano instance", (t) => {
-	const schema = tasl.schema({
-		"http://example.com/foo": tasl.types.boolean,
-	})
+	const schema = {
+		"http://example.com/foo": tasl.Schema.boolean,
+	}
 
-	const instance = tasl.Instance.fromJSON(schema, {
+	const instance: tasl.Instance.Instance<typeof schema> = {
 		"http://example.com/foo": [
 			{ kind: "literal", value: "true" },
 			{ kind: "literal", value: "false" },
 		],
-	})
+	}
 
 	t.deepEqual(
-		instance.encode(),
+		tasl.encode(schema, instance),
 		new Uint8Array([
 			0x01, // version number
 			0x02, // number of elements in the class
@@ -28,18 +26,18 @@ test("encode nano instance", (t) => {
 })
 
 test("encode micro instance", (t) => {
-	const schema = tasl.schema({
-		"http://example.com/a": tasl.types.product({
-			"http://example.com/a/a": tasl.types.uint8,
-			"http://example.com/a/b": tasl.types.int,
+	const schema = {
+		"http://example.com/a": tasl.Schema.product({
+			"http://example.com/a/a": tasl.Schema.uint8,
+			"http://example.com/a/b": tasl.Schema.int,
 		}),
-		"http://example.com/b": tasl.types.coproduct({
-			"http://example.com/b/a": tasl.types.bytes,
-			"http://example.com/b/b": tasl.types.unit,
+		"http://example.com/b": tasl.Schema.coproduct({
+			"http://example.com/b/a": tasl.Schema.bytes,
+			"http://example.com/b/b": tasl.Schema.unit,
 		}),
-	})
+	}
 
-	const instance = tasl.Instance.fromJSON(schema, {
+	const instance: tasl.Instance.Instance<typeof schema> = {
 		"http://example.com/a": [
 			{
 				kind: "product",
@@ -66,10 +64,10 @@ test("encode micro instance", (t) => {
 				value: { kind: "product", components: {} },
 			},
 		],
-	})
+	}
 
 	t.deepEqual(
-		instance.encode(),
+		tasl.encode(schema, instance),
 		new Uint8Array([
 			0x01, // version number
 			0x01, // number of elements in the first class

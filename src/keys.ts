@@ -67,13 +67,13 @@ export function getKeyAtIndex<K extends string>(
 	}
 }
 
-export function mapKeys<S extends { readonly [key in string]: any }, T>(
+export function mapEntries<S extends Readonly<Record<string, any>>, T>(
 	object: S,
-	map: <Key extends keyof S>(value: S[Key], key: Key) => T
-): { readonly [key in keyof S]: T } {
+	map: (entry: [keyof S, S[keyof S]]) => T
+): { readonly [K in keyof S]: T } {
 	const keys = getKeys(object)
 	const result = Object.fromEntries(
-		keys.map((key) => [key, map(object[key], key)])
+		keys.map((key) => [key, map([key, object[key]])])
 	)
 
 	// sneakily pre-set the result in keyMap since we know its keys already
@@ -82,3 +82,13 @@ export function mapKeys<S extends { readonly [key in string]: any }, T>(
 
 	return result as { readonly [key in keyof S]: T }
 }
+
+export const mapKeys = <S extends Readonly<Record<string, any>>, T>(
+	object: S,
+	map: (key: keyof S) => T
+) => mapEntries(object, ([key, _]) => map(key))
+
+export const mapValues = <S extends Readonly<Record<string, any>>, T>(
+	object: S,
+	map: (value: S[keyof S]) => T
+) => mapEntries(object, ([_, value]) => map(value))

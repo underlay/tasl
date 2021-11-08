@@ -120,11 +120,9 @@ export function validateLiteral(datatype: string, value: string) {
 			return
 		} else {
 			console.error(value)
-			throw new Error(`invalid xsd:hexBinary value`)
+			throw new Error("invalid xsd:hexBinary value")
 		}
 	} else if (datatype === rdf.JSON) {
 		const _ = JSON.parse(value)
-	} else {
-		return
 	}
 }

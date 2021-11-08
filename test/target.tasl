@@ -1,0 +1,17 @@
+# target.tasl
+namespace ex http://example.com/
+
+class ex:a {
+  ex:a/a -> {
+    ex:a/a/a -> uri
+  }
+  ex:a/b -> [
+    ex:a/b/a
+    ex:a/b/b <- * ex:b
+  ]
+}
+
+class ex:b {
+  ex:b/a -> * ex:a
+  ex:b/b -> uri
+}
