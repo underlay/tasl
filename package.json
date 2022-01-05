@@ -2,7 +2,7 @@
 	"name": "tasl",
 	"version": "0.2.1",
 	"type": "module",
-	"description": "An algebraic data model designed for datasets",
+	"description": " An algebraic data model for strongly typed semantic data",
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
 	"files": [
@@ -27,20 +27,19 @@
 	},
 	"homepage": "https://github.com/underlay/tasl#readme",
 	"dependencies": {
-		"@lezer/common": "^0.15.7",
+		"@lezer/common": "^0.15.11",
 		"@types/varint": "^6.0.0",
 		"@underlay/namespaces": "^0.2.0",
-		"big-varint": "^0.1.0",
 		"buffer": "^6.0.3",
 		"fp16": "^0.1.3",
-		"lezer-tasl": "^0.0.13",
-		"lezer-taslx": "^0.0.3",
+		"lezer-tasl": "^0.2.0",
+		"lezer-taslx": "^0.2.1",
 		"microcbor": "^0.1.0",
 		"varint": "^6.0.0"
 	},
 	"devDependencies": {
-		"ava": "^4.0.0-rc.1",
+		"ava": "^4.0.0",
 		"ts-node": "^10.0.0",
-		"typescript": "^4.3.4"
+		"typescript": "^4.5.4"
 	}
 }
