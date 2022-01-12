@@ -133,7 +133,7 @@ console.log(targetInstance.elements)
 
 ## Testing
 
-Tests use [AVA4](https://github.com/avajs/ava) and live in the [test](./test/) directory.
+Tests use [AVA](https://github.com/avajs/ava) and live in the [test](./test/) directory.
 
 ```
 npm run test
