@@ -161,5 +161,4 @@ test("apply instantiated mapping", (t) => {
 			}),
 		],
 	})
-	console.log(JSON.stringify(targetInstance.elements, null, "  "))
 })
