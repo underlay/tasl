@@ -2,9 +2,8 @@ import test from "ava"
 import varint from "varint"
 import { xsd } from "@underlay/namespaces"
 
-import { literal } from "../src/schema/index.js"
-import { decodeLiteral } from "../src/decodeLiteral.js"
-import { encodeLiteral } from "../src/encodeLiteral.js"
+import { types } from "../src/schema/index.js"
+import { encodeLiteral, decodeLiteral } from "../src/instance/literals/index.js"
 import { DecodeState, makeEncodeState } from "../src/utils.js"
 
 // dd if=/dev/urandom bs=1 count=1020 | xxd -p
@@ -79,23 +78,6 @@ const literals: Record<string, [string, string][]> = {
 		["5e-324", "0000000000000001"], // Math.MIN_VALUE
 		["-1.7976931348623157e+308", "ffefffffffffffff"], // -Math.MAX_VALUE
 		["-5e-324", "8000000000000001"], // -Math.MIN_VALUE
-	],
-	[xsd.integer]: [
-		["0", "00"],
-		["1", "02"],
-		["-1", "01"],
-		["2", "04"],
-		["-2", "03"],
-		["64", "8001"],
-		["-64", "7f"],
-		["12345678901234567890", "a4abf8b19de3d4d4d602"],
-	],
-	[xsd.nonNegativeInteger]: [
-		["0", "00"],
-		["1", "01"],
-		["127", "7f"],
-		["128", "8001"],
-		["12345678901234567890", "d295fcd8ceb1aaaaab01"],
 	],
 	[xsd.long]: [
 		["0", "0000000000000000"],
@@ -172,7 +154,7 @@ test("encode/decode literals", (t) => {
 
 	const encodeState = makeEncodeState()
 	for (const datatype of datatypes) {
-		const type = literal(datatype)
+		const type = types.literal(datatype)
 		for (const [i, _] of literals[datatype]) {
 			process(encodeLiteral(encodeState, type, { kind: "literal", value: i }))
 		}
@@ -194,7 +176,7 @@ test("encode/decode literals", (t) => {
 	const view = new DataView(buffer)
 	const decodeState: DecodeState = { data, view, offset: 0 }
 	for (const datatype of datatypes) {
-		const type = literal(datatype)
+		const type = types.literal(datatype)
 		for (const [i, o] of literals[datatype]) {
 			const offset = decodeState.offset
 

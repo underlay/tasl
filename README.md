@@ -2,13 +2,12 @@
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg)](https://github.com/RichardLitt/standard-readme) [![license](https://img.shields.io/github/license/underlay/tasl)](https://opensource.org/licenses/MIT) [![NPM version](https://img.shields.io/npm/v/tasl)](https://www.npmjs.com/package/tasl) ![TypeScript types](https://img.shields.io/npm/types/tasl) ![lines of code](https://img.shields.io/tokei/lines/github/underlay/tasl)
 
-A data model for strongly typed semantic data.
+An algebraic data model for strongly typed semantic data.
 
 ## Table of Contents
 
 - [Install](#install)
 - [Usage](#usage)
-- [API](#api)
 - [Testing](#testing)
 - [Contributing](#contributing)
 - [License](#license)
@@ -22,94 +21,109 @@ npm i tasl
 ## Usage
 
 ```ts
-import * as tasl from "tasl"
+import { Schema, types, Instance, values, Mapping, expressions } from "tasl"
 
-const person = tasl.types.product({
-	"http://schema.org/name": tasl.types.string,
-	"http://schema.org/gender": tasl.types.coproduct({
-		"http://schema.org/Male": tasl.types.unit,
-		"http://schema.org/Female": tasl.types.unit,
-		"http://schema.org/value": tasl.types.string,
+// directly instantiate a schema
+const schema = new Schema({
+	"http://schema.org/Person": types.product({
+		"http://schema.org/name": types.string,
+		"http://schema.org/gender": types.coproduct({
+			"http://schema.org/Male": types.unit,
+			"http://schema.org/Female": types.unit,
+			"http://schema.org/value": types.string,
+		}),
 	}),
 })
 
-const schema = tasl.schema({
-	"http://schema.org/Person": person,
-})
-
-const instance = tasl.Instance.fromJSON(schema, {
+// directly instantiate an instance
+const instance = new Instance(schema, {
 	"http://schema.org/Person": [
-		{
-			kind: "product",
-			components: {
-				"http://schema.org/name": {
-					kind: "literal",
-					value: "Alyssa P. Hacker",
-				},
-				"http://schema.org/gender": {
-					kind: "coproduct",
-					key: "http://schema.org/Female",
-					value: { kind: "product", components: {} },
-				},
-			},
-		},
-		{
-			kind: "product",
-			components: {
-				"http://schema.org/name": { kind: "literal", value: "Ben Bitdiddle" },
-				"http://schema.org/gender": {
-					kind: "coproduct",
-					key: "http://schema.org/Male",
-					value: { kind: "product", components: {} },
-				},
-			},
-		},
+		values.product({
+			"http://schema.org/name": values.string("John Doe"),
+			"http://schema.org/gender": values.coproduct(
+				"http://schema.org/Male",
+				values.unit()
+			),
+		}),
+		values.product({
+			"http://schema.org/name": values.string("Jane Doe"),
+			"http://schema.org/gender": values.coproduct(
+				"http://schema.org/Female",
+				values.unit()
+			),
+		}),
 	],
 })
 
-const data = instance.encode()
-console.log(data)
-// Uint8Array(35) [
-//     1,   2,   0,  16,  65, 108, 121, 115, 115,
-//    97,  32,  80,  46,  32,  72,  97,  99, 107,
-//   101, 114,   1,  13,  66, 101, 110,  32,  66,
-//   105, 116, 100, 105, 100, 100, 108, 101
-// ]
+const targetSchema = new Schema({
+	"http://example.com/person": types.product({
+		"http://example.com/name": types.string,
+		"http://example.com/gender": types.string,
+	}),
+})
 
-console.log(tasl.Instance.decode(schema, data).toJSON())
+const mapping = new Mapping(schema, targetSchema, [
+	{
+		source: "http://schema.org/Person",
+		target: "http://example.com/person",
+		id: "person",
+		value: expressions.construction({
+			"http://example.com/name": expressions.projection(
+				"http://schema.org/name",
+				expressions.variable("person")
+			),
+			"http://example.com/gender": expressions.match(
+				expressions.projection(
+					"http://schema.org/gender",
+					expressions.variable("person")
+				),
+				{
+					"http://schema.org/Male": {
+						id: "gender",
+						value: expressions.literal("Male"),
+					},
+					"http://schema.org/Female": {
+						id: "gender",
+						value: expressions.literal("Female"),
+					},
+					"http://schema.org/value": {
+						id: "gender",
+						value: expressions.variable("gender"),
+					},
+				}
+			),
+		}),
+	},
+])
+
+// apply a mapping
+const targetInstance = mapping.apply(instance)
+console.log(targetInstance.elements)
 // {
-//   "http://schema.org/Person": [
+//   "http://example.com/person": [
 //     {
 //       "kind": "product",
 //       "components": {
-//         "http://schema.org/gender": {
-//           "kind": "coproduct",
-//           "key": "http://schema.org/Female",
-//           "value": {
-//             "kind": "product",
-//             "components": {}
-//           }
-//         },
-//         "http://schema.org/name": {
+//         "http://example.com/gender": {
 //           "kind": "literal",
-//           "value": "Alyssa P. Hacker"
+//           "value": "Male"
+//         },
+//         "http://example.com/name": {
+//           "kind": "literal",
+//           "value": "John Doe"
 //         }
 //       }
 //     },
 //     {
 //       "kind": "product",
 //       "components": {
-//         "http://schema.org/gender": {
-//           "kind": "coproduct",
-//           "key": "http://schema.org/Male",
-//           "value": {
-//             "kind": "product",
-//             "components": {}
-//           }
-//         },
-//         "http://schema.org/name": {
+//         "http://example.com/gender": {
 //           "kind": "literal",
-//           "value": "Ben Bitdiddle"
+//           "value": "Female"
+//         },
+//         "http://example.com/name": {
+//           "kind": "literal",
+//           "value": "Jane Doe"
 //         }
 //       }
 //     }
@@ -117,13 +131,9 @@ console.log(tasl.Instance.decode(schema, data).toJSON())
 // }
 ```
 
-## API
-
-See [API.md](./API.md).
-
 ## Testing
 
-Tests use [AVA 4](https://github.com/avajs/ava) (currently in alpha) and live in the [test](./test/) directory.
+Tests use [AVA4](https://github.com/avajs/ava) and live in the [test](./test/) directory.
 
 ```
 npm run test

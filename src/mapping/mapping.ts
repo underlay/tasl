@@ -1,97 +1,349 @@
-import { forKeys } from "../keys.js"
-import { validateURI } from "../utils.js"
+import { mapEntries, mapKeys } from "../keys.js"
+import { signalInvalidType } from "../utils.js"
 
-export type Mapping = Record<string, Map>
+import type { Type, Value } from "../types.js"
+import type { Schema } from "../schema/index.js"
+import { Instance, values } from "../instance/index.js"
 
-export type Map = {
-	source: string
-	id: string
-	expression: Expression
-}
+import { encodeMapping } from "./encodeMapping.js"
+import { decodeMapping } from "./decodeMapping.js"
+import { parseMapping } from "./parseMapping.js"
 
-export type Expression =
-	| Value
-	| URI
-	| Literal
-	| Match
-	| Construction
-	| Injection
-
-export type Value = Variable | Projection | Dereference
-
-export type Variable = { kind: "variable"; id: string }
-
-export function variable(id: string): Variable {
-	return { kind: "variable", id }
-}
-
-export type Projection = { kind: "projection"; key: string; value: Value }
-
-export function projection(key: string, value: Value): Projection {
-	validateURI(key)
-	return { kind: "projection", key, value }
-}
-
-export type Dereference = { kind: "dereference"; key: string; value: Value }
-
-export function dereference(key: string, value: Value): Dereference {
-	validateURI(key)
-	return { kind: "dereference", key, value }
-}
-
-export type URI = { kind: "uri"; value: string }
-
-export function uri(value: string): URI {
-	validateURI(value)
-	return { kind: "uri", value }
-}
-
-export type Literal = { kind: "literal"; value: string }
-
-export function literal(value: string): Literal {
-	return { kind: "literal", value }
-}
-
-export type Injection = {
-	kind: "injection"
-	key: string
-	expression: Expression
-}
-
-export function injection(key: string, expression: Expression): Injection {
-	validateURI(key)
-	return { kind: "injection", key, expression }
-}
-
-export type Construction = {
-	kind: "construction"
-	slots: Slots
-}
-
-export type Slots = Record<string, Expression>
-
-export function construction(slots: Slots): Construction {
-	for (const key of forKeys(slots)) {
-		validateURI(key)
+export namespace Mapping {
+	export type Map = {
+		source: string
+		target: string
+		id: string
+		value: Expression
 	}
 
-	return { kind: "construction", slots }
-}
+	export type Expression =
+		| Term
+		| URI
+		| Literal
+		| Match
+		| Construction
+		| Injection
 
-export type Match = {
-	kind: "match"
-	value: Value
-	cases: Cases
-}
+	export type Term = Variable | Projection | Dereference
 
-export type Cases = Record<string, Case>
+	export type Variable = { kind: "variable"; id: string }
 
-export type Case = { id: string; expression: Expression }
+	export type Projection = { kind: "projection"; key: string; value: Term }
 
-export function match(value: Value, cases: Cases): Match {
-	for (const key of forKeys(cases)) {
-		validateURI(key)
+	export type Dereference = { kind: "dereference"; key: string; value: Term }
+
+	export type URI = { kind: "uri"; value: string }
+
+	export type Literal = { kind: "literal"; value: string }
+
+	export type Injection = {
+		kind: "injection"
+		key: string
+		value: Expression
 	}
 
-	return { kind: "match", value, cases }
+	export type Construction = {
+		kind: "construction"
+		slots: { [K in string]: Expression }
+	}
+
+	export type Match = {
+		kind: "match"
+		value: Term
+		cases: { [K in string]: { id: string; value: Expression } }
+	}
+}
+
+export class Mapping<
+	S extends { [K in string]: Type } = { [K in string]: Type },
+	T extends { [K in string]: Type } = { [K in string]: Type }
+> {
+	constructor(
+		readonly source: Schema<S>,
+		readonly target: Schema<T>,
+		readonly maps: Mapping.Map[]
+	) {}
+
+	/**
+	 * Convert an encoded instance of the mapping schema to a mapping
+	 * @param {Uint8Array} data
+	 * @returns {Mapping} a mapping
+	 */
+	static decode<
+		S extends { [K in string]: Type } = { [K in string]: Type },
+		T extends { [K in string]: Type } = { [K in string]: Type }
+	>(source: Schema<S>, target: Schema<T>, data: Uint8Array): Mapping<S, T> {
+		return decodeMapping(source, target, data)
+	}
+
+	/**
+	 * Parse a mapping from a .taslx file
+	 * @param {string} input the taslx source string
+	 * @returns {Mapping}
+	 */
+	static parse<
+		S extends { [K in string]: Type } = { [K in string]: Type },
+		T extends { [K in string]: Type } = { [K in string]: Type }
+	>(source: Schema<S>, target: Schema<T>, input: string): Mapping<S, T> {
+		return Mapping.fromJSON(source, target, parseMapping(input))
+	}
+
+	static fromJSON<
+		S extends { [K in string]: Type } = { [K in string]: Type },
+		T extends { [K in string]: Type } = { [K in string]: Type }
+	>(source: Schema<S>, target: Schema<T>, maps: Mapping.Map[]): Mapping<S, T> {
+		return new Mapping(source, target, maps)
+	}
+
+	get(target: keyof T): Mapping.Map {
+		const map = this.maps.find((map) => map.target === target)
+		if (map === undefined) {
+			throw new Error(`mapping does not have a map with target ${target}`)
+		} else {
+			return map
+		}
+	}
+
+	public toJSON(): Mapping.Map[] {
+		return this.maps
+	}
+
+	/**
+	 * Convert a mapping to an encoded instance of the mapping schema
+	 * @returns {Uint8Array} an encoded instance of the mapping schema
+	 */
+	public encode(): Uint8Array {
+		return encodeMapping(this.maps)
+	}
+
+	public apply(instance: Instance<S>): Instance<T> {
+		const elements: { [K in string]: Value[] } = mapEntries(
+			this.target.classes,
+			([key, targetType]) => {
+				const { value: expression, id, source } = this.get(key)
+				const sourceType = this.source.get(source)
+
+				const elements: Value[] = []
+				for (const element of instance.values(source)) {
+					elements.push(
+						this.applyExpression(instance, expression, targetType, {
+							[id]: [sourceType, element],
+						})
+					)
+				}
+
+				return elements
+			}
+		)
+
+		return new Instance(
+			this.target,
+			elements as { [K in keyof T]: Value<T[K]>[] }
+		)
+	}
+
+	private applyExpression(
+		instance: Instance<S>,
+		expression: Mapping.Expression,
+		targetType: Type,
+		environment: Record<string, [Type, Value]>
+	): Value {
+		if (expression.kind === "uri") {
+			if (targetType.kind !== "uri") {
+				throw new Error("unexpected URI expression")
+			}
+
+			return values.uri(expression.value)
+		} else if (expression.kind === "literal") {
+			if (targetType.kind !== "literal") {
+				throw new Error("unexpected URI expression")
+			}
+
+			return values.literal(expression.value)
+		} else if (expression.kind === "construction") {
+			if (targetType.kind !== "product") {
+				throw new Error("unexpected construction expression")
+			}
+
+			const components = mapEntries(
+				targetType.components,
+				([key, component]) => {
+					if (key in expression.slots) {
+						const slot = expression.slots[key]
+						return this.applyExpression(instance, slot, component, environment)
+					} else {
+						throw new Error(`missing slot for component ${key}`)
+					}
+				}
+			)
+
+			return values.product(components)
+		} else if (expression.kind === "match") {
+			const [t, v] = this.evaluateTerm(instance, expression.value, environment)
+			if (t.kind !== "coproduct") {
+				throw new Error("the value of a match expression must be a coproduct")
+			} else if (v.kind !== "coproduct") {
+				throw new Error("internal type error")
+			}
+
+			if (v.key in expression.cases) {
+				const { value: expr, id } = expression.cases[v.key]
+				return this.applyExpression(instance, expr, targetType, {
+					...environment,
+					[id]: [t.options[v.key], v.value],
+				})
+			} else {
+				throw new Error(`missing case for option ${v.key}`)
+			}
+		} else if (expression.kind === "injection") {
+			if (targetType.kind !== "coproduct") {
+				throw new Error("unexpected injection expression")
+			}
+
+			const option = targetType.options[expression.key]
+			if (option === undefined) {
+				throw new Error(`injection key ${expression.key} is not an option`)
+			}
+
+			return values.coproduct(
+				expression.key,
+				this.applyExpression(instance, expression.value, option, environment)
+			)
+		} else {
+			const [t, v] = this.evaluateTerm(instance, expression, environment)
+			return this.project([t, v], targetType)
+		}
+	}
+
+	private evaluateTerm(
+		instance: Instance<S>,
+		term: Mapping.Term,
+		environment: Record<string, [Type, Value]>
+	): [Type, Value] {
+		if (term.kind === "projection") {
+			const [t, v] = this.evaluateTerm(instance, term.value, environment)
+
+			if (t.kind !== "product") {
+				throw new Error("invalid projection - value is not a product")
+			} else if (v.kind !== "product") {
+				throw new Error("internal type error")
+			}
+
+			if (t.components[term.key] === undefined) {
+				throw new Error(
+					`invalid projection - no component with key ${term.key}`
+				)
+			} else if (v.components[term.key] === undefined) {
+				throw new Error("internal type error")
+			}
+
+			return [t.components[term.key], v.components[term.key]]
+		} else if (term.kind === "dereference") {
+			const [t, v] = this.evaluateTerm(instance, term.value, environment)
+
+			if (t.kind !== "reference") {
+				throw new Error("invalid dereference - value is not a reference")
+			} else if (v.kind !== "reference") {
+				throw new Error("internal type error")
+			}
+
+			return [this.source.get(term.key), instance.get(term.key, v.index)]
+		} else if (term.kind === "variable") {
+			if (term.id in environment) {
+				return environment[term.id]
+			} else {
+				throw new Error(`unbound variable ${term.id}`)
+			}
+		} else {
+			signalInvalidType(term)
+		}
+	}
+
+	private project([t, v]: [Type, Value], targetType: Type): Value {
+		if (targetType.kind === "uri") {
+			if (t.kind !== "uri") {
+				throw new Error(
+					`invalid type - expected a URI value, but got a ${t.kind}`
+				)
+			} else if (v.kind !== "uri") {
+				throw new Error("internal type error")
+			}
+
+			return v
+		} else if (targetType.kind === "literal") {
+			if (t.kind !== "literal") {
+				throw new Error(
+					`invalid type - expected a literal value, but got a ${t.kind}`
+				)
+			} else if (v.kind !== "literal") {
+				throw new Error("internal type error")
+			}
+
+			if (targetType.datatype !== t.datatype) {
+				throw new Error(
+					`invalid type - expected a literal with datatype ${targetType.datatype}, but got a literal with datatype ${t.datatype}`
+				)
+			}
+
+			return v
+		} else if (targetType.kind === "product") {
+			if (t.kind !== "product") {
+				throw new Error(
+					`invalid type - expected a product value, but got a ${t.kind}`
+				)
+			} else if (v.kind !== "product") {
+				throw new Error("internal type error")
+			}
+
+			return values.product(
+				mapKeys(targetType.components, (key) => {
+					if (t.components[key] === undefined) {
+						throw new Error(`invalid type - missing component ${key}`)
+					}
+
+					return this.project(
+						[t.components[key], v.components[key]],
+						targetType.components[key]
+					)
+				})
+			)
+		} else if (targetType.kind === "coproduct") {
+			if (t.kind !== "coproduct") {
+				throw new Error(
+					`invalid type - expected a coproduct value, but got a ${t.kind}`
+				)
+			} else if (v.kind !== "coproduct") {
+				throw new Error("internal type error")
+			}
+
+			if (targetType.options[v.key] === undefined) {
+				throw new Error(`invalid type - ${v.key} is not an option`)
+			}
+
+			return values.coproduct(
+				v.key,
+				this.project([t.options[v.key], v.value], targetType.options[v.key])
+			)
+		} else if (targetType.kind === "reference") {
+			if (t.kind !== "reference") {
+				throw new Error(
+					`invalid type - expected a reference value, but got a ${t.kind}`
+				)
+			} else if (v.kind !== "reference") {
+				throw new Error("internal type error")
+			}
+
+			const { source } = this.get(targetType.key)
+			if (t.key !== source) {
+				throw new Error(
+					`invalid type - expected a reference to ${source}, but got a reference to ${t.key}`
+				)
+			}
+
+			return values.reference(v.index)
+		} else {
+			signalInvalidType(targetType)
+		}
+	}
 }

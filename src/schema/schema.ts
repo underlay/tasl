@@ -1,93 +1,65 @@
-import { forKeys } from "../keys.js"
-import { validateURI } from "../utils.js"
+import type { Type } from "../types.js"
 
-export type Schema = { [K in string]: Type }
+import * as types from "./types/index.js"
 
-export type Type = URI | Literal | Product | Coproduct | Reference
-
-export type URI = { kind: "uri" }
-
-export function uri(): URI {
-	return { kind: "uri" }
-}
-
-export const isURI = (type: Type): type is URI => type.kind === "uri"
-
-export type Literal<Datatype extends string = string> = {
-	kind: "literal"
-	datatype: Datatype
-}
-
-export function literal<Datatype extends string>(
-	datatype: Datatype
-): Literal<Datatype> {
-	validateURI(datatype)
-	return { kind: "literal", datatype }
-}
-
-export const isLiteral = (type: Type): type is Literal =>
-	type.kind === "literal"
-
-export const isLiteralDatatype = <Datatype extends string>(
-	type: Type,
-	datatype: Datatype
-): type is Literal<Datatype> =>
-	type.kind === "literal" && type.datatype === datatype
-
-export type Components = { [K in string]: Type }
-
-export type Product<T extends Components = Components> = {
-	kind: "product"
-	components: T
-}
-
-export function product<T extends Components = Components>(
-	components: T
-): Product<T> {
-	for (const key of forKeys(components)) {
-		validateURI(key)
+export class Schema<
+	S extends { [K in string]: Type } = { [K in string]: Type }
+> {
+	private readonly _keys: readonly (keyof S)[]
+	constructor(readonly classes: S) {
+		this._keys = Object.freeze(
+			Object.keys(classes).sort()
+		) as readonly (keyof S)[]
 	}
 
-	return { kind: "product", components }
-}
-
-export const isProduct = (type: Type): type is Product =>
-	type.kind === "product"
-
-export type Options = { [key in string]: Type }
-
-export type Coproduct<T extends Options = Options> = {
-	kind: "coproduct"
-	options: T
-}
-
-export function coproduct<T extends Options = Options>(
-	options: T
-): Coproduct<T> {
-	for (const key of forKeys(options)) {
-		validateURI(key)
+	get<K extends keyof S>(key: K): S[K] {
+		const type = this.classes[key]
+		if (type === undefined) {
+			throw new Error(`schema does not have a class with key ${key}`)
+		} else {
+			return type
+		}
 	}
 
-	return { kind: "coproduct", options }
+	has(key: string | number | symbol): key is keyof S {
+		return key in this.classes
+	}
+
+	*keys(): Iterable<keyof S> {
+		for (const key of this._keys) {
+			yield key
+		}
+	}
+
+	*values(): Iterable<S[keyof S]> {
+		for (const key of this._keys) {
+			yield this.classes[key]
+		}
+	}
+
+	*entries(): Iterable<[keyof S, S[keyof S]]> {
+		for (const key of this._keys) {
+			yield [key, this.classes[key]]
+		}
+	}
+
+	isEqualTo<S extends { [K in string]: Type }>(schema: Schema<S>): boolean {
+		for (const key of this.keys()) {
+			if (schema.has(key as string)) {
+				continue
+			} else {
+				return false
+			}
+		}
+
+		for (const [key, type] of schema.entries()) {
+			if (this.has(key) && types.isEqualTo(this.get(key), type)) {
+				continue
+			} else {
+				return false
+			}
+		}
+
+		return true
+	}
 }
-
-export const isCoproduct = (type: Type): type is Coproduct =>
-	type.kind === "coproduct"
-
-export type Reference<Key extends string = string> = {
-	kind: "reference"
-	key: Key
-}
-
-export function reference<Key extends string>(key: Key): Reference<Key> {
-	validateURI(key)
-	return { kind: "reference", key }
-}
-
-export const isReference = (type: Type): type is Reference =>
-	type.kind === "reference"
-
-export const isReferenceKey = <Key extends string>(
-	type: Type,
-	key: Key
-): type is Reference<Key> => type.kind === "reference" && type.key === key

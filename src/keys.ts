@@ -1,47 +1,44 @@
-// the tasl library needs to do a lot of iterating over the entries of objects,
-// like schemas, product components, and coproduct options. in many cases we
-// need to do this iteration in lexicographic key order, which we don't get by
-// default from JavaScript's Object.entries({...}). most of the objects we need
-// to iterate over are just provided to us by the end user.
-
-// we could just get a new key array and sort it every time we need to iterate,
-// but this felt wasteful to me (maybe it's not at all, i have no real idea).
-// the utilities here are a little homemade system for memoizing sorted arrays of
-// keys for *arbirary objects* (as long as they extend Readonly<Record<string, any>>)
-// that uses a single WeakMap to avoid needing to clean up after itself.
-// they also play nicer with TypeScript than Object.keys() and Object.entries().
-
 type R<K extends string, V = any> = Readonly<Record<K, V>>
 
-const keyMap = new WeakMap<R<string>, readonly string[]>()
-
-// this function is deliberately not exported; i want the external interface
-// to this key iteration system to *only* use Iterable<K> and not K[]
-function getKeys<K extends string>(object: R<K>): readonly K[] {
-	if (keyMap.has(object)) {
-		return keyMap.get(object)! as K[]
-	} else {
-		const keys = Object.keys(object).sort()
-		Object.freeze(keys)
-		keyMap.set(object, keys)
-		return keys as K[]
-	}
-}
-
+/**
+ * Iterate over the keys of an object in lexicographic order
+ * @param object
+ */
 export function* forKeys<K extends string>(object: R<K>): Iterable<K> {
-	yield* getKeys(object)
+	yield* Object.keys(object).sort() as K[]
 }
 
+/**
+ * Iterate over the [key, value] entries of an object in lexicographic order
+ * @param object
+ */
 export function* forEntries<K extends string, V>(
 	object: R<K, V>
 ): Iterable<[K, V]> {
-	for (const key of getKeys(object)) {
-		yield [key, object[key]]
+	for (const key of Object.keys(object).sort()) {
+		yield [key as K, object[key as K] as V]
 	}
 }
 
+/**
+ * Iterate over the values of an object in lexicographic order
+ * @param object
+ */
+export function* forValues<K extends string, V>(object: R<K, V>): Iterable<V> {
+	for (const key of Object.keys(object).sort()) {
+		yield object[key as K]
+	}
+}
+
+/**
+ * Get the integer lexicographic index of an object key
+ * @param object an object
+ * @param key a key in the object
+ * @throws an error if the key is not a property of the object
+ * @returns the integer index of the key in the lexicographic ordering of all the object's keys
+ */
 export function getIndexOfKey<K extends string>(object: R<K>, key: K): number {
-	const keys = getKeys(object)
+	const keys = Object.keys(object).sort()
 	const index = keys.indexOf(key)
 	if (index === -1) {
 		throw new Error(`key not found: ${JSON.stringify(key)}`)
@@ -49,46 +46,71 @@ export function getIndexOfKey<K extends string>(object: R<K>, key: K): number {
 	return index
 }
 
-export function hasKeyAtIndex(object: R<string>, index: number): boolean {
-	const keys = getKeys(object)
-	return 0 <= index && index < keys.length
-}
-
+/**
+ * Get the key of an object at a given lexicographic index
+ * @param object an object
+ * @param index an integer 0 <= index < Object.keys(object).length
+ * @throws an error if the index is out of range
+ * @returns {string} the key at the index in the lexicographic ordering of all the object's keys
+ */
 export function getKeyAtIndex<K extends string>(
 	object: R<K>,
 	index: number
 ): K {
-	const keys = getKeys(object)
+	const keys = Object.keys(object).sort()
 	if (0 <= index && index < keys.length) {
-		return keys[index]
+		return keys[index] as K
 	} else {
 		console.error(object, index, keys)
 		throw new Error("index out of range")
 	}
 }
 
+/**
+ * mapEntries is equivalent to Object.fromEntries(Object.entries(object).map(map)),
+ * except that it always iterates in lexicographic order.
+ * @param object an object
+ * @param map a function mapping each entry [key, value] to a new value
+ * @returns an object with the same keys as the input but with values from the map function
+ */
 export function mapEntries<S extends Readonly<Record<string, any>>, T>(
 	object: S,
 	map: (entry: [keyof S, S[keyof S]]) => T
-): { readonly [K in keyof S]: T } {
-	const keys = getKeys(object)
+): { [K in keyof S]: T } {
+	const keys = Object.keys(object).sort()
 	const result = Object.fromEntries(
 		keys.map((key) => [key, map([key, object[key]])])
 	)
 
-	// sneakily pre-set the result in keyMap since we know its keys already
-	keyMap.set(result, keys as readonly string[])
-	Object.freeze(result)
-
-	return result as { readonly [key in keyof S]: T }
+	return result as { [key in keyof S]: T }
 }
 
+/**
+ * mapKeys is a wrapper for mapEntries that only calls the provided map
+ * function with the key of each entry, not the value.
+ * @param object an object
+ * @param map a function mapping each key from the input object to a new value
+ * @returns an object with the same keys as the input but with values from the map function
+ */
 export const mapKeys = <S extends Readonly<Record<string, any>>, T>(
 	object: S,
 	map: (key: keyof S) => T
 ) => mapEntries(object, ([key, _]) => map(key))
 
+/**
+ * mapValues is a wrapper for mapEntries that only calls the provided map
+ * function with the value of each entry, not the key.
+ * @param object an object
+ * @param map a function mapping each value from the input object to a new value
+ * @returns an object with the same keys as the input but with values from the map function
+ */
 export const mapValues = <S extends Readonly<Record<string, any>>, T>(
 	object: S,
 	map: (value: S[keyof S]) => T
 ) => mapEntries(object, ([_, value]) => map(value))
+
+export function* map<X, Y>(iter: Iterable<X>, f: (value: X) => Y): Iterable<Y> {
+	for (const value of iter) {
+		yield f(value)
+	}
+}
