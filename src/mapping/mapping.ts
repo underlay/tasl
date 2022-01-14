@@ -5,10 +5,6 @@ import type { Type, Value } from "../types.js"
 import type { Schema } from "../schema/index.js"
 import { Instance, values } from "../instance/index.js"
 
-import { encodeMapping } from "./encodeMapping.js"
-import { decodeMapping } from "./decodeMapping.js"
-import { parseMapping } from "./parseMapping.js"
-
 export namespace Mapping {
 	export type Map = {
 		source: string
@@ -65,37 +61,6 @@ export class Mapping<
 		readonly maps: Mapping.Map[]
 	) {}
 
-	/**
-	 * Convert an encoded instance of the mapping schema to a mapping
-	 * @param {Uint8Array} data
-	 * @returns {Mapping} a mapping
-	 */
-	static decode<
-		S extends { [K in string]: Type } = { [K in string]: Type },
-		T extends { [K in string]: Type } = { [K in string]: Type }
-	>(source: Schema<S>, target: Schema<T>, data: Uint8Array): Mapping<S, T> {
-		return decodeMapping(source, target, data)
-	}
-
-	/**
-	 * Parse a mapping from a .taslx file
-	 * @param {string} input the taslx source string
-	 * @returns {Mapping}
-	 */
-	static parse<
-		S extends { [K in string]: Type } = { [K in string]: Type },
-		T extends { [K in string]: Type } = { [K in string]: Type }
-	>(source: Schema<S>, target: Schema<T>, input: string): Mapping<S, T> {
-		return Mapping.fromJSON(source, target, parseMapping(input))
-	}
-
-	static fromJSON<
-		S extends { [K in string]: Type } = { [K in string]: Type },
-		T extends { [K in string]: Type } = { [K in string]: Type }
-	>(source: Schema<S>, target: Schema<T>, maps: Mapping.Map[]): Mapping<S, T> {
-		return new Mapping(source, target, maps)
-	}
-
 	get(target: keyof T): Mapping.Map {
 		const map = this.maps.find((map) => map.target === target)
 		if (map === undefined) {
@@ -105,19 +70,13 @@ export class Mapping<
 		}
 	}
 
-	public toJSON(): Mapping.Map[] {
-		return this.maps
-	}
+	apply(instance: Instance<S>): Instance<T> {
+		if (!this.source.isEqualTo(instance.schema)) {
+			throw new Error(
+				"a mapping can only be applied to an instance of its source schema"
+			)
+		}
 
-	/**
-	 * Convert a mapping to an encoded instance of the mapping schema
-	 * @returns {Uint8Array} an encoded instance of the mapping schema
-	 */
-	public encode(): Uint8Array {
-		return encodeMapping(this.maps)
-	}
-
-	public apply(instance: Instance<S>): Instance<T> {
 		const elements: { [K in string]: Value[] } = mapEntries(
 			this.target.classes,
 			([key, targetType]) => {

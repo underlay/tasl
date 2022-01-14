@@ -15,6 +15,11 @@ import { forEntries, map } from "../keys.js"
 import type { Type, Value } from "../types.js"
 import { Instance } from "./instance.js"
 
+/**
+ * Encode an instance to a byte array
+ * @param {Instance} instance
+ * @returns {Uint8Array}
+ */
 export function encodeInstance<S extends { [K in string]: Type }>(
 	instance: Instance<S>
 ): Uint8Array {

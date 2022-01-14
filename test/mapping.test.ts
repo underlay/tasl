@@ -11,6 +11,9 @@ import {
 	Mapping,
 	expressions,
 	parseSchema,
+	parseMapping,
+	encodeMapping,
+	decodeMapping,
 } from "../src/index.js"
 
 const dataset = parseSchema(
@@ -21,25 +24,25 @@ const graph = parseSchema(
 	fs.readFileSync(resolve("test", "rdf-graph.tasl"), "utf-8")
 )
 
-const graphToDataset = Mapping.parse(
+const graphToDataset = parseMapping(
 	graph,
 	dataset,
 	fs.readFileSync(resolve("test", "graph-to-dataset.taslx"), "utf-8")
 )
 
-const datasetToGraph = Mapping.parse(
+const datasetToGraph = parseMapping(
 	dataset,
 	graph,
 	fs.readFileSync(resolve("test", "dataset-to-graph.taslx"), "utf-8")
 )
 
 test("round-trip dataset-to-graph.taslx to binary blob and back", (t) => {
-	Mapping.decode(dataset, graph, datasetToGraph.encode())
+	decodeMapping(dataset, graph, encodeMapping(datasetToGraph))
 	t.pass()
 })
 
 test("round-trip graph-to-dataset.taslx to binary blob and back", (t) => {
-	Mapping.decode(graph, dataset, graphToDataset.encode())
+	decodeMapping(graph, dataset, encodeMapping(graphToDataset))
 	t.pass()
 })
 
@@ -51,14 +54,14 @@ const target = parseSchema(
 	fs.readFileSync(resolve("test", "target.tasl"), "utf-8")
 )
 
-const sourceToTarget = Mapping.parse(
+const sourceToTarget = parseMapping(
 	source,
 	target,
 	fs.readFileSync(resolve("test", "source-to-target.taslx"), "utf-8")
 )
 
 test("round-trip source-to-target.taslx to binary blob and back", (t) => {
-	Mapping.decode(source, target, sourceToTarget.encode())
+	decodeMapping(source, target, encodeMapping(sourceToTarget))
 	t.pass()
 })
 

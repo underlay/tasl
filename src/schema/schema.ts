@@ -44,6 +44,10 @@ export class Schema<
 	}
 
 	isEqualTo<S extends { [K in string]: Type }>(schema: Schema<S>): boolean {
+		if (Object.is(this, schema)) {
+			return true
+		}
+
 		for (const key of this.keys()) {
 			if (schema.has(key as string)) {
 				continue

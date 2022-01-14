@@ -34,6 +34,10 @@ export class Instance<
 	}
 
 	isEqualTo<T extends { [K in string]: Type }>(instance: Instance<T>): boolean {
+		if (Object.is(this, instance)) {
+			return true
+		}
+
 		if (!this.schema.isEqualTo(instance.schema)) {
 			return false
 		}

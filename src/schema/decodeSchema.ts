@@ -10,6 +10,11 @@ import { Schema } from "./schema.js"
 import * as types from "./types/index.js"
 import { schemaSchema, TypeType } from "./schemaSchema.js"
 
+/**
+ * Convert an encoded instance of the schema schema to a Schema
+ * @param {Uint8Array} data
+ * @returns {Schema}
+ */
 export function decodeSchema(data: Uint8Array): Schema {
 	// this is also responsible for validating the schema constraints:
 	// - no duplicate class keys

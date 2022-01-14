@@ -10,9 +10,15 @@ import { getKeyAtIndex, mapValues } from "../keys.js"
 import type { Type, Value } from "../types.js"
 import type { Schema } from "../schema/schema.js"
 
-import * as values from "./values/index.js"
 import { Instance } from "./instance.js"
+import * as values from "./values/index.js"
 
+/**
+ * Decode an instance from a byte array
+ * @param {Schema} schema
+ * @param {Uint8Array} data
+ * @returns {Instance}
+ */
 export function decodeInstance<S extends { [K in string]: Type }>(
 	schema: Schema<S>,
 	data: Uint8Array

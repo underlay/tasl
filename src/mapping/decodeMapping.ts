@@ -10,6 +10,13 @@ import { decodeInstance } from "../instance/index.js"
 import { ExpressionType, TermType, mappingSchema } from "./mappingSchema.js"
 import { Mapping } from "./mapping.js"
 
+/**
+ * Convert an encoded instance of the mapping schema to a mapping
+ * @param {Schema} source
+ * @param {Schema} garget
+ * @param {Uint8Array} data
+ * @returns {Mapping}
+ */
 export function decodeMapping<
 	S extends { [K in string]: Type },
 	T extends { [K in string]: Type }

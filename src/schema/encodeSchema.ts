@@ -9,6 +9,11 @@ import { Instance, values, encodeInstance } from "../instance/index.js"
 import { Schema } from "./schema.js"
 import { SchemaSchema, schemaSchema, TypeType } from "./schemaSchema.js"
 
+/**
+ * Convert a schema to an encoded instance of the schema schema
+ * @param {Schema} schema
+ * @returns {Uint8Array} an encoded instance of the schema schema
+ */
 export function encodeSchema<S extends { [K in string]: Type }>(
 	schema: Schema<S>
 ): Uint8Array {

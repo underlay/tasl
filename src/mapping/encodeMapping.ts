@@ -14,7 +14,12 @@ import {
 	mappingSchema,
 } from "./mappingSchema.js"
 
-export function encodeMapping(mapping: Mapping.Map[]): Uint8Array {
+/**
+ * Convert a mapping to an encoded instance of the mapping schema
+ * @param {Mapping} mapping
+ * @returns {Uint8Array} an encoded instance of the mapping schema
+ */
+export function encodeMapping(mapping: Mapping): Uint8Array {
 	const elements: { [K in keyof MappingSchema]: Value<MappingSchema[K]>[] } = {
 		[ul.map]: [],
 		[ul.projection]: [],
@@ -26,7 +31,7 @@ export function encodeMapping(mapping: Mapping.Map[]): Uint8Array {
 		[ul.injection]: [],
 	}
 
-	for (const { source, target, id, value: expression } of mapping) {
+	for (const { source, target, id, value: expression } of mapping.maps) {
 		const { length: index } = elements[ul.map]
 		const value = values.coproduct(ul.map, values.reference(index))
 		elements[ul.map].push(

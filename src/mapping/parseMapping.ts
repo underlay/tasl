@@ -1,12 +1,18 @@
 import { parser } from "lezer-taslx"
 import type { SyntaxNode } from "@lezer/common"
 
-import type { Mapping } from "./mapping.js"
+import { Schema } from "../schema/index.js"
+
+import { Mapping } from "./mapping.js"
 import * as expressions from "./expressions/index.js"
 
 const strictParser = parser.configure({ strict: true })
 
-export function parseMapping(input: string): Mapping.Map[] {
+export function parseMapping(
+	source: Schema,
+	target: Schema,
+	input: string
+): Mapping {
 	const tree = strictParser.parse(input)
 	if (tree.topNode.name !== "Mapping") {
 		throw new Error()
@@ -233,5 +239,9 @@ export function parseMapping(input: string): Mapping.Map[] {
 		}
 	}
 
-	return Object.entries(mapping).map(([target, map]) => ({ target, ...map }))
+	return new Mapping(
+		source,
+		target,
+		Object.entries(mapping).map(([target, map]) => ({ target, ...map }))
+	)
 }
