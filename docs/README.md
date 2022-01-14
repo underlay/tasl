@@ -21,6 +21,8 @@ import { Schema, Instance, Mapping } from "tasl"
 
 Each of these can be instantiated directly with a JSON format, encoded to a `Uint8Array`, and decoded from a `Uint8Array`. Additionally, tasl defines two DSLs `.tasl` and `.taslx` for writing schemas and mappings respectively as human-readable UTF-8 source files.
 
+<img src="format-diagram.png" width="400" />
+
 ## JSON instantiation using class constructors
 
 ### Schemas
