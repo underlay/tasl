@@ -1,14 +1,5 @@
 # Documentation
 
-## Table of contents
-
-- [Overview](#overview)
-- [JSON instantiation using class constructors](#json-instantiation-using-class-constructors)
-- [Binary codecs](#binary-codecs)
-- [Schema and mapping DSLs](#schema-and-mapping-dsls)
-
-## Overview
-
 There are three primary data structures in tasl, represented in this JavaScript library as classes exported at the top level.
 
 ```ts
@@ -31,7 +22,7 @@ The JSON schema format is documented in [./SCHEMAS.md](./SCHEMAS.md).
 
 ```ts
 const schema = new Schema({
-	/* ... see ./schemas.md */
+	/* ... see ./SCHEMAS.md */
 })
 ```
 
@@ -41,7 +32,7 @@ Instances are always instances of a particular schema, so the first argument to 
 
 ```ts
 const instance = new Instance(schema, {
-	/* ... see ./instances.md */
+	/* ... see ./INSTANCES.md */
 })
 ```
 
@@ -51,7 +42,7 @@ Similarly, mappings are always mappings from one particular schema to another pa
 
 ```ts
 const mapping = new Mapping(sourceSchema, targetSchema, [
-	/* ... see ./mappings.md */
+	/* ... see ./MAPPINGS.md */
 ])
 ```
 
@@ -66,12 +57,16 @@ declare function encodeSchema(schema: Schema): Uint8Array
 declare function decodeSchema(data: Uint8Array): Schema
 ```
 
+### Instances
+
 Just like the `Instance` constructor, `decodeInstance` takes a concrete schema as its first argument.
 
 ```ts
 declare function encodeInstance(instance: Instance): Uint8Array
 declare function decodeInstance(schema: Schema, data: Uint8Array): Instance
 ```
+
+### Mappings
 
 Just like the `Mapping` constructor, `decodeMapping` takes two concrete schemas as its first arguments.
 
