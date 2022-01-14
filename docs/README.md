@@ -27,7 +27,7 @@ Each of these can be instantiated directly with a JSON format, encoded to a `Uin
 
 ### Schemas
 
-The JSON schema format is documented in [./schemas.md](./schemas.md).
+The JSON schema format is documented in [./SCHEMAS.md](./SCHEMAS.md).
 
 ```ts
 const schema = new Schema({
@@ -37,7 +37,7 @@ const schema = new Schema({
 
 ### Instances
 
-Instances are always instances of a particular schema, so the first argument to the `Instance` constructor is a `readonly schema: Schema`. The JSON instance format is documented in [./instances.md](./instances.md).
+Instances are always instances of a particular schema, so the first argument to the `Instance` constructor is a `readonly schema: Schema`. The JSON instance format is documented in [./INSTANCES.md](./INSTANCES.md).
 
 ```ts
 const instance = new Instance(schema, {
@@ -47,7 +47,7 @@ const instance = new Instance(schema, {
 
 ### Mappings
 
-Similarly, mappings are always mappings from one particular schema to another particular schema, so the first two arguments to the `Mapping` constructor are `readonly source: Schema` and `readonly target: Schema`. The JSON mapping format is documented in [./mappings.md](./mappings.md).
+Similarly, mappings are always mappings from one particular schema to another particular schema, so the first two arguments to the `Mapping` constructor are `readonly source: Schema` and `readonly target: Schema`. The JSON mapping format is documented in [./MAPPINGS.md](./MAPPINGS.md).
 
 ```ts
 const mapping = new Mapping(sourceSchema, targetSchema, [
