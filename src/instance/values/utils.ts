@@ -133,6 +133,22 @@ export function cast<X extends Type, Y extends Type>(
 			throw new Error("values cannot be cast to different kinds of types")
 		}
 
+		const { [value.key]: source, ...rest } = type.options
+		if (source === undefined) {
+			throw new Error("the coproduct value is not of the provided source type")
+		}
+
+		for (const [key, option] of Object.entries(rest)) {
+			if (
+				key in target.options &&
+				types.isSubtypeOf(target.options[key], option)
+			) {
+				continue
+			} else {
+				throw new Error("the target type is not a subtype of the source type")
+			}
+		}
+
 		const option = target.options[value.key]
 		if (option === undefined) {
 			throw new Error(
@@ -142,7 +158,7 @@ export function cast<X extends Type, Y extends Type>(
 
 		return values.coproduct(
 			value.key,
-			cast(type.options[value.key], value.value, option)
+			cast(source, value.value, option)
 		) as Value<Coproduct> as Value<Y>
 	} else if (type.kind === "reference") {
 		if (value.kind !== "reference" || target.kind !== "reference") {
