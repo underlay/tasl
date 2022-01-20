@@ -7,6 +7,7 @@ An algebraic data model for strongly typed semantic data.
 ## Table of Contents
 
 - [Install](#install)
+- [API](#api)
 - [Usage](#usage)
 - [Testing](#testing)
 - [Contributing](#contributing)
@@ -22,7 +23,7 @@ npm i tasl
 
 See the [docs/](./docs) folder.
 
-Here's a
+## Usage
 
 ```ts
 import {
