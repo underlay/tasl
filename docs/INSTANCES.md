@@ -157,7 +157,7 @@ declare namespace values {
 
 These effectively handle serializing JavaScript types to Unicode as required by the corresponding type's datatype definition (e.g. in the [XSD spec](https://www.w3.org/TR/xmlschema11-2/)). These, especially the two floating-point types `f32` and `f64`, are **not** obvious and are **not** the same as calling `Number.toString()` or relying on JavaScript's implicit type coercion. **Values of the standard library types should always be created using these built-in value constructors and never manually converted to string values.**
 
-Here's the example instance from above rewritten to use the value constructors
+Here's the example instance from above rewritten to use the value constructors.
 
 ```ts
 import { Instance, values } from "tasl"
