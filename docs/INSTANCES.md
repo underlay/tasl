@@ -5,9 +5,9 @@
 - [Overview](#overview)
 - [JSON format](#json-format)
 - [Value factory methods](#value-factory-methods)
-- [Standard value constructors](#standard-value-constants)
+- [Standard value constructors](#standard-value-constructors)
 - [Value predicate methods](#value-predicate-methods)
-- [Type casting](type-casting)
+- [Type casting](#type-casting)
 
 ## Overview
 
