@@ -186,7 +186,7 @@ const schema = new Schema({
 
 ## Type predicate methods
 
-The `types` namespace also has five type predicate methods for discriminating between the kinds of types. These are equivalent to `(type) => type.kind === "uri"`, `(type) => type.kind === "literal"`, etc.
+The `types` namespace has five type predicate methods for discriminating between the kinds of types. These are equivalent to `(type) => type.kind === "uri"`, `(type) => type.kind === "literal"`, etc.
 
 ```ts
 declare namespace types {
@@ -200,7 +200,7 @@ declare namespace types {
 
 ## Type comparison methods
 
-Lastly, the `types` namespace also has methods implementing the _subtype relation over types_.
+The `types` namespace also has methods implementing the _subtype relation over types_.
 
 ```ts
 declare namespace types {
