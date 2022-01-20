@@ -105,13 +105,13 @@ export function isSubtypeOf(x: Type, y: Type): boolean {
 }
 
 /**
- * Check whether the type X is comparable with the type Y.
- * The comparability relation is reflexive and symmetric, but not necessarily transitive.
+ * Check whether the type X has common bounds with the type Y.
+ * The common bound relation is reflexive and symmetric, but not necessarily transitive.
  * @param x a type
  * @param y a type
- * @returns {boolean} true if X ≤ Y or Y ≤ X, false otherwise
+ * @returns {boolean} true if X and Y have suprema and infima, false otherwise
  */
-export function isComparableWith(x: Type, y: Type): boolean {
+export function hasCommonBounds(x: Type, y: Type): boolean {
 	if (x.kind === "uri" && y.kind === "uri") {
 		return true
 	} else if (x.kind === "literal" && y.kind === "literal") {
@@ -119,7 +119,7 @@ export function isComparableWith(x: Type, y: Type): boolean {
 	} else if (x.kind === "product" && y.kind === "product") {
 		for (const key of forKeys(y.components)) {
 			if (key in x.components) {
-				if (isComparableWith(x.components[key], y.components[key])) {
+				if (hasCommonBounds(x.components[key], y.components[key])) {
 					continue
 				} else {
 					return false
@@ -130,7 +130,7 @@ export function isComparableWith(x: Type, y: Type): boolean {
 	} else if (x.kind === "coproduct" && y.kind === "coproduct") {
 		for (const key of forKeys(y.options)) {
 			if (key in x.options) {
-				if (isComparableWith(x.options[key], y.options[key])) {
+				if (hasCommonBounds(x.options[key], y.options[key])) {
 					continue
 				} else {
 					return false
@@ -150,7 +150,7 @@ export function isComparableWith(x: Type, y: Type): boolean {
  * The supremum operation is associative and commutative.
  * @param x any type
  * @param y any type
- * @throws an error if X and Y are not comparable
+ * @throws an error if X and Y do not have common bounds
  * @returns {Type} a type Z such that both X and Y are subtypes of Z
  */
 export function leastCommonSupertype(x: Type, y: Type): Type {
@@ -180,7 +180,7 @@ export function leastCommonSupertype(x: Type, y: Type): Type {
 /**
  * @param x a product type
  * @param y a product type
- * @throws an error if X and Y are not comparable
+ * @throws an error if X and Y do not have common bounds
  * @yields entries of the supremum of X and Y
  */
 function* forComponentSuprema(
