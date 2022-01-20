@@ -133,9 +133,7 @@ declare namespace values {
 
 ## Standard value constructors
 
-Just like it
-
-So, analogous to the standard library of constants for common types in the `types` namespace, the `values` namespace has a standard library of methods for creating values of each of those common types.
+Analogous to the standard library of constants for common types in the `types` namespace, the `values` namespace has a standard library of methods for creating values of each of those common types.
 
 ```ts
 declare namespace values {
