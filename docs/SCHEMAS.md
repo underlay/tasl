@@ -386,7 +386,6 @@ types.leastCommonSupertype(
 
 types.greatestCommonSubtype(types.string, types.boolean)
 // Uncaught Error: cannot unify unequal literal types
-//     at Module.greatestCommonSubtype
 
 types.greatestCommonSubtype(
 	types.product({ "http://schema.org/name": types.string }),
@@ -398,11 +397,6 @@ types.greatestCommonSubtype(
 	})
 )
 // Uncaught Error: cannot unify types of different kinds
-//     at greatestCommonSubtype
-//     at forComponentInfima
-//     at forComponentInfima.next
-//     at Function.fromEntries
-//     at Module.greatestCommonSubtype
 ```
 
 The operations `types.greatestCommonSubtype` and `types.leastCommonSupertype` are both associative and commutative. The relation `types.hasCommonBounds` is reflexive and symmetric, but **not necessarily transitive**.
