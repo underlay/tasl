@@ -22,7 +22,7 @@ npm i tasl
 
 See the [docs/](./docs) folder.
 
-## Usage
+Here's a
 
 ```ts
 import {
@@ -34,6 +34,7 @@ import {
 	decodeInstance,
 } from "tasl"
 
+// Directly instantiate a schema using the types.* factory methods
 const schema = new Schema({
 	"http://schema.org/Person": types.product({
 		"http://schema.org/name": types.string,
@@ -50,6 +51,7 @@ const schema = new Schema({
 //   },
 // }
 
+// Directly instantiate an instance using the values.* factory methods
 const instance = new Instance(schema, {
 	"http://schema.org/Person": [
 		values.product({
@@ -75,6 +77,7 @@ const instance = new Instance(schema, {
 //   elements: { 'http://schema.org/Person': [ [Object], [Object] ] }
 // }
 
+// Encode the instance to a Uint8Array
 const data = encodeInstance(instance)
 // Uint8Array(22) [
 //     1,  2,   1,   8,  74, 111, 104,
@@ -83,6 +86,7 @@ const data = encodeInstance(instance)
 //   101
 // ]
 
+// Decode the Uint8Array back into an identical Instance
 decodeInstance(schema, data)
 // Instance {
 //   schema: Schema {
