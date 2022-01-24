@@ -70,6 +70,8 @@ test("encode micro instance", (t) => {
 		],
 	})
 
+	// instance.schema
+
 	t.deepEqual(
 		encodeInstance(instance),
 		new Uint8Array([

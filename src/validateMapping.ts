@@ -69,22 +69,22 @@ function validateExpression(
 			const e = { ...environment, [c.id]: option }
 			validateExpression(source, maps, c.value, type, e)
 		}
-	} else if (expression.kind === "construction") {
+	} else if (expression.kind === "product") {
 		if (type.kind !== "product") {
-			throw new Error("unexpected construction expression")
+			throw new Error("unexpected product expression")
 		}
 
 		for (const [key, component] of forEntries(type.components)) {
-			const entry = expression.slots[key]
+			const entry = expression.components[key]
 			if (entry === undefined) {
 				throw new Error(`missing slot for component ${key}`)
 			}
 
 			validateExpression(source, maps, entry, component, environment)
 		}
-	} else if (expression.kind === "injection") {
+	} else if (expression.kind === "coproduct") {
 		if (type.kind !== "coproduct") {
-			throw new Error("unexpected injection expression")
+			throw new Error("unexpected coproduct expression")
 		}
 
 		const option = type.options[expression.key]

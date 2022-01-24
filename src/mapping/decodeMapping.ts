@@ -9,6 +9,7 @@ import { decodeInstance } from "../instance/index.js"
 
 import { ExpressionType, TermType, mappingSchema } from "./mappingSchema.js"
 import { Mapping } from "./mapping.js"
+import * as expressions from "./expressions/index.js"
 
 /**
  * Convert an encoded instance of the mapping schema to a mapping
@@ -23,21 +24,21 @@ export function decodeMapping<
 >(source: Schema<S>, target: Schema<T>, data: Uint8Array): Mapping<S, T> {
 	const instance = decodeInstance(mappingSchema, data)
 
-	const constructions: Record<string, Value<ExpressionType>>[] = Array.from(
-		iota(instance.count(ul.construction), (_) => ({}))
+	const products: Record<string, Value<ExpressionType>>[] = Array.from(
+		iota(instance.count(ul.product), (_) => ({}))
 	)
 
-	for (const element of instance.values(ul.slot)) {
+	for (const element of instance.values(ul.component)) {
 		const value = element.components[ul.value]
 		const { value: key } = element.components[ul.key]
 		const { index } = element.components[ul.source]
-		const slots = constructions[index]
-		if (slots === undefined) {
+		const components = products[index]
+		if (components === undefined) {
 			throw new Error("broken construction reference value")
-		} else if (key in slots) {
+		} else if (key in components) {
 			throw new Error("duplicate slot keys")
 		} else {
-			slots[key] = value
+			components[key] = value
 		}
 	}
 
@@ -67,10 +68,10 @@ export function decodeMapping<
 	): Mapping.Term {
 		if (value.key === ul.map) {
 			const { index } = value.value
-			return { kind: "variable", id: `m${index}` }
+			return expressions.variable(`m${index}`)
 		} else if (value.key === ul.case) {
 			const { index } = value.value
-			return { kind: "variable", id: `c${index}` }
+			return expressions.variable(`c${index}`)
 		} else if (value.key === ul.projection) {
 			const { index } = value.value
 			if (projections.has(index)) {
@@ -81,12 +82,12 @@ export function decodeMapping<
 
 			const element = instance.get(ul.projection, index)
 			const { value: key } = element.components[ul.key]
-			const path = toTerm(
+			const term = toTerm(
 				element.components[ul.value],
 				projections,
 				dereferences
 			)
-			return { kind: "projection", key, value: path }
+			return expressions.projection(key, term)
 		} else if (value.key === ul.dereference) {
 			const { index } = value.value
 			if (dereferences.has(index)) {
@@ -97,12 +98,12 @@ export function decodeMapping<
 
 			const element = instance.get(ul.dereference, index)
 			const { value: key } = element.components[ul.key]
-			const path = toTerm(
+			const term = toTerm(
 				element.components[ul.value],
 				projections,
 				dereferences
 			)
-			return { kind: "dereference", key, value: path }
+			return expressions.dereference(key, term)
 		} else {
 			signalInvalidType(value)
 		}
@@ -112,15 +113,15 @@ export function decodeMapping<
 		expression: Value<ExpressionType>,
 		context = {
 			match: new Set<number>(),
-			construction: new Set<number>(),
-			injection: new Set<number>(),
+			product: new Set<number>(),
+			coproduct: new Set<number>(),
 		}
 	): Mapping.Expression {
 		if (expression.key === ul.uri) {
-			return { kind: "uri", value: expression.value.value }
+			return expressions.uri(expression.value.value)
 		} else if (expression.key === ul.literal) {
 			const { value } = expression.value
-			return { kind: "literal", value }
+			return expressions.literal(value)
 		} else if (expression.key === ul.match) {
 			const { index } = expression.value
 			const element = instance.get(ul.match, index)
@@ -130,29 +131,24 @@ export function decodeMapping<
 				value: toExpression(value),
 			}))
 
-			return { kind: "match", value: toTerm(value), cases }
-		} else if (expression.key === ul.construction) {
+			return expressions.match(toTerm(value), cases)
+		} else if (expression.key === ul.product) {
 			const { index } = expression.value
-			const slots = mapValues(constructions[index], (value) =>
-				toExpression(value, context)
+			return expressions.product(
+				mapValues(products[index], (value) => toExpression(value, context))
 			)
-			return { kind: "construction", slots }
-		} else if (expression.key === ul.injection) {
+		} else if (expression.key === ul.coproduct) {
 			const { index } = expression.value
-			if (context.injection.has(index)) {
+			if (context.coproduct.has(index)) {
 				throw new Error("injection cycle detected")
 			} else {
-				context.injection.add(index)
+				context.coproduct.add(index)
 			}
 
-			const element = instance.get(ul.injection, index)
+			const element = instance.get(ul.coproduct, index)
 			const { value: key } = element.components[ul.key]
 			const value = element.components[ul.value]
-			return {
-				kind: "injection",
-				key,
-				value: toExpression(value, context),
-			}
+			return expressions.coproduct(key, toExpression(value, context))
 		} else {
 			return toTerm(expression)
 		}

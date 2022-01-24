@@ -81,7 +81,7 @@ export function parseMapping(
 		} else if (node.name === "Path") {
 			return parsePath(node)
 		} else if (node.name === "Construction") {
-			const slots: { [K in string]: Mapping.Expression } = {}
+			const components: { [K in string]: Mapping.Expression } = {}
 			const entries = node.getChildren("Slot")
 			for (const entry of entries) {
 				const term = entry.getChild("Key")
@@ -90,7 +90,7 @@ export function parseMapping(
 				}
 
 				const key = getURI(term)
-				if (key in slots) {
+				if (key in components) {
 					throw new Error(`duplicate slot key ${key}`)
 				}
 
@@ -100,10 +100,13 @@ export function parseMapping(
 				}
 
 				const injections = entry.getChildren("Injection")
-				slots[key] = parseInjections(parseExpression(expression), injections)
+				components[key] = parseInjections(
+					parseExpression(expression),
+					injections
+				)
 			}
 
-			return expressions.construction(slots)
+			return expressions.product(components)
 		} else if (node.name === "Match") {
 			const path = node.getChild("Path")
 			if (path === null) {
@@ -161,7 +164,7 @@ export function parseMapping(
 				throw new Error("internal parse error - missing Injection/Key node")
 			}
 
-			return expressions.injection(getURI(key), expression)
+			return expressions.coproduct(getURI(key), expression)
 		}, expression)
 
 	const mapping: {

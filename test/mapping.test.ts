@@ -121,7 +121,7 @@ test("apply instantiated mapping", (t) => {
 			source: "http://schema.org/Person",
 			target: "http://example.com/person",
 			id: "person",
-			value: expressions.construction({
+			value: expressions.product({
 				"http://example.com/name": expressions.projection(
 					"http://schema.org/name",
 					expressions.variable("person")

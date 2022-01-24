@@ -26,9 +26,9 @@ export function encodeMapping(mapping: Mapping): Uint8Array {
 		[ul.dereference]: [],
 		[ul.match]: [],
 		[ul.case]: [],
-		[ul.construction]: [],
-		[ul.slot]: [],
-		[ul.injection]: [],
+		[ul.product]: [],
+		[ul.component]: [],
+		[ul.coproduct]: [],
 	}
 
 	for (const { source, target, id, value: expression } of mapping.maps) {
@@ -79,32 +79,32 @@ function fromExpression(
 		}
 
 		return values.coproduct(ul.match, values.reference(index))
-	} else if (expression.kind === "construction") {
-		const { length: index } = elements[ul.construction]
-		elements[ul.construction].push(values.unit())
+	} else if (expression.kind === "product") {
+		const { length: index } = elements[ul.product]
+		elements[ul.product].push(values.unit())
 
-		for (const [key, s] of forEntries(expression.slots)) {
-			elements[ul.slot].push(
+		for (const [key, component] of forEntries(expression.components)) {
+			elements[ul.component].push(
 				values.product({
 					[ul.source]: values.reference(index),
 					[ul.key]: values.uri(key),
-					[ul.value]: fromExpression(elements, s, environment),
+					[ul.value]: fromExpression(elements, component, environment),
 				})
 			)
 		}
 
-		return values.coproduct(ul.construction, values.reference(index))
-	} else if (expression.kind === "injection") {
+		return values.coproduct(ul.product, values.reference(index))
+	} else if (expression.kind === "coproduct") {
 		const value = fromExpression(elements, expression.value, environment)
-		const { length: index } = elements[ul.injection]
-		elements[ul.injection].push(
+		const { length: index } = elements[ul.coproduct]
+		elements[ul.coproduct].push(
 			values.product({
 				[ul.key]: values.uri(expression.key),
 				[ul.value]: value,
 			})
 		)
 
-		return values.coproduct(ul.injection, values.reference(index))
+		return values.coproduct(ul.coproduct, values.reference(index))
 	} else {
 		return fromTerm(elements, expression, environment)
 	}

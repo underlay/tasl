@@ -16,8 +16,8 @@ export const expressionType = types.coproduct({
 	[ul.uri]: types.uri(),
 	[ul.literal]: types.string,
 	[ul.match]: types.reference(ul.match),
-	[ul.construction]: types.reference(ul.construction),
-	[ul.injection]: types.reference(ul.injection),
+	[ul.product]: types.reference(ul.product),
+	[ul.coproduct]: types.reference(ul.coproduct),
 })
 
 export type ExpressionType = typeof expressionType
@@ -44,13 +44,13 @@ export const mappingSchema = new Schema({
 		[ul.key]: types.uri(),
 		[ul.value]: expressionType,
 	}),
-	[ul.construction]: types.product({}),
-	[ul.slot]: types.product({
-		[ul.source]: types.reference(ul.construction),
+	[ul.product]: types.product({}),
+	[ul.component]: types.product({
+		[ul.source]: types.reference(ul.product),
 		[ul.key]: types.uri(),
 		[ul.value]: expressionType,
 	}),
-	[ul.injection]: types.product({
+	[ul.coproduct]: types.product({
 		[ul.key]: types.uri(),
 		[ul.value]: expressionType,
 	}),

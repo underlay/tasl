@@ -29,7 +29,7 @@
 	"dependencies": {
 		"@lezer/common": "^0.15.11",
 		"@types/varint": "^6.0.0",
-		"@underlay/namespaces": "^0.2.0",
+		"@underlay/namespaces": "^0.3.0",
 		"buffer": "^6.0.3",
 		"fp16": "^0.1.3",
 		"lezer-tasl": "^0.2.0",

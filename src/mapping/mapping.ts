@@ -13,13 +13,22 @@ export namespace Mapping {
 		value: Expression
 	}
 
-	export type Expression =
-		| Term
-		| URI
-		| Literal
-		| Match
-		| Construction
-		| Injection
+	export type Expression = URI | Literal | Product | Coproduct | Term | Match
+
+	export type URI = { kind: "uri"; value: string }
+
+	export type Literal = { kind: "literal"; value: string }
+
+	export type Product = {
+		kind: "product"
+		components: { [K in string]: Expression }
+	}
+
+	export type Coproduct = {
+		kind: "coproduct"
+		key: string
+		value: Expression
+	}
 
 	export type Term = Variable | Projection | Dereference
 
@@ -29,25 +38,12 @@ export namespace Mapping {
 
 	export type Dereference = { kind: "dereference"; key: string; value: Term }
 
-	export type URI = { kind: "uri"; value: string }
-
-	export type Literal = { kind: "literal"; value: string }
-
-	export type Injection = {
-		kind: "injection"
-		key: string
-		value: Expression
-	}
-
-	export type Construction = {
-		kind: "construction"
-		slots: { [K in string]: Expression }
-	}
+	export type Case = { id: string; value: Expression }
 
 	export type Match = {
 		kind: "match"
 		value: Term
-		cases: { [K in string]: { id: string; value: Expression } }
+		cases: { [K in string]: Case }
 	}
 }
 
@@ -120,22 +116,19 @@ export class Mapping<
 			}
 
 			return values.literal(expression.value)
-		} else if (expression.kind === "construction") {
+		} else if (expression.kind === "product") {
 			if (targetType.kind !== "product") {
 				throw new Error("unexpected construction expression")
 			}
 
-			const components = mapEntries(
-				targetType.components,
-				([key, component]) => {
-					if (key in expression.slots) {
-						const slot = expression.slots[key]
-						return this.applyExpression(instance, slot, component, environment)
-					} else {
-						throw new Error(`missing slot for component ${key}`)
-					}
+			const components = mapEntries(targetType.components, ([key, target]) => {
+				const source = expression.components[key]
+				if (source === undefined) {
+					throw new Error(`missing component ${key}`)
+				} else {
+					return this.applyExpression(instance, source, target, environment)
 				}
-			)
+			})
 
 			return values.product(components)
 		} else if (expression.kind === "match") {
@@ -155,7 +148,7 @@ export class Mapping<
 			} else {
 				throw new Error(`missing case for option ${v.key}`)
 			}
-		} else if (expression.kind === "injection") {
+		} else if (expression.kind === "coproduct") {
 			if (targetType.kind !== "coproduct") {
 				throw new Error("unexpected injection expression")
 			}

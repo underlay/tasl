@@ -1,6 +1,3 @@
-import { encodeInstance } from "./encodeInstance.js"
-import { decodeInstance } from "./decodeInstance.js"
-
 import type { Type, Value } from "../types.js"
 import type { Schema } from "../schema/schema.js"
 import { values } from "./index.js"
