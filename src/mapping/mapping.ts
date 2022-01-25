@@ -4,6 +4,7 @@ import { signalInvalidType } from "../utils.js"
 import type { Type, Value } from "../types.js"
 import type { Schema } from "../schema/index.js"
 import { Instance, values } from "../instance/index.js"
+import { validateMapping } from "./validateMapping.js"
 
 export namespace Mapping {
 	export type Map = {
@@ -55,7 +56,9 @@ export class Mapping<
 		readonly source: Schema<S>,
 		readonly target: Schema<T>,
 		readonly maps: Mapping.Map[]
-	) {}
+	) {
+		validateMapping(source, target, maps)
+	}
 
 	get(target: keyof T): Mapping.Map {
 		const map = this.maps.find((map) => map.target === target)

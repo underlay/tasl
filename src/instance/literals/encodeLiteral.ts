@@ -11,7 +11,7 @@ import {
 	parseInteger,
 	integerValidators,
 	floatValidators,
-} from "./validate.js"
+} from "./validateLiteral.js"
 
 import {
 	allocate,

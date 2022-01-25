@@ -1,6 +1,9 @@
 import type { Type, Value } from "../types.js"
 import type { Schema } from "../schema/schema.js"
-import { values } from "./index.js"
+
+import * as values from "./values/index.js"
+
+import { validateInstance } from "./validateInstance.js"
 
 export class Instance<
 	S extends { [K in string]: Type } = { [K in string]: Type }
@@ -8,7 +11,9 @@ export class Instance<
 	constructor(
 		readonly schema: Schema<S>,
 		readonly elements: { [K in keyof S]: Value<S[K]>[] }
-	) {}
+	) {
+		validateInstance(schema, elements)
+	}
 
 	count(key: keyof S): number {
 		return this.elements[key].length

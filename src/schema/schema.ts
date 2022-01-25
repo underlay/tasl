@@ -1,6 +1,7 @@
 import type { Type } from "../types.js"
 
 import * as types from "./types/index.js"
+import { validateSchema } from "./validateSchema.js"
 
 export class Schema<
 	S extends { [K in string]: Type } = { [K in string]: Type }
@@ -10,6 +11,7 @@ export class Schema<
 		this._keys = Object.freeze(
 			Object.keys(classes).sort()
 		) as readonly (keyof S)[]
+		validateSchema(classes)
 	}
 
 	get<K extends keyof S>(key: K): S[K] {

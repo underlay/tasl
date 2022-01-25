@@ -39,8 +39,8 @@ export function parseInteger(value: string): bigint {
 }
 
 export const floatValidators: Record<string, (f: number) => void> = {
-	[xsd.double](f: number) {},
-	[xsd.float](f: number) {
+	[xsd.double](f) {},
+	[xsd.float](f) {
 		if (getFloat32Precision(f) !== "exact") {
 			throw new Error(`xsd:float value ${f} out of precision`)
 		}
@@ -48,48 +48,48 @@ export const floatValidators: Record<string, (f: number) => void> = {
 }
 
 export const integerValidators: Record<string, (i: bigint) => void> = {
-	[xsd.long](i: bigint) {
+	[xsd.long](i) {
 		if (i < -9223372036854775808n || 9223372036854775807n < i) {
 			throw new Error(`integer value ${i} out of range for xsd:long datatype`)
 		}
 	},
-	[xsd.int](i: bigint) {
+	[xsd.int](i) {
 		if (i < -2147483648n || 2147483647n < i) {
 			throw new Error(`integer value ${i} out of range for xsd:int datatype`)
 		}
 	},
-	[xsd.short](i: bigint) {
+	[xsd.short](i) {
 		if (i < -32768n || 32767n < i) {
 			throw new Error(`integer value ${i} out of range for xsd:short datatype`)
 		}
 	},
-	[xsd.byte](i: bigint) {
+	[xsd.byte](i) {
 		if (i < -128n || 127n < i) {
 			throw new Error(`integer value ${i} out of range for xsd:byte datatype`)
 		}
 	},
-	[xsd.unsignedLong](i: bigint) {
+	[xsd.unsignedLong](i) {
 		if (i < 0n || 18446744073709551615n < i) {
 			throw new Error(
 				`integer value ${i} out of range for xsd:unsignedLong datatype`
 			)
 		}
 	},
-	[xsd.unsignedInt](i: bigint) {
+	[xsd.unsignedInt](i) {
 		if (i < 0n || 4294967295n < i) {
 			throw new Error(
 				`integer value ${i} out of range for xsd:unsignedInt datatype`
 			)
 		}
 	},
-	[xsd.unsignedShort](i: bigint) {
+	[xsd.unsignedShort](i) {
 		if (i < 0n || 65535n < i) {
 			throw new Error(
 				`integer value ${i} out of range for xsd:unsignedShort datatype`
 			)
 		}
 	},
-	[xsd.unsignedByte](i: bigint) {
+	[xsd.unsignedByte](i) {
 		if (i < 0n || 255n < i) {
 			throw new Error(
 				`integer value ${i} out of range for xsd:unsignedByte datatype`
@@ -111,7 +111,6 @@ export function validateLiteral(datatype: string, value: string) {
 		if (hexPattern.test(value)) {
 			return
 		} else {
-			console.error(value)
 			throw new Error("invalid xsd:hexBinary value")
 		}
 	} else if (datatype === rdf.JSON) {

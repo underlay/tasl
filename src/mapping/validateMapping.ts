@@ -1,11 +1,9 @@
-import { forEntries } from "./keys.js"
-import { signalInvalidType } from "./utils.js"
+import { forEntries } from "../keys.js"
+import { signalInvalidType } from "../utils.js"
 
-import * as types from "./schema/types/index.js"
-import { Schema } from "./schema/schema.js"
-
-import type { Mapping } from "./mapping/mapping.js"
-import type { Type } from "./types.js"
+import { Schema, types } from "../schema/index.js"
+import type { Mapping } from "./mapping.js"
+import type { Type } from "../types.js"
 
 /**
  *
@@ -14,34 +12,34 @@ import type { Type } from "./types.js"
  * @param target the target schema
  * @throws an error if the mapping does not match the source and target
  */
-export function validateMapping(
-	source: Schema,
-	target: Schema,
-	maps: Mapping.Map[]
-) {
+export function validateMapping<
+	S extends { [K in string]: Type },
+	T extends { [K in string]: Type }
+>(source: Schema<S>, target: Schema<T>, maps: Mapping.Map[]) {
+	const targets = new Map<string | number | symbol, Mapping.Map>()
+	for (const map of maps) {
+		if (targets.has(map.target)) {
+			throw new Error("duplicate target in mapping")
+		} else {
+			targets.set(map.target, map)
+		}
+	}
+
 	for (const [key, targetType] of target.entries()) {
-		const map = maps.find((map) => map.target === key)
+		const map = targets.get(key)
 		if (map === undefined) {
 			throw new Error(`missing target ${key} from mapping`)
 		}
+
 		const sourceType = source.get(map.source)
 		const environment = { [map.id]: sourceType }
-		validateExpression(source, maps, map.value, targetType, environment)
+		validateExpression(source, targets, map.value, targetType, environment)
 	}
 }
 
-/**
- *
- * @param source the source schema
- * @param maps a mapping from the source schema
- * @param expression an expression within one of the maps of the mapping
- * @param type the target type of the expression
- * @param environment the environment of bound variables
- * @throws an error if the expression does not evaluate to the given type
- */
-function validateExpression(
-	source: Schema,
-	maps: Mapping.Map[],
+function validateExpression<S extends { [K in string]: Type }>(
+	source: Schema<S>,
+	targets: Map<string | number | symbol, Mapping.Map>,
 	expression: Mapping.Expression,
 	type: Type,
 	environment: Record<string, Type>
@@ -67,7 +65,7 @@ function validateExpression(
 			}
 
 			const e = { ...environment, [c.id]: option }
-			validateExpression(source, maps, c.value, type, e)
+			validateExpression(source, targets, c.value, type, e)
 		}
 	} else if (expression.kind === "product") {
 		if (type.kind !== "product") {
@@ -80,7 +78,7 @@ function validateExpression(
 				throw new Error(`missing slot for component ${key}`)
 			}
 
-			validateExpression(source, maps, entry, component, environment)
+			validateExpression(source, targets, entry, component, environment)
 		}
 	} else if (expression.kind === "coproduct") {
 		if (type.kind !== "coproduct") {
@@ -92,11 +90,11 @@ function validateExpression(
 			throw new Error(`no option for injection key ${expression.key}`)
 		}
 
-		validateExpression(source, maps, expression.value, option, environment)
+		validateExpression(source, targets, expression.value, option, environment)
 	} else {
 		const value = getTermType(source, expression, environment)
 		if (type.kind === "reference") {
-			const map = maps.find((map) => map.target === type.key)
+			const map = targets.get(type.key)
 			if (map === undefined) {
 				throw new Error(`missing target ${type.key} from mapping`)
 			} else if (value.kind !== "reference" || value.key !== map.source) {
@@ -110,8 +108,8 @@ function validateExpression(
 	}
 }
 
-function getTermType(
-	source: Schema,
+function getTermType<S extends { [K in string]: Type }>(
+	source: Schema<S>,
 	value: Mapping.Term,
 	environment: Record<string, Type>
 ): Type {

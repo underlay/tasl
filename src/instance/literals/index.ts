@@ -1,3 +1,3 @@
-export * from "./validate.js"
-export * from "./encode.js"
-export * from "./decode.js"
+export * from "./validateLiteral.js"
+export * from "./encodeLiteral.js"
+export * from "./decodeLiteral.js"
