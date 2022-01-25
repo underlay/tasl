@@ -401,4 +401,4 @@ types.greatestCommonSubtype(
 
 The operations `types.greatestCommonSubtype` and `types.leastCommonSupertype` are both associative and commutative. The relation `types.hasCommonBounds` is reflexive and symmetric, but **not necessarily transitive**.
 
-If X ≤ Y then their greatest common subtype is X and least common supertype is Y.
+If X ≤ Y then their greatest common subtype is X and least common supertype is Y. There are many situations where types that are incomparable (neither X ≤ Y nor Y ≤ X) **do** have common bounds - `types.hasCommonBounds(x, y)` is **not** equivalent to `types.isSubtypeOf(x, y) || types.isSubtypeOf(y, x)`.
