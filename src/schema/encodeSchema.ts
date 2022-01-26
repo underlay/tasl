@@ -1,23 +1,29 @@
 import { ul } from "@underlay/namespaces"
 
-import { forEntries, map } from "../keys.js"
 import { signalInvalidType } from "../utils.js"
 
-import type { Type, Value } from "../types.js"
 import { Instance, values, encodeInstance } from "../instance/index.js"
 
 import { Schema } from "./schema.js"
-import { SchemaSchema, schemaSchema, TypeType } from "./schemaSchema.js"
+import { types } from "./types.js"
+import { schemaSchema } from "./schemaSchema.js"
+import { forComponents, forOptions } from "../keys.js"
+
+type SchemaElements = {
+	[ul.class]: values.Value[]
+	[ul.product]: values.Value[]
+	[ul.component]: values.Value[]
+	[ul.coproduct]: values.Value[]
+	[ul.option]: values.Value[]
+}
 
 /**
  * Convert a schema to an encoded instance of the schema schema
  * @param {Schema} schema
  * @returns {Uint8Array} an encoded instance of the schema schema
  */
-export function encodeSchema<S extends { [K in string]: Type }>(
-	schema: Schema<S>
-): Uint8Array {
-	const elements: { [K in keyof SchemaSchema]: Value<SchemaSchema[K]>[] } = {
+export function encodeSchema(schema: Schema): Uint8Array {
+	const elements: SchemaElements = {
 		[ul.class]: [],
 		[ul.product]: [],
 		[ul.component]: [],
@@ -25,9 +31,10 @@ export function encodeSchema<S extends { [K in string]: Type }>(
 		[ul.option]: [],
 	}
 
-	const indices = new Map(
-		map(Array.from(schema.keys()).entries(), ([index, key]) => [key, index])
-	)
+	const indices = new Map<string, number>()
+	for (const key of schema.keys()) {
+		indices.set(key, schema.indexOfKey(key))
+	}
 
 	for (const [key, type] of schema.entries()) {
 		const value = fromType(elements, indices, type)
@@ -40,20 +47,20 @@ export function encodeSchema<S extends { [K in string]: Type }>(
 	return encodeInstance(instance)
 }
 
-function fromType<S extends { [K in string]: Type }>(
-	elements: { [K in keyof SchemaSchema]: Value<SchemaSchema[K]>[] },
-	indices: Map<keyof S, number>,
-	type: Type
-): Value<TypeType> {
-	if (type.kind === "uri") {
+function fromType(
+	elements: SchemaElements,
+	indices: Map<string, number>,
+	type: types.Type
+): values.Value {
+	if (types.isURI(type)) {
 		return values.coproduct(ul.uri, values.unit())
-	} else if (type.kind === "literal") {
+	} else if (types.isLiteral(type)) {
 		return values.coproduct(ul.literal, values.uri(type.datatype))
-	} else if (type.kind === "product") {
+	} else if (types.isProduct(type)) {
 		const index = elements[ul.product].length
 		elements[ul.product].push(values.unit())
 
-		for (const [key, component] of forEntries(type.components)) {
+		for (const [key, component] of forComponents(type)) {
 			const value = fromType(elements, indices, component)
 			elements[ul.component].push(
 				values.product({
@@ -65,11 +72,11 @@ function fromType<S extends { [K in string]: Type }>(
 		}
 
 		return values.coproduct(ul.product, values.reference(index))
-	} else if (type.kind === "coproduct") {
+	} else if (types.isCoproduct(type)) {
 		const index = elements[ul.coproduct].length
 		elements[ul.coproduct].push(values.unit())
 
-		for (const [key, option] of forEntries(type.options)) {
+		for (const [key, option] of forOptions(type)) {
 			const value = fromType(elements, indices, option)
 			elements[ul.option].push(
 				values.product({
@@ -81,11 +88,12 @@ function fromType<S extends { [K in string]: Type }>(
 		}
 
 		return values.coproduct(ul.coproduct, values.reference(index))
-	} else if (type.kind === "reference") {
+	} else if (types.isReference(type)) {
 		const index = indices.get(type.key)
 		if (index === undefined) {
 			throw new Error(`internal error`)
 		}
+
 		return values.coproduct(ul.reference, values.reference(index))
 	} else {
 		signalInvalidType(type)

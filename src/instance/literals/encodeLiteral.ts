@@ -3,8 +3,6 @@ import * as microcbor from "microcbor"
 
 import { xsd, rdf } from "@underlay/namespaces"
 
-import type { Value, Literal } from "../../types.js"
-
 import {
 	parseBoolean,
 	parseFloat,
@@ -20,10 +18,10 @@ import {
 	encodeUnsignedVarint,
 } from "../../utils.js"
 
-export function* encodeLiteral<Datatype extends string>(
+export function* encodeLiteral(
 	state: EncodeState,
-	{ datatype }: Literal<Datatype>,
-	{ value }: Value<Literal<Datatype>>
+	datatype: string,
+	value: string
 ): Iterable<Uint8Array> {
 	if (datatype === xsd.boolean) {
 		yield* allocate(state, 1)

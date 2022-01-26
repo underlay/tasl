@@ -1,11 +1,8 @@
 import { parser } from "lezer-tasl"
 import type { SyntaxNode } from "@lezer/common"
 
-import type { Type } from "../types.js"
-
 import { Schema } from "./schema.js"
-import * as types from "./types/types.js"
-import * as std from "./types/std.js"
+import { types } from "./types.js"
 
 const p = parser.configure({ strict: true })
 
@@ -16,7 +13,24 @@ export function parseSchema(input: string): Schema {
 	}
 
 	const namespaces: Record<string, string> = {}
-	const environment: Record<string, Type> = { uri: types.uri(), ...std }
+	const environment: Record<string, types.Type> = {
+		uri: types.uri(),
+		unit: types.unit,
+		string: types.string,
+		boolean: types.boolean,
+		f32: types.f32,
+		f64: types.f64,
+		i8: types.i8,
+		i16: types.i16,
+		i32: types.i32,
+		i64: types.i64,
+		u8: types.u8,
+		u16: types.u16,
+		u32: types.u32,
+		u64: types.u64,
+		bytes: types.bytes,
+		JSON: types.JSON,
+	}
 
 	const slice = ({ from, to }: SyntaxNode) => input.slice(from, to)
 
@@ -33,12 +47,11 @@ export function parseSchema(input: string): Schema {
 		}
 	}
 
-	function parseType(node: SyntaxNode): Type {
+	function parseType(node: SyntaxNode): types.Type {
 		if (node.name === "Type") {
 			const id = slice(node)
 			const type = environment[id]
 			if (type === undefined) {
-				console.error(id, environment)
 				throw new Error(
 					`invalid type variable - no type with name "${id}"" has been declared`
 				)
@@ -55,7 +68,7 @@ export function parseSchema(input: string): Schema {
 
 			return types.literal(getTerm(key))
 		} else if (node.name === "Product") {
-			const components: { [K in string]: Type } = {}
+			const components: Record<string, types.Type> = {}
 			const entries = node.getChildren("Component")
 			for (const entry of entries) {
 				const term = entry.getChild("Key")
@@ -80,7 +93,7 @@ export function parseSchema(input: string): Schema {
 
 			return types.product(components)
 		} else if (node.name === "Coproduct") {
-			const options: { [K in string]: Type } = {}
+			const options: Record<string, types.Type> = {}
 			const entries = node.getChildren("Option")
 			for (const entry of entries) {
 				const term = entry.getChild("Key")
@@ -95,7 +108,7 @@ export function parseSchema(input: string): Schema {
 
 				const expression = entry.getChild("Expression")
 				if (expression === null) {
-					options[key] = std.unit
+					options[key] = types.unit
 				} else {
 					options[key] = parseType(expression)
 				}
@@ -116,7 +129,7 @@ export function parseSchema(input: string): Schema {
 		}
 	}
 
-	const classes: { [K in string]: Type } = {}
+	const classes: Record<string, types.Type> = {}
 	for (
 		let node = tree.topNode.firstChild;
 		node !== null;

@@ -1,41 +1,66 @@
-import type { Type, Value } from "../types.js"
 import type { Schema } from "../schema/schema.js"
 
-import * as values from "./values/index.js"
-
 import { validateInstance } from "./validateInstance.js"
+import { values } from "./values.js"
 
-export class Instance<
-	S extends { [K in string]: Type } = { [K in string]: Type }
-> {
+export class Instance {
 	constructor(
-		readonly schema: Schema<S>,
-		readonly elements: { [K in keyof S]: Value<S[K]>[] }
+		readonly schema: Schema,
+		readonly elements: Record<string, values.Value[]>
 	) {
 		validateInstance(schema, elements)
 	}
 
-	count(key: keyof S): number {
-		return this.elements[key].length
+	count(key: string): number {
+		const elements = this.elements[key]
+		if (elements === undefined) {
+			throw new Error("key not found")
+		}
+
+		return elements.length
 	}
 
-	get<K extends keyof S>(key: K, index: number): Value<S[K]> {
-		return this.elements[key][index]
+	get(key: string, index: number): values.Value {
+		const elements = this.elements[key]
+		if (elements === undefined) {
+			throw new Error("key not found")
+		}
+
+		if (elements[index] === undefined) {
+			throw new Error("index out of range")
+		}
+
+		return elements[index]
 	}
 
-	*keys<K extends keyof S>(key: K): Iterable<number> {
-		yield* this.elements[key].keys()
+	*keys(key: string): Iterable<number> {
+		const elements = this.elements[key]
+		if (elements === undefined) {
+			throw new Error("key not found")
+		}
+
+		yield* elements.keys()
 	}
 
-	*values<K extends keyof S>(key: K): Iterable<Value<S[K]>> {
-		yield* this.elements[key].values()
+	*values(key: string): Iterable<values.Value> {
+		const elements = this.elements[key]
+		if (elements === undefined) {
+			throw new Error("key not found")
+		}
+
+		yield* elements.values()
 	}
 
-	*entries<K extends keyof S>(key: K): Iterable<[number, Value<S[K]>]> {
-		yield* this.elements[key].entries()
+	*entries(key: string): Iterable<[number, values.Value]> {
+		const elements = this.elements[key]
+		if (elements === undefined) {
+			throw new Error("key not found")
+		}
+
+		yield* elements.entries()
 	}
 
-	isEqualTo<T extends { [K in string]: Type }>(instance: Instance<T>): boolean {
+	isEqualTo(instance: Instance): boolean {
 		if (Object.is(this, instance)) {
 			return true
 		}
@@ -50,8 +75,8 @@ export class Instance<
 			}
 
 			for (const [index, x] of this.entries(key)) {
-				const y = instance.get(key as keyof T, index) as Value
-				if (!values.isEqualTo(type, x, y as Value<S[keyof S]>)) {
+				const y = instance.get(key, index)
+				if (!values.isEqualTo(type, x, y)) {
 					return false
 				} else {
 					continue

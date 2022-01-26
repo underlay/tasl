@@ -1,5 +1,5 @@
 import { encodeLiteral } from "./literals/index.js"
-import { getIndexOfKey } from "../keys.js"
+import { forComponents, indexOfOption } from "../keys.js"
 
 import { version } from "../version.js"
 
@@ -10,24 +10,19 @@ import {
 	encodeUnsignedVarint,
 	makeEncodeState,
 } from "../utils.js"
-import { forEntries, map } from "../keys.js"
 
-import type { Type, Value } from "../types.js"
+import { types } from "../schema/index.js"
+
 import { Instance } from "./instance.js"
+import { values } from "./values.js"
 
 /**
  * Encode an instance to a byte array
  * @param {Instance} instance
  * @returns {Uint8Array}
  */
-export function encodeInstance<S extends { [K in string]: Type }>(
-	instance: Instance<S>
-): Uint8Array {
+export function encodeInstance(instance: Instance): Uint8Array {
 	const chunks: Uint8Array[] = []
-
-	const offsets = Object.fromEntries(
-		map(instance.schema.keys(), (key) => [key, new Array(instance.count(key))])
-	) as { [K in keyof S]: number[] }
 
 	let byteLength = 0
 
@@ -47,8 +42,7 @@ export function encodeInstance<S extends { [K in string]: Type }>(
 		// write the number of elements in the class
 		process(encodeUnsignedVarint(state, instance.count(key)))
 
-		for (const [i, value] of instance.entries(key)) {
-			offsets[key][i] = byteLength + state.offset
+		for (const value of instance.values(key)) {
 			process(encodeValue(state, instance, type, value))
 		}
 	}
@@ -69,11 +63,11 @@ export function encodeInstance<S extends { [K in string]: Type }>(
 	return new Uint8Array(buffer)
 }
 
-function* encodeValue<S extends { [K in string]: Type }, T extends Type>(
+function* encodeValue(
 	state: EncodeState,
-	instance: Instance<S>,
-	type: T,
-	value: Value<T>
+	instance: Instance,
+	type: types.Type,
+	value: values.Value
 ): Iterable<Uint8Array> {
 	if (type.kind === "reference") {
 		if (instance.schema.has(type.key)) {
@@ -98,25 +92,24 @@ function* encodeValue<S extends { [K in string]: Type }, T extends Type>(
 		}
 	} else if (type.kind === "literal") {
 		if (value.kind === "literal") {
-			yield* encodeLiteral(state, type, value)
+			yield* encodeLiteral(state, type.datatype, value.value)
 		} else {
 			throw new Error("expected a literal value")
 		}
 	} else if (type.kind === "product") {
 		if (value.kind == "product") {
-			for (const [key, component] of forEntries(type.components)) {
-				if (key in value.components) {
-					yield* encodeValue(state, instance, component, value.components[key])
-				} else {
-					throw new Error("missing component")
+			for (const [key, component] of forComponents(type)) {
+				if (value.components[key] === undefined) {
+					throw new Error("key not found")
 				}
+				yield* encodeValue(state, instance, component, value.components[key])
 			}
 		} else {
 			throw new Error("expected a product value")
 		}
 	} else if (type.kind === "coproduct") {
 		if (value.kind === "coproduct") {
-			const index = getIndexOfKey(type.options, value.key)
+			const index = indexOfOption(type, value.key)
 			yield* encodeUnsignedVarint(state, index)
 			yield* encodeValue(state, instance, type.options[value.key], value.value)
 		} else {

@@ -156,7 +156,7 @@ test("encode/decode literals", (t) => {
 	for (const datatype of datatypes) {
 		const type = types.literal(datatype)
 		for (const [i, _] of literals[datatype]) {
-			process(encodeLiteral(encodeState, type, { kind: "literal", value: i }))
+			process(encodeLiteral(encodeState, type.datatype, i))
 		}
 	}
 
@@ -186,7 +186,7 @@ test("encode/decode literals", (t) => {
 			t.deepEqual(Buffer.from(source), output, `encode ${datatype} ${i}`)
 
 			// test decode
-			const value = decodeLiteral(decodeState, type)
+			const value = decodeLiteral(decodeState, type.datatype)
 			t.is(
 				o.length / 2,
 				decodeState.offset - offset,

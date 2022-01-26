@@ -20,8 +20,6 @@ export const expressionType = types.coproduct({
 	[ul.coproduct]: types.reference(ul.coproduct),
 })
 
-export type ExpressionType = typeof expressionType
-
 export const mappingSchema = new Schema({
 	[ul.map]: types.product({
 		[ul.source]: types.uri(),
@@ -55,7 +53,3 @@ export const mappingSchema = new Schema({
 		[ul.value]: expressionType,
 	}),
 })
-
-export type MappingSchema = typeof mappingSchema extends Schema<infer S>
-	? S
-	: never

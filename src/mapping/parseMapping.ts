@@ -4,7 +4,7 @@ import type { SyntaxNode } from "@lezer/common"
 import { Schema } from "../schema/index.js"
 
 import { Mapping } from "./mapping.js"
-import * as expressions from "./expressions/index.js"
+import { expressions } from "./expressions.js"
 
 const strictParser = parser.configure({ strict: true })
 
@@ -35,7 +35,7 @@ export function parseMapping(
 		}
 	}
 
-	function parsePath(node: SyntaxNode): Mapping.Term {
+	function parsePath(node: SyntaxNode): expressions.Term {
 		const identifier = node.getChild("Identifier")
 		if (identifier === null) {
 			throw new Error("internal parse error - missing Value/Identifier node")
@@ -43,7 +43,7 @@ export function parseMapping(
 
 		const id = slice(identifier)
 		const segments = node.getChildren("Segment")
-		return segments.reduce<Mapping.Term>((term, segment) => {
+		return segments.reduce<expressions.Term>((term, segment) => {
 			if (segment.name === "Projection") {
 				const key = segment.getChild("Key")
 				if (key === null) {
@@ -66,7 +66,7 @@ export function parseMapping(
 		}, expressions.variable(id))
 	}
 
-	function parseExpression(node: SyntaxNode): Mapping.Expression {
+	function parseExpression(node: SyntaxNode): expressions.Expression {
 		if (node.name === "URI") {
 			const value = slice(node).slice(1, -1)
 			return expressions.uri(value)
@@ -81,7 +81,7 @@ export function parseMapping(
 		} else if (node.name === "Path") {
 			return parsePath(node)
 		} else if (node.name === "Construction") {
-			const components: { [K in string]: Mapping.Expression } = {}
+			const components: Record<string, expressions.Expression> = {}
 			const entries = node.getChildren("Slot")
 			for (const entry of entries) {
 				const term = entry.getChild("Key")
@@ -113,9 +113,7 @@ export function parseMapping(
 				throw new Error("internal parse error - missing Match/Value node")
 			}
 
-			const cases: {
-				[K in string]: { id: string; value: Mapping.Expression }
-			} = {}
+			const cases: Record<string, expressions.Case> = {}
 
 			const entries = node.getChildren("Case")
 			for (const entry of entries) {
@@ -155,10 +153,10 @@ export function parseMapping(
 	}
 
 	const parseInjections = (
-		expression: Mapping.Expression,
+		expression: expressions.Expression,
 		injections: SyntaxNode[]
 	) =>
-		injections.reduce<Mapping.Expression>((expression, injection) => {
+		injections.reduce<expressions.Expression>((expression, injection) => {
 			const key = injection.getChild("Key")
 			if (key === null) {
 				throw new Error("internal parse error - missing Injection/Key node")
@@ -168,7 +166,7 @@ export function parseMapping(
 		}, expression)
 
 	const mapping: {
-		[K in string]: { id: string; source: string; value: Mapping.Expression }
+		[K in string]: { id: string; source: string; value: expressions.Expression }
 	} = {}
 
 	for (

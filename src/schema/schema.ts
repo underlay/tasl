@@ -1,20 +1,14 @@
-import type { Type } from "../types.js"
-
-import * as types from "./types/index.js"
+import { types } from "./types.js"
 import { validateSchema } from "./validateSchema.js"
 
-export class Schema<
-	S extends { [K in string]: Type } = { [K in string]: Type }
-> {
-	private readonly _keys: readonly (keyof S)[]
-	constructor(readonly classes: S) {
-		this._keys = Object.freeze(
-			Object.keys(classes).sort()
-		) as readonly (keyof S)[]
-		validateSchema(classes)
+export class Schema {
+	#keys: readonly string[]
+
+	constructor(readonly classes: Record<string, types.Type>) {
+		this.#keys = validateSchema(classes)
 	}
 
-	get<K extends keyof S>(key: K): S[K] {
+	get(key: string): types.Type {
 		const type = this.classes[key]
 		if (type === undefined) {
 			throw new Error(`schema does not have a class with key ${key}`)
@@ -23,35 +17,51 @@ export class Schema<
 		}
 	}
 
-	has(key: string | number | symbol): key is keyof S {
+	has(key: string): boolean {
 		return key in this.classes
 	}
 
-	*keys(): Iterable<keyof S> {
-		for (const key of this._keys) {
-			yield key
-		}
+	*keys(): Iterable<string> {
+		yield* this.#keys
 	}
 
-	*values(): Iterable<S[keyof S]> {
-		for (const key of this._keys) {
+	*values(): Iterable<types.Type> {
+		for (const key of this.#keys) {
 			yield this.classes[key]
 		}
 	}
 
-	*entries(): Iterable<[keyof S, S[keyof S]]> {
-		for (const key of this._keys) {
+	*entries(): Iterable<[string, types.Type]> {
+		for (const key of this.#keys) {
 			yield [key, this.classes[key]]
 		}
 	}
 
-	isEqualTo<S extends { [K in string]: Type }>(schema: Schema<S>): boolean {
+	indexOfKey(key: string): number {
+		const index = this.#keys.indexOf(key)
+		if (index === -1) {
+			throw new Error("key not found")
+		}
+
+		return index
+	}
+
+	keyAtIndex(index: number): string {
+		const key = this.#keys[index]
+		if (key === undefined) {
+			throw new Error("index out of range")
+		}
+
+		return key
+	}
+
+	isEqualTo(schema: Schema): boolean {
 		if (Object.is(this, schema)) {
 			return true
 		}
 
 		for (const key of this.keys()) {
-			if (schema.has(key as string)) {
+			if (schema.has(key)) {
 				continue
 			} else {
 				return false

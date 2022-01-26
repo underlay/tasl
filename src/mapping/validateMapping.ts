@@ -1,22 +1,16 @@
-import { forEntries } from "../keys.js"
 import { signalInvalidType } from "../utils.js"
 
 import { Schema, types } from "../schema/index.js"
-import type { Mapping } from "./mapping.js"
-import type { Type } from "../types.js"
 
-/**
- *
- * @param source the source schema
- * @param mapping a mapping from the source schema to the target schema
- * @param target the target schema
- * @throws an error if the mapping does not match the source and target
- */
-export function validateMapping<
-	S extends { [K in string]: Type },
-	T extends { [K in string]: Type }
->(source: Schema<S>, target: Schema<T>, maps: Mapping.Map[]) {
-	const targets = new Map<string | number | symbol, Mapping.Map>()
+import type { expressions } from "./expressions.js"
+import { forComponents, forOptions } from "../keys.js"
+
+export function validateMapping(
+	source: Schema,
+	target: Schema,
+	maps: expressions.Map[]
+) {
+	const targets = new Map<string, expressions.Map>()
 	for (const map of maps) {
 		if (targets.has(map.target)) {
 			throw new Error("duplicate target in mapping")
@@ -37,12 +31,12 @@ export function validateMapping<
 	}
 }
 
-function validateExpression<S extends { [K in string]: Type }>(
-	source: Schema<S>,
-	targets: Map<string | number | symbol, Mapping.Map>,
-	expression: Mapping.Expression,
-	type: Type,
-	environment: Record<string, Type>
+function validateExpression(
+	source: Schema,
+	targets: Map<string, expressions.Map>,
+	expression: expressions.Expression,
+	type: types.Type,
+	environment: Record<string, types.Type>
 ) {
 	if (expression.kind === "uri") {
 		if (type.kind !== "uri") {
@@ -53,12 +47,12 @@ function validateExpression<S extends { [K in string]: Type }>(
 			throw new Error("unexpected literal value")
 		}
 	} else if (expression.kind === "match") {
-		const value = getTermType(source, expression.value, environment)
-		if (value.kind !== "coproduct") {
+		const termType = getTermType(source, expression.value, environment)
+		if (termType.kind !== "coproduct") {
 			throw new Error("the value of a match expression must be a coproduct")
 		}
 
-		for (const [key, option] of forEntries(value.options)) {
+		for (const [key, option] of forOptions(termType)) {
 			const c = expression.cases[key]
 			if (c === undefined) {
 				throw new Error(`missing case for option ${key}`)
@@ -72,7 +66,7 @@ function validateExpression<S extends { [K in string]: Type }>(
 			throw new Error("unexpected product expression")
 		}
 
-		for (const [key, component] of forEntries(type.components)) {
+		for (const [key, component] of forComponents(type)) {
 			const entry = expression.components[key]
 			if (entry === undefined) {
 				throw new Error(`missing slot for component ${key}`)
@@ -108,11 +102,11 @@ function validateExpression<S extends { [K in string]: Type }>(
 	}
 }
 
-function getTermType<S extends { [K in string]: Type }>(
-	source: Schema<S>,
-	value: Mapping.Term,
-	environment: Record<string, Type>
-): Type {
+function getTermType(
+	source: Schema,
+	value: expressions.Term,
+	environment: Record<string, types.Type>
+): types.Type {
 	if (value.kind === "variable") {
 		const type = environment[value.id]
 		if (type === undefined) {

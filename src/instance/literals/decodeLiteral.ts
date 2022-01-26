@@ -3,18 +3,13 @@ import * as microcbor from "microcbor"
 
 import { rdf, xsd } from "@underlay/namespaces"
 
-import type { Literal } from "../../types.js"
-
 import {
 	floatToString,
 	decodeUnsignedVarint,
 	DecodeState,
 } from "../../utils.js"
 
-export function decodeLiteral(
-	state: DecodeState,
-	{ datatype }: Literal
-): string {
+export function decodeLiteral(state: DecodeState, datatype: string): string {
 	if (datatype === xsd.boolean) {
 		const value = state.view.getUint8(state.offset)
 		state.offset += 1
@@ -23,8 +18,7 @@ export function decodeLiteral(
 		} else if (value === 1) {
 			return "true"
 		} else {
-			console.error(value)
-			throw new Error(`invalid boolean value`)
+			throw new Error("invalid boolean value")
 		}
 	} else if (datatype === xsd.float) {
 		const value = state.view.getFloat32(state.offset)

@@ -1,15 +1,13 @@
 import { ul } from "@underlay/namespaces"
 
-import { iota, signalInvalidType } from "../utils.js"
-import { map, mapValues } from "../keys.js"
+import { iota } from "../utils.js"
 
-import type { Type, Value } from "../types.js"
 import type { Schema } from "../schema/index.js"
-import { decodeInstance } from "../instance/index.js"
+import { decodeInstance, values } from "../instance/index.js"
 
-import { ExpressionType, TermType, mappingSchema } from "./mappingSchema.js"
+import { mappingSchema } from "./mappingSchema.js"
 import { Mapping } from "./mapping.js"
-import * as expressions from "./expressions/index.js"
+import { expressions } from "./expressions.js"
 
 /**
  * Convert an encoded instance of the mapping schema to a mapping
@@ -18,152 +16,322 @@ import * as expressions from "./expressions/index.js"
  * @param {Uint8Array} data
  * @returns {Mapping}
  */
-export function decodeMapping<
-	S extends { [K in string]: Type },
-	T extends { [K in string]: Type }
->(source: Schema<S>, target: Schema<T>, data: Uint8Array): Mapping<S, T> {
+export function decodeMapping(
+	source: Schema,
+	target: Schema,
+	data: Uint8Array
+): Mapping {
 	const instance = decodeInstance(mappingSchema, data)
 
-	const products: Record<string, Value<ExpressionType>>[] = Array.from(
+	const products: Record<string, values.Value>[] = Array.from(
 		iota(instance.count(ul.product), (_) => ({}))
 	)
 
 	for (const element of instance.values(ul.component)) {
-		const value = element.components[ul.value]
-		const { value: key } = element.components[ul.key]
-		const { index } = element.components[ul.source]
-		const components = products[index]
+		if (!values.isProduct(element)) {
+			throw new Error("internal error decoding mapping")
+		}
+
+		const {
+			[ul.source]: source,
+			[ul.key]: key,
+			[ul.value]: value,
+		} = element.components
+
+		if (source === undefined) {
+			throw new Error("internal error decoding mapping")
+		} else if (!values.isReference(source)) {
+			throw new Error("internal error decoding mapping")
+		} else if (key === undefined) {
+			throw new Error("internal error decoding mapping")
+		} else if (!values.isURI(key)) {
+			throw new Error("internal error decoding mapping")
+		} else if (value === undefined) {
+			throw new Error("internal error decoding mapping")
+		} else if (!values.isCoproduct(value)) {
+			throw new Error("internal error decoding mapping")
+		}
+
+		const components = products[source.index]
 		if (components === undefined) {
 			throw new Error("broken construction reference value")
-		} else if (key in components) {
+		} else if (key.value in components) {
 			throw new Error("duplicate slot keys")
 		} else {
-			components[key] = value
+			components[key.value] = value
 		}
 	}
 
-	const matches: Record<
-		string,
-		{ index: number; value: Value<ExpressionType> }
-	>[] = Array.from(iota(instance.count(ul.match), (_) => ({})))
+	const matches: Record<string, { index: number; value: values.Value }>[] =
+		Array.from(iota(instance.count(ul.match), (_) => ({})))
 
 	for (const [i, element] of instance.entries(ul.case)) {
-		const value = element.components[ul.value]
-		const { value: key } = element.components[ul.key]
-		const { index } = element.components[ul.source]
-		const cases = matches[index]
+		if (!values.isProduct(element)) {
+			throw new Error("internal error decoding mapping")
+		}
+
+		const {
+			[ul.source]: source,
+			[ul.key]: key,
+			[ul.value]: value,
+		} = element.components
+
+		if (source === undefined) {
+			throw new Error("internal error decoding mapping")
+		} else if (!values.isReference(source)) {
+			throw new Error("internal error decoding mapping")
+		} else if (key === undefined) {
+			throw new Error("internal error decoding mapping")
+		} else if (!values.isURI(key)) {
+			throw new Error("internal error decoding mapping")
+		} else if (value === undefined) {
+			throw new Error("internal error decoding mapping")
+		} else if (!values.isCoproduct(value)) {
+			throw new Error("internal error decoding mapping")
+		}
+
+		const cases = matches[source.index]
 		if (cases === undefined) {
 			throw new Error("broken match reference value")
-		} else if (key in cases) {
+		} else if (key.value in cases) {
 			throw new Error("duplicate case keys")
 		} else {
-			cases[key] = { index: i, value }
+			cases[key.value] = { index: i, value }
 		}
+	}
+
+	interface TermContext {
+		projection: Set<number>
+		dereference: Set<number>
 	}
 
 	function toTerm(
-		value: Value<TermType>,
-		projections = new Set<number>(),
-		dereferences = new Set<number>()
-	): Mapping.Term {
-		if (value.key === ul.map) {
-			const { index } = value.value
-			return expressions.variable(`m${index}`)
-		} else if (value.key === ul.case) {
-			const { index } = value.value
-			return expressions.variable(`c${index}`)
-		} else if (value.key === ul.projection) {
-			const { index } = value.value
-			if (projections.has(index)) {
+		term: values.Coproduct,
+		context: TermContext
+	): expressions.Term {
+		if (term.key === ul.map) {
+			if (!values.isReference(term.value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			return expressions.variable(`m${term.value.index}`)
+		} else if (term.key === ul.case) {
+			if (!values.isReference(term.value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			return expressions.variable(`c${term.value.index}`)
+		} else if (term.key === ul.projection) {
+			if (!values.isReference(term.value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			if (context.projection.has(term.value.index)) {
 				throw new Error("projection cycle detected")
 			} else {
-				projections.add(index)
+				context.projection.add(term.value.index)
 			}
 
-			const element = instance.get(ul.projection, index)
-			const { value: key } = element.components[ul.key]
-			const term = toTerm(
-				element.components[ul.value],
-				projections,
-				dereferences
-			)
-			return expressions.projection(key, term)
-		} else if (value.key === ul.dereference) {
-			const { index } = value.value
-			if (dereferences.has(index)) {
+			const element = instance.get(ul.projection, term.value.index)
+			if (!values.isProduct(element)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			const { [ul.key]: key, [ul.value]: value } = element.components
+
+			if (key === undefined) {
+				throw new Error("internal error decoding mapping")
+			} else if (!values.isURI(key)) {
+				throw new Error("internal error decoding mapping")
+			} else if (value === undefined) {
+				throw new Error("internal error decoding mapping")
+			} else if (!values.isCoproduct(value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			return expressions.projection(key.value, toTerm(value, context))
+		} else if (term.key === ul.dereference) {
+			if (!values.isReference(term.value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			if (context.dereference.has(term.value.index)) {
 				throw new Error("dereference cycle detected")
 			} else {
-				dereferences.add(index)
+				context.dereference.add(term.value.index)
 			}
 
-			const element = instance.get(ul.dereference, index)
-			const { value: key } = element.components[ul.key]
-			const term = toTerm(
-				element.components[ul.value],
-				projections,
-				dereferences
-			)
-			return expressions.dereference(key, term)
+			const element = instance.get(ul.dereference, term.value.index)
+			if (!values.isProduct(element)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			const { [ul.key]: key, [ul.value]: value } = element.components
+
+			if (key === undefined) {
+				throw new Error("internal error decoding mapping")
+			} else if (!values.isURI(key)) {
+				throw new Error("internal error decoding mapping")
+			} else if (value === undefined) {
+				throw new Error("internal error decoding mapping")
+			} else if (!values.isCoproduct(value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			return expressions.dereference(key.value, toTerm(value, context))
 		} else {
-			signalInvalidType(value)
+			throw new Error("internal error decoding mapping")
 		}
+	}
+
+	interface ExpressionContext {
+		match: Set<number>
+		product: Set<number>
+		coproduct: Set<number>
 	}
 
 	function toExpression(
-		expression: Value<ExpressionType>,
-		context = {
-			match: new Set<number>(),
-			product: new Set<number>(),
-			coproduct: new Set<number>(),
-		}
-	): Mapping.Expression {
+		expression: values.Coproduct,
+		context: ExpressionContext
+	): expressions.Expression {
 		if (expression.key === ul.uri) {
-			return expressions.uri(expression.value.value)
-		} else if (expression.key === ul.literal) {
-			const { value } = expression.value
-			return expressions.literal(value)
-		} else if (expression.key === ul.match) {
-			const { index } = expression.value
-			const element = instance.get(ul.match, index)
-			const value = element.components[ul.value]
-			const cases = mapValues(matches[index], ({ index, value }) => ({
-				id: `c${index}`,
-				value: toExpression(value),
-			}))
-
-			return expressions.match(toTerm(value), cases)
-		} else if (expression.key === ul.product) {
-			const { index } = expression.value
-			return expressions.product(
-				mapValues(products[index], (value) => toExpression(value, context))
-			)
-		} else if (expression.key === ul.coproduct) {
-			const { index } = expression.value
-			if (context.coproduct.has(index)) {
-				throw new Error("injection cycle detected")
-			} else {
-				context.coproduct.add(index)
+			if (!values.isURI(expression.value)) {
+				throw new Error("internal error decoding mapping")
 			}
 
-			const element = instance.get(ul.coproduct, index)
-			const { value: key } = element.components[ul.key]
-			const value = element.components[ul.value]
-			return expressions.coproduct(key, toExpression(value, context))
+			return expressions.uri(expression.value.value)
+		} else if (expression.key === ul.literal) {
+			if (!values.isLiteral(expression.value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			return expressions.literal(expression.value.value)
+		} else if (expression.key === ul.match) {
+			if (!values.isReference(expression.value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			const element = instance.get(ul.match, expression.value.index)
+			if (!values.isProduct(element)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			const { [ul.value]: value } = element.components
+			if (value === undefined) {
+				throw new Error("internal error decoding mapping")
+			} else if (!values.isCoproduct(value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			const cases = Object.fromEntries(
+				Object.entries(matches[expression.value.index]).map(
+					([key, { index, value }]) => {
+						if (!values.isCoproduct(value)) {
+							throw new Error("internal error decoding mapping")
+						}
+						return [
+							key,
+							{ id: `c${index}`, value: toExpression(value, context) },
+						]
+					}
+				)
+			)
+
+			return expressions.match(
+				toTerm(value, { dereference: new Set(), projection: new Set() }),
+				cases
+			)
+		} else if (expression.key === ul.product) {
+			if (!values.isReference(expression.value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			const components = Object.fromEntries(
+				Object.entries(products[expression.value.index]).map(([key, value]) => {
+					if (!values.isCoproduct(value)) {
+						throw new Error("internal error decoding mapping")
+					}
+
+					return [key, toExpression(value, context)]
+				})
+			)
+
+			return expressions.product(components)
+		} else if (expression.key === ul.coproduct) {
+			if (!values.isReference(expression.value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			if (context.coproduct.has(expression.value.index)) {
+				throw new Error("coproduct injection cycle detected")
+			} else {
+				context.coproduct.add(expression.value.index)
+			}
+
+			const element = instance.get(ul.coproduct, expression.value.index)
+			if (!values.isProduct(element)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			const { [ul.key]: key, [ul.value]: value } = element.components
+			if (key === undefined) {
+				throw new Error("internal error decoding mapping")
+			} else if (!values.isURI(key)) {
+				throw new Error("internal error decoding mapping")
+			} else if (value === undefined) {
+				throw new Error("internal error decoding mapping")
+			} else if (!values.isCoproduct(value)) {
+				throw new Error("internal error decoding mapping")
+			}
+
+			return expressions.coproduct(key.value, toExpression(value, context))
 		} else {
-			return toTerm(expression)
+			return toTerm(expression, {
+				projection: new Set(),
+				dereference: new Set(),
+			})
 		}
 	}
 
-	return new Mapping(
-		source,
-		target,
-		Array.from(
-			map(instance.entries(ul.map), ([i, element]) => {
-				const { value: source } = element.components[ul.source]
-				const { value: target } = element.components[ul.target]
-				const expression = toExpression(element.components[ul.value])
-				return { source, target, id: `m${i}`, value: expression }
-			})
-		)
-	)
+	const maps: expressions.Map[] = []
+	for (const [i, element] of instance.entries(ul.map)) {
+		if (!values.isProduct(element)) {
+			throw new Error("internal error decoding mapping")
+		}
+
+		const {
+			[ul.source]: source,
+			[ul.target]: target,
+			[ul.value]: value,
+		} = element.components
+
+		if (source === undefined) {
+			throw new Error("internal error decoding mapping")
+		} else if (!values.isURI(source)) {
+			throw new Error("internal error decoding mapping")
+		} else if (target === undefined) {
+			throw new Error("internal error decoding mapping")
+		} else if (!values.isURI(target)) {
+			throw new Error("internal error decoding mapping")
+		} else if (value === undefined) {
+			throw new Error("internal error decoding mapping")
+		} else if (!values.isCoproduct(value)) {
+			throw new Error("internal error decoding mapping")
+		}
+
+		const expression = toExpression(value, {
+			match: new Set(),
+			product: new Set(),
+			coproduct: new Set(),
+		})
+
+		maps.push({
+			source: source.value,
+			target: target.value,
+			id: `m${i}`,
+			value: expression,
+		})
+	}
+
+	return new Mapping(source, target, maps)
 }

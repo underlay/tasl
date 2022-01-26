@@ -1,14 +1,12 @@
 import { ul } from "@underlay/namespaces"
 
 import { iota } from "../utils.js"
-import { mapValues } from "../keys.js"
 
-import type { Type, Value } from "../types.js"
-import { decodeInstance } from "../instance/index.js"
+import { decodeInstance, values } from "../instance/index.js"
 
 import { Schema } from "./schema.js"
-import * as types from "./types/index.js"
-import { schemaSchema, TypeType } from "./schemaSchema.js"
+import { types } from "./types.js"
+import { schemaSchema } from "./schemaSchema.js"
 
 /**
  * Convert an encoded instance of the schema schema to a Schema
@@ -24,16 +22,34 @@ export function decodeSchema(data: Uint8Array): Schema {
 
 	const instance = decodeInstance(schemaSchema, data)
 
-	const products: Record<string, Value<TypeType>>[] = Array.from(
+	const products: Record<string, values.Value>[] = Array.from(
 		iota(instance.count(ul.product), (_) => ({}))
 	)
 
 	for (const element of instance.values(ul.component)) {
+		if (!values.isProduct(element)) {
+			throw new Error("internal error decoding schema")
+		}
+
 		const {
 			[ul.source]: source,
 			[ul.key]: key,
 			[ul.value]: value,
 		} = element.components
+
+		if (source === undefined) {
+			throw new Error("internal error decoding schema")
+		} else if (!values.isReference(source)) {
+			throw new Error("internal error decoding schema")
+		} else if (key === undefined) {
+			throw new Error("internal error decoding schema")
+		} else if (!values.isURI(key)) {
+			throw new Error("internal error decoding schema")
+		} else if (value === undefined) {
+			throw new Error("internal error decoding schema")
+		} else if (!values.isCoproduct(value)) {
+			throw new Error("internal error decoding schema")
+		}
 
 		const components = products[source.index]
 		if (components === undefined) {
@@ -45,16 +61,34 @@ export function decodeSchema(data: Uint8Array): Schema {
 		}
 	}
 
-	const coproducts: Record<string, Value<TypeType>>[] = Array.from(
+	const coproducts: Record<string, values.Value>[] = Array.from(
 		iota(instance.count(ul.coproduct), (_) => ({}))
 	)
 
 	for (const element of instance.values(ul.option)) {
+		if (!values.isProduct(element)) {
+			throw new Error("internal error decoding schema")
+		}
+
 		const {
 			[ul.source]: source,
 			[ul.key]: key,
 			[ul.value]: value,
 		} = element.components
+
+		if (source === undefined) {
+			throw new Error("internal error decoding schema")
+		} else if (!values.isReference(source)) {
+			throw new Error("internal error decoding schema")
+		} else if (key === undefined) {
+			throw new Error("internal error decoding schema")
+		} else if (!values.isURI(key)) {
+			throw new Error("internal error decoding schema")
+		} else if (value === undefined) {
+			throw new Error("internal error decoding schema")
+		} else if (!values.isCoproduct(value)) {
+			throw new Error("internal error decoding schema")
+		}
 
 		const options = coproducts[source.index]
 		if (options === undefined) {
@@ -66,12 +100,18 @@ export function decodeSchema(data: Uint8Array): Schema {
 		}
 	}
 
-	function toType(value: Value<TypeType>): Type {
+	function toType(value: values.Coproduct): types.Type {
 		if (value.key === ul.uri) {
 			return types.uri()
 		} else if (value.key === ul.literal) {
+			if (!values.isURI(value.value)) {
+				throw new Error("internal error decoding schema")
+			}
 			return types.literal(value.value.value)
 		} else if (value.key === ul.product) {
+			if (!values.isReference(value.value)) {
+				throw new Error("internal error decoding schema")
+			}
 			const { index } = value.value
 
 			// this is how we check for product element re-use.
@@ -86,8 +126,20 @@ export function decodeSchema(data: Uint8Array): Schema {
 				delete products[index]
 			}
 
-			return types.product(mapValues(components, toType))
+			return types.product(
+				Object.fromEntries(
+					Object.entries(components).map(([key, value]) => {
+						if (!values.isCoproduct(value)) {
+							throw new Error("internal error decoding schema")
+						}
+						return [key, toType(value)]
+					})
+				)
+			)
 		} else if (value.key === ul.coproduct) {
+			if (!values.isReference(value.value)) {
+				throw new Error("internal error decoding schema")
+			}
 			const { index } = value.value
 
 			// same for coproducts here...
@@ -98,25 +150,71 @@ export function decodeSchema(data: Uint8Array): Schema {
 				delete coproducts[index]
 			}
 
-			return types.coproduct(mapValues(options, toType))
+			return types.coproduct(
+				Object.fromEntries(
+					Object.entries(options).map(([key, value]) => {
+						if (!values.isCoproduct(value)) {
+							throw new Error("internal error decoding schema")
+						}
+						return [key, toType(value)]
+					})
+				)
+			)
 		} else if (value.key === ul.reference) {
+			if (!values.isReference(value.value)) {
+				throw new Error("internal error decoding schema")
+			}
+
 			const { index } = value.value
 			const element = instance.get(ul.class, index)
+			if (!values.isProduct(element)) {
+				throw new Error("internal error decoding schema")
+			}
+
 			const key = element.components[ul.key]
+			if (key === undefined) {
+				throw new Error("internal error decoding schema")
+			}
+
+			if (!values.isURI(key)) {
+				throw new Error("internal error decoding schema")
+			}
+
 			return types.reference(key.value)
 		} else {
 			throw new Error("internal error decoding instance")
 		}
 	}
 
-	const classes: { [K in string]: Type } = {}
+	const classes: Record<string, types.Type> = {}
 	for (const element of instance.values(ul.class)) {
+		if (!values.isProduct(element)) {
+			throw new Error("internal error decoding schema")
+		}
+
 		const key = element.components[ul.key]
+		if (key === undefined) {
+			throw new Error("internal error decoding schema")
+		}
+
+		if (!values.isURI(key)) {
+			throw new Error("internal error decoding schema")
+		}
+
 		if (key.value in classes) {
 			throw new Error("duplicate class key")
-		} else {
-			classes[key.value] = toType(element.components[ul.value])
 		}
+
+		const value = element.components[ul.value]
+		if (value === undefined) {
+			throw new Error("internal error decoding schema")
+		}
+
+		if (!values.isCoproduct(value)) {
+			throw new Error("internal error decoding schema")
+		}
+
+		classes[key.value] = toType(value)
 	}
 
 	return new Schema(classes)

@@ -1,7 +1,7 @@
 import { ul } from "@underlay/namespaces"
 
 import { Schema } from "./schema.js"
-import { uri, product, coproduct, reference } from "./types/index.js"
+import { types } from "./types.js"
 
 /**
  * typeType is a type that models tasl types.
@@ -12,15 +12,13 @@ import { uri, product, coproduct, reference } from "./types/index.js"
  *   This is harder to model in tasl itself because there may be an aribtrary number of components or options,
  * - Reference types are parametrized by a URI key and can be modeled with the URI type.
  */
-export const typeType = coproduct({
-	[ul.uri]: product({}),
-	[ul.literal]: uri(),
-	[ul.product]: reference(ul.product),
-	[ul.coproduct]: reference(ul.coproduct),
-	[ul.reference]: reference(ul.class),
+export const typeType = types.coproduct({
+	[ul.uri]: types.product({}),
+	[ul.literal]: types.uri(),
+	[ul.product]: types.reference(ul.product),
+	[ul.coproduct]: types.reference(ul.coproduct),
+	[ul.reference]: types.reference(ul.class),
 })
-
-export type TypeType = typeof typeType
 
 /**
  * schemaSchema is a schema that models tasl schemas.
@@ -28,24 +26,20 @@ export type TypeType = typeof typeType
  * a URI key to a type. Here, we represent
  */
 export const schemaSchema = new Schema({
-	[ul.class]: product({
-		[ul.key]: uri(),
+	[ul.class]: types.product({
+		[ul.key]: types.uri(),
 		[ul.value]: typeType,
 	}),
-	[ul.product]: product({}),
-	[ul.component]: product({
-		[ul.source]: reference(ul.product),
-		[ul.key]: uri(),
+	[ul.product]: types.product({}),
+	[ul.component]: types.product({
+		[ul.source]: types.reference(ul.product),
+		[ul.key]: types.uri(),
 		[ul.value]: typeType,
 	}),
-	[ul.coproduct]: product({}),
-	[ul.option]: product({
-		[ul.source]: reference(ul.coproduct),
-		[ul.key]: uri(),
+	[ul.coproduct]: types.product({}),
+	[ul.option]: types.product({
+		[ul.source]: types.reference(ul.coproduct),
+		[ul.key]: types.uri(),
 		[ul.value]: typeType,
 	}),
 })
-
-export type SchemaSchema = typeof schemaSchema extends Schema<infer S>
-	? S
-	: never

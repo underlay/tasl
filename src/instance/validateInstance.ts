@@ -1,15 +1,12 @@
-import type { Value, Type } from "../types.js"
-
 import { Schema, types } from "../schema/index.js"
-
+import { values } from "./values.js"
 import { validateLiteral } from "./literals/index.js"
-import * as values from "./values/index.js"
 
 import { signalInvalidType, validateURI } from "../utils.js"
 
-export function validateInstance<S extends { [K in string]: Type }>(
-	schema: Schema<S>,
-	elements: Record<string, Value[]>
+export function validateInstance(
+	schema: Schema,
+	elements: Record<string, values.Value[]>
 ) {
 	for (const [key, type] of schema.entries()) {
 		if (key in elements) {
@@ -23,9 +20,9 @@ export function validateInstance<S extends { [K in string]: Type }>(
 }
 
 function validateValue(
-	elements: Record<string, Value[]>,
-	type: Type,
-	value: Value
+	elements: Record<string, values.Value[]>,
+	type: types.Type,
+	value: values.Value
 ) {
 	if (types.isURI(type)) {
 		if (!values.isURI(value)) {

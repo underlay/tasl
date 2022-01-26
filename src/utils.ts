@@ -1,5 +1,10 @@
 import varint from "varint"
 
+export function getKeys(object: Record<string, any>): readonly string[] {
+	const keys = Object.keys(object).sort()
+	return Object.freeze(keys)
+}
+
 export function signalInvalidType(type: never): never {
 	console.error(type)
 	throw new Error("invalid type")

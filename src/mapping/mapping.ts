@@ -1,66 +1,22 @@
-import { mapEntries, mapKeys } from "../keys.js"
 import { signalInvalidType } from "../utils.js"
 
-import type { Type, Value } from "../types.js"
-import type { Schema } from "../schema/index.js"
+import type { Schema, types } from "../schema/index.js"
 import { Instance, values } from "../instance/index.js"
 import { validateMapping } from "./validateMapping.js"
 
-export namespace Mapping {
-	export type Map = {
-		source: string
-		target: string
-		id: string
-		value: Expression
-	}
+import type { expressions } from "./expressions.js"
+import { forComponents } from "../keys.js"
 
-	export type Expression = URI | Literal | Product | Coproduct | Term | Match
-
-	export type URI = { kind: "uri"; value: string }
-
-	export type Literal = { kind: "literal"; value: string }
-
-	export type Product = {
-		kind: "product"
-		components: { [K in string]: Expression }
-	}
-
-	export type Coproduct = {
-		kind: "coproduct"
-		key: string
-		value: Expression
-	}
-
-	export type Term = Variable | Projection | Dereference
-
-	export type Variable = { kind: "variable"; id: string }
-
-	export type Projection = { kind: "projection"; key: string; value: Term }
-
-	export type Dereference = { kind: "dereference"; key: string; value: Term }
-
-	export type Case = { id: string; value: Expression }
-
-	export type Match = {
-		kind: "match"
-		value: Term
-		cases: { [K in string]: Case }
-	}
-}
-
-export class Mapping<
-	S extends { [K in string]: Type } = { [K in string]: Type },
-	T extends { [K in string]: Type } = { [K in string]: Type }
-> {
+export class Mapping {
 	constructor(
-		readonly source: Schema<S>,
-		readonly target: Schema<T>,
-		readonly maps: Mapping.Map[]
+		readonly source: Schema,
+		readonly target: Schema,
+		readonly maps: expressions.Map[]
 	) {
 		validateMapping(source, target, maps)
 	}
 
-	get(target: keyof T): Mapping.Map {
+	get(target: string): expressions.Map {
 		const map = this.maps.find((map) => map.target === target)
 		if (map === undefined) {
 			throw new Error(`mapping does not have a map with target ${target}`)
@@ -69,44 +25,43 @@ export class Mapping<
 		}
 	}
 
-	apply(instance: Instance<S>): Instance<T> {
+	*values(): Iterable<expressions.Map> {
+		for (const map of this.maps) {
+			yield map
+		}
+	}
+
+	apply(instance: Instance): Instance {
 		if (!this.source.isEqualTo(instance.schema)) {
 			throw new Error(
 				"a mapping can only be applied to an instance of its source schema"
 			)
 		}
 
-		const elements: { [K in string]: Value[] } = mapEntries(
-			this.target.classes,
-			([key, targetType]) => {
-				const { value: expression, id, source } = this.get(key)
-				const sourceType = this.source.get(source)
-
-				const elements: Value[] = []
-				for (const element of instance.values(source)) {
-					elements.push(
-						this.applyExpression(instance, expression, targetType, {
-							[id]: [sourceType, element],
-						})
-					)
-				}
-
-				return elements
+		const elements: Record<string, values.Value[]> = {}
+		for (const [key, targetType] of this.target.entries()) {
+			const { value: expression, id, source: sourceKey } = this.get(key)
+			const sourceType = this.source.get(sourceKey)
+			elements[key] = new Array(instance.count(sourceKey))
+			for (const [index, value] of instance.entries(sourceKey)) {
+				elements[key][index] = this.applyExpression(
+					instance,
+					expression,
+					targetType,
+					{ [id]: [sourceType, value] }
+				)
 			}
-		)
+		}
 
-		return new Instance(
-			this.target,
-			elements as { [K in keyof T]: Value<T[K]>[] }
-		)
+		return new Instance(this.target, elements)
 	}
 
 	private applyExpression(
-		instance: Instance<S>,
-		expression: Mapping.Expression,
-		targetType: Type,
-		environment: Record<string, [Type, Value]>
-	): Value {
+		instance: Instance,
+		expression: expressions.Expression,
+		targetType: types.Type,
+		environment: Record<string, [types.Type, values.Value]>
+	): values.Value {
 		if (expression.kind === "uri") {
 			if (targetType.kind !== "uri") {
 				throw new Error("unexpected URI expression")
@@ -124,14 +79,20 @@ export class Mapping<
 				throw new Error("unexpected construction expression")
 			}
 
-			const components = mapEntries(targetType.components, ([key, target]) => {
+			const components: Record<string, values.Value> = {}
+			for (const [key, target] of forComponents(targetType)) {
 				const source = expression.components[key]
 				if (source === undefined) {
 					throw new Error(`missing component ${key}`)
-				} else {
-					return this.applyExpression(instance, source, target, environment)
 				}
-			})
+
+				components[key] = this.applyExpression(
+					instance,
+					source,
+					target,
+					environment
+				)
+			}
 
 			return values.product(components)
 		} else if (expression.kind === "match") {
@@ -172,10 +133,10 @@ export class Mapping<
 	}
 
 	private evaluateTerm(
-		instance: Instance<S>,
-		term: Mapping.Term,
-		environment: Record<string, [Type, Value]>
-	): [Type, Value] {
+		instance: Instance,
+		term: expressions.Term,
+		environment: Record<string, [types.Type, values.Value]>
+	): [types.Type, values.Value] {
 		if (term.kind === "projection") {
 			const [t, v] = this.evaluateTerm(instance, term.value, environment)
 
@@ -215,7 +176,10 @@ export class Mapping<
 		}
 	}
 
-	private project([t, v]: [Type, Value], targetType: Type): Value {
+	private project(
+		[t, v]: [types.Type, values.Value],
+		targetType: types.Type
+	): values.Value {
 		if (targetType.kind === "uri") {
 			if (t.kind !== "uri") {
 				throw new Error(
@@ -251,18 +215,19 @@ export class Mapping<
 				throw new Error("internal type error")
 			}
 
-			return values.product(
-				mapKeys(targetType.components, (key) => {
-					if (t.components[key] === undefined) {
-						throw new Error(`invalid type - missing component ${key}`)
-					}
+			const components: Record<string, values.Value> = {}
+			for (const [key, component] of forComponents(targetType)) {
+				if (t.components[key] === undefined) {
+					throw new Error(`invalid type - missing component ${key}`)
+				}
 
-					return this.project(
-						[t.components[key], v.components[key]],
-						targetType.components[key]
-					)
-				})
-			)
+				components[key] = this.project(
+					[t.components[key], v.components[key]],
+					component
+				)
+			}
+
+			return values.product(components)
 		} else if (targetType.kind === "coproduct") {
 			if (t.kind !== "coproduct") {
 				throw new Error(
