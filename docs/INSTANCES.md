@@ -3,28 +3,33 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [JSON format](#json-format)
 - [Value factory methods](#value-factory-methods)
 - [Standard value constructors](#standard-value-constructors)
-- [Value predicate methods](#value-predicate-methods)
-- [Type casting](#type-casting)
+- [Binary codec](#binary-codec)
+- [Advanced value utilities](#advanced-value-utilities)
+  - [Value comparison](#value-comparison)
+  - [Type casting](#type-casting)
 
 ## Overview
 
 An `Instance` is a runtime representation of the contents of a dataset. Every instance is an instance of a particular `Schema`, and it has, for each class in its schema, an array of _values_ of the class type. The values at the top-level of each array are called _elements_.
 
-The tasl JavaScript library exports a regular ES6 class `Instance` at the top level. Instances can be instantiated in two ways:
-
-- Passing a JSON representation of the instance into the class constructor `new Instance(schema, ...)`
-- Decoding an instance from the binary format using `decodeInstance(schema: Schema, data: Uint8Array): Instance`
-
-## JSON format
-
-An instance can be instantiated by passing the class constructor a schema `schema: Schema` and an object `elements: Record<string, Value[]>`. The entries of `elements` object must correspond to the classes in the schema.
-
-Each kind of tasl type corresponds to a kind of value, which are represented as JavaScript objects discriminated by a `.kind` property
+The tasl JavaScript library exports a regular ES6 class `Instance` at the top level. Just like `Schema` classes are built out of objects from the `types` namespace, `Instance` classes are built out of objects from the `values` namespace. Each kind of type in `types.` corresponds to a kind of value in `values.`, also represented as regular JavaScript objects discriminated by a `.kind` property.
 
 ```ts
+declare class Instance {
+	constructor(
+		readonly schema: Schema,
+		readonly elements: Record<string, values.Value[]>
+	)
+	count(key: string): number
+	get(key: string, index: number): values.Value
+	keys(key: string): Iterable<number>
+	values(key: string): Iterable<values.Value>
+	entries(key: string): Iterable<[number, values.Value]>
+	isEqualTo(instance: Instance): boolean
+}
+
 type Value = URI | Literal | Product | Coproduct | Reference
 
 type URI = { kind: "uri"; value: string }
@@ -34,9 +39,9 @@ type Coproduct = { kind: "coproduct"; key: string; value: Value }
 type Reference = { kind: "reference"; index: number }
 ```
 
-Note that product and coproduct _types_ have the same structure, product and coproduct _values_ are structurally different. A product value has values for each of its type's components, while a coproduct value only has a value for one of its type's options.
+Instances are always instances of a particular schema, so the first argument to the `Instance` constructor is a `readonly schema: Schema`.
 
-Here's an example instance of the example schema given in [SCHEMAS.md](./SCHEMAS.md)
+Here's an example instance of our example schema.
 
 ```ts
 import { Schema, types, Instance } from "tasl"
@@ -115,11 +120,9 @@ const instance = new Instance(schema, {
 })
 ```
 
-Note that the order of the elements in each array is important since reference values use integer indices.
-
 ## Value factory methods
 
-Similar to the `types` namespace that has utility methods for constructing types, we have a `values` namespace with analogous utility methods for constructing values.
+Just like how the `types` namespace has factory methods for constructing types, the `values` namespace has factory methods for constructing values.
 
 ```ts
 declare namespace values {
@@ -133,7 +136,7 @@ declare namespace values {
 
 ## Standard value constructors
 
-Analogous to the standard library of constants for common types in the `types` namespace, the `values` namespace has a standard library of methods for creating values of each of those common types.
+Again, analogous to the standard library of constants for common types in the `types` namespace, the `values` namespace has a standard library of methods for creating values of each of those common types.
 
 ```ts
 declare namespace values {
@@ -157,10 +160,25 @@ declare namespace values {
 
 These effectively handle serializing JavaScript types to Unicode as required by the corresponding type's datatype definition (e.g. in the [XSD spec](https://www.w3.org/TR/xmlschema11-2/)). These, especially the two floating-point types `f32` and `f64`, are **not** obvious and are **not** the same as calling `Number.toString()` or relying on JavaScript's implicit type coercion. **Values of the standard library types should always be created using these built-in value constructors and never manually converted to string values.**
 
-Here's the example instance from above rewritten to use the value constructors.
+Here's the example instance from above rewritten to use the value factory methods and standard literal constructors.
 
 ```ts
-import { Instance, values } from "tasl"
+import { Schema, types, Instance, values } from "tasl"
+
+const schema = new Schema({
+	"http://schema.org/Person": types.product({
+		"http://schema.org/name": types.product({
+			"http://schema.org/givenName": types.string,
+			"http://schema.org/familyName": types.string,
+		}),
+		"http://schema.org/email": types.uri(),
+	}),
+	"http://schema.org/Book": types.product({
+		"http://schema.org/name": types.string,
+		"http://schema.org/identifier": types.uri(),
+		"http://schema.org/author": types.reference("http://schema.org/Person"),
+	}),
+})
 
 const instance = new Instance(schema, {
 	"http://schema.org/Person": [
@@ -188,21 +206,20 @@ const instance = new Instance(schema, {
 })
 ```
 
-## Value predicate methods
+## Binary codec
 
-The `values` namespace has five predicate methods for discriminating between the kinds of values. These are equivalent to `(value) => value.kind === "uri"`, `(value) => value.kind === "literal"`, etc.
+Instances can be encoded and decoded from `Uint8Arrays` with the top-level `encodeInstance` and `decodeInstance` methods. Just like the `Instance` constructor, `decodeInstance` takes a concrete schema as its first argument.
 
 ```ts
-declare namespace values {
-	function isURI(value: Value): value is URI
-	function isLiteral(value: Value): value is Literal
-	function isProduct(value: Value): value is Product
-	function isCoproduct(value: Value): value is Coproduct
-	function isReference(value: Value): value is Reference
-}
+declare function encodeInstance(instance: Instance): Uint8Array
+declare function decodeInstance(schema: Schema, data: Uint8Array): Instance
 ```
 
-## Value comparison methods
+## Advanced value utilities
+
+The `values` namespace also has a few additional methods for comparing and manipulating values.
+
+### Value comparison
 
 Two values of the same type can be tested for value equality.
 
@@ -214,7 +231,7 @@ declare namespace values {
 
 `values.isEqualTo` must only be called with two values of the same type; if either `x` or `y` does not match the type `type` then the function will throw an error.
 
-## Type casting
+### Type casting
 
 A value of type Y can be cast into a value of type X if and only if X ≤ Y.
 
