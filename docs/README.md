@@ -20,9 +20,7 @@ Each of these are documented in depth on their own page:
 - [./instances](./instances)
 - [./mappings](./mappings)
 
-It's best to read these in order: schemas, then instances, and then mappings. For
-
-## API
+It's best to read these in order: schemas, then instances, and then mappings.
 
 ```ts
 declare class Schema {
@@ -53,12 +51,6 @@ declare namespace types {
 	function product(components: Record<string, Type>): Product
 	function coproduct(options: Record<string, Type>): Coproduct
 	function reference(key: string): Reference
-
-	function isURI(type: Type): type is URI
-	function isLiteral(type: Type): type is Literal
-	function isProduct(type: Type): type is Product
-	function isCoproduct(type: Type): type is Coproduct
-	function isReference(type: Type): type is Reference
 
 	const unit: Product
 	const string: Literal
@@ -115,12 +107,6 @@ declare namespace values {
 	function product(components: Record<string, Value>): Product
 	function coproduct(key: string, value: Value): Coproduct
 	function reference(index: number): Reference
-
-	function isURI(value: Value): type is URI
-	function isLiteral(value: Value): type is Literal
-	function isProduct(value: Value): type is Product
-	function isCoproduct(value: Value): type is Coproduct
-	function isReference(value: Value): type is Reference
 
 	function unit(): Product
 	function string(value: string): Literal
@@ -196,14 +182,5 @@ declare namespace expressions {
 	function projection(key: string, value: Term): Projection
 	function dereference(key: string, value: Term): Dereference
 	function match(value: Term, cases: Record<string, Case>): Match
-
-	function isURI(expression: Expression): expression is URI
-	function isLiteral(expression: Expression): expression is Literal
-	function isProduct(expression: Expression): expression is Product
-	function isCoproduct(expression: Expression): expression is Coproduct
-	function isVariable(expression: Expression): expression is Variable
-	function isProjection(expression: Expression): expression is Projection
-	function isDereference(expression: Expression): expression is Dereference
-	function isMatch(expression: Expression): expression is Match
 }
 ```
