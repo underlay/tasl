@@ -28,7 +28,7 @@ export function decodeMapping(
 	)
 
 	for (const element of instance.values(ul.component)) {
-		if (!values.isProduct(element)) {
+		if (element.kind !== "product") {
 			throw new Error("internal error decoding mapping")
 		}
 
@@ -40,15 +40,15 @@ export function decodeMapping(
 
 		if (source === undefined) {
 			throw new Error("internal error decoding mapping")
-		} else if (!values.isReference(source)) {
+		} else if (source.kind !== "reference") {
 			throw new Error("internal error decoding mapping")
 		} else if (key === undefined) {
 			throw new Error("internal error decoding mapping")
-		} else if (!values.isURI(key)) {
+		} else if (key.kind !== "uri") {
 			throw new Error("internal error decoding mapping")
 		} else if (value === undefined) {
 			throw new Error("internal error decoding mapping")
-		} else if (!values.isCoproduct(value)) {
+		} else if (value.kind !== "coproduct") {
 			throw new Error("internal error decoding mapping")
 		}
 
@@ -66,7 +66,7 @@ export function decodeMapping(
 		Array.from(iota(instance.count(ul.match), (_) => ({})))
 
 	for (const [i, element] of instance.entries(ul.case)) {
-		if (!values.isProduct(element)) {
+		if (element.kind !== "product") {
 			throw new Error("internal error decoding mapping")
 		}
 
@@ -78,15 +78,15 @@ export function decodeMapping(
 
 		if (source === undefined) {
 			throw new Error("internal error decoding mapping")
-		} else if (!values.isReference(source)) {
+		} else if (source.kind !== "reference") {
 			throw new Error("internal error decoding mapping")
 		} else if (key === undefined) {
 			throw new Error("internal error decoding mapping")
-		} else if (!values.isURI(key)) {
+		} else if (key.kind !== "uri") {
 			throw new Error("internal error decoding mapping")
 		} else if (value === undefined) {
 			throw new Error("internal error decoding mapping")
-		} else if (!values.isCoproduct(value)) {
+		} else if (value.kind !== "coproduct") {
 			throw new Error("internal error decoding mapping")
 		}
 
@@ -110,19 +110,19 @@ export function decodeMapping(
 		context: TermContext
 	): expressions.Term {
 		if (term.key === ul.map) {
-			if (!values.isReference(term.value)) {
+			if (term.value.kind !== "reference") {
 				throw new Error("internal error decoding mapping")
 			}
 
-			return expressions.variable(`m${term.value.index}`)
+			return expressions.term(`m${term.value.index}`, [])
 		} else if (term.key === ul.case) {
-			if (!values.isReference(term.value)) {
+			if (term.value.kind !== "reference") {
 				throw new Error("internal error decoding mapping")
 			}
 
-			return expressions.variable(`c${term.value.index}`)
+			return expressions.term(`c${term.value.index}`, [])
 		} else if (term.key === ul.projection) {
-			if (!values.isReference(term.value)) {
+			if (term.value.kind !== "reference") {
 				throw new Error("internal error decoding mapping")
 			}
 
@@ -133,7 +133,7 @@ export function decodeMapping(
 			}
 
 			const element = instance.get(ul.projection, term.value.index)
-			if (!values.isProduct(element)) {
+			if (element.kind !== "product") {
 				throw new Error("internal error decoding mapping")
 			}
 
@@ -141,17 +141,19 @@ export function decodeMapping(
 
 			if (key === undefined) {
 				throw new Error("internal error decoding mapping")
-			} else if (!values.isURI(key)) {
+			} else if (key.kind !== "uri") {
 				throw new Error("internal error decoding mapping")
 			} else if (value === undefined) {
 				throw new Error("internal error decoding mapping")
-			} else if (!values.isCoproduct(value)) {
+			} else if (value.kind !== "coproduct") {
 				throw new Error("internal error decoding mapping")
 			}
 
-			return expressions.projection(key.value, toTerm(value, context))
+			const rest = toTerm(value, context)
+			rest.path.push(expressions.projection(key.value))
+			return rest
 		} else if (term.key === ul.dereference) {
-			if (!values.isReference(term.value)) {
+			if (term.value.kind !== "reference") {
 				throw new Error("internal error decoding mapping")
 			}
 
@@ -162,7 +164,7 @@ export function decodeMapping(
 			}
 
 			const element = instance.get(ul.dereference, term.value.index)
-			if (!values.isProduct(element)) {
+			if (element.kind !== "product") {
 				throw new Error("internal error decoding mapping")
 			}
 
@@ -170,15 +172,17 @@ export function decodeMapping(
 
 			if (key === undefined) {
 				throw new Error("internal error decoding mapping")
-			} else if (!values.isURI(key)) {
+			} else if (key.kind !== "uri") {
 				throw new Error("internal error decoding mapping")
 			} else if (value === undefined) {
 				throw new Error("internal error decoding mapping")
-			} else if (!values.isCoproduct(value)) {
+			} else if (value.kind !== "coproduct") {
 				throw new Error("internal error decoding mapping")
 			}
 
-			return expressions.dereference(key.value, toTerm(value, context))
+			const rest = toTerm(value, context)
+			rest.path.push(expressions.dereference(key.value))
+			return rest
 		} else {
 			throw new Error("internal error decoding mapping")
 		}
@@ -195,38 +199,38 @@ export function decodeMapping(
 		context: ExpressionContext
 	): expressions.Expression {
 		if (expression.key === ul.uri) {
-			if (!values.isURI(expression.value)) {
+			if (expression.value.kind !== "uri") {
 				throw new Error("internal error decoding mapping")
 			}
 
 			return expressions.uri(expression.value.value)
 		} else if (expression.key === ul.literal) {
-			if (!values.isLiteral(expression.value)) {
+			if (expression.value.kind !== "literal") {
 				throw new Error("internal error decoding mapping")
 			}
 
 			return expressions.literal(expression.value.value)
 		} else if (expression.key === ul.match) {
-			if (!values.isReference(expression.value)) {
+			if (expression.value.kind !== "reference") {
 				throw new Error("internal error decoding mapping")
 			}
 
 			const element = instance.get(ul.match, expression.value.index)
-			if (!values.isProduct(element)) {
+			if (element.kind !== "product") {
 				throw new Error("internal error decoding mapping")
 			}
 
 			const { [ul.value]: value } = element.components
 			if (value === undefined) {
 				throw new Error("internal error decoding mapping")
-			} else if (!values.isCoproduct(value)) {
+			} else if (value.kind !== "coproduct") {
 				throw new Error("internal error decoding mapping")
 			}
 
 			const cases = Object.fromEntries(
 				Object.entries(matches[expression.value.index]).map(
 					([key, { index, value }]) => {
-						if (!values.isCoproduct(value)) {
+						if (value.kind !== "coproduct") {
 							throw new Error("internal error decoding mapping")
 						}
 						return [
@@ -237,18 +241,20 @@ export function decodeMapping(
 				)
 			)
 
-			return expressions.match(
-				toTerm(value, { dereference: new Set(), projection: new Set() }),
-				cases
-			)
+			const term = toTerm(value, {
+				dereference: new Set(),
+				projection: new Set(),
+			})
+
+			return expressions.match(term.id, term.path, cases)
 		} else if (expression.key === ul.product) {
-			if (!values.isReference(expression.value)) {
+			if (expression.value.kind !== "reference") {
 				throw new Error("internal error decoding mapping")
 			}
 
 			const components = Object.fromEntries(
 				Object.entries(products[expression.value.index]).map(([key, value]) => {
-					if (!values.isCoproduct(value)) {
+					if (value.kind !== "coproduct") {
 						throw new Error("internal error decoding mapping")
 					}
 
@@ -258,7 +264,7 @@ export function decodeMapping(
 
 			return expressions.product(components)
 		} else if (expression.key === ul.coproduct) {
-			if (!values.isReference(expression.value)) {
+			if (expression.value.kind !== "reference") {
 				throw new Error("internal error decoding mapping")
 			}
 
@@ -269,18 +275,18 @@ export function decodeMapping(
 			}
 
 			const element = instance.get(ul.coproduct, expression.value.index)
-			if (!values.isProduct(element)) {
+			if (element.kind !== "product") {
 				throw new Error("internal error decoding mapping")
 			}
 
 			const { [ul.key]: key, [ul.value]: value } = element.components
 			if (key === undefined) {
 				throw new Error("internal error decoding mapping")
-			} else if (!values.isURI(key)) {
+			} else if (key.kind !== "uri") {
 				throw new Error("internal error decoding mapping")
 			} else if (value === undefined) {
 				throw new Error("internal error decoding mapping")
-			} else if (!values.isCoproduct(value)) {
+			} else if (value.kind !== "coproduct") {
 				throw new Error("internal error decoding mapping")
 			}
 
@@ -293,9 +299,9 @@ export function decodeMapping(
 		}
 	}
 
-	const maps: expressions.Map[] = []
+	const maps: Record<string, expressions.Map> = {}
 	for (const [i, element] of instance.entries(ul.map)) {
-		if (!values.isProduct(element)) {
+		if (element.kind !== "product") {
 			throw new Error("internal error decoding mapping")
 		}
 
@@ -307,16 +313,20 @@ export function decodeMapping(
 
 		if (source === undefined) {
 			throw new Error("internal error decoding mapping")
-		} else if (!values.isURI(source)) {
+		} else if (source.kind !== "uri") {
 			throw new Error("internal error decoding mapping")
 		} else if (target === undefined) {
 			throw new Error("internal error decoding mapping")
-		} else if (!values.isURI(target)) {
+		} else if (target.kind !== "uri") {
 			throw new Error("internal error decoding mapping")
 		} else if (value === undefined) {
 			throw new Error("internal error decoding mapping")
-		} else if (!values.isCoproduct(value)) {
+		} else if (value.kind !== "coproduct") {
 			throw new Error("internal error decoding mapping")
+		}
+
+		if (target.value in maps) {
+			throw new Error("duplicate target key")
 		}
 
 		const expression = toExpression(value, {
@@ -325,12 +335,7 @@ export function decodeMapping(
 			coproduct: new Set(),
 		})
 
-		maps.push({
-			source: source.value,
-			target: target.value,
-			id: `m${i}`,
-			value: expression,
-		})
+		maps[target.value] = { key: source.value, id: `m${i}`, value: expression }
 	}
 
 	return new Mapping(source, target, maps)

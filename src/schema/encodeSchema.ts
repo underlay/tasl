@@ -6,7 +6,7 @@ import { Instance, values, encodeInstance } from "../instance/index.js"
 
 import { Schema } from "./schema.js"
 import { types } from "./types.js"
-import { schemaSchema } from "./schemaSchema.js"
+import { schemaSchema, typeType } from "./schemaSchema.js"
 import { forComponents, forOptions } from "../keys.js"
 
 type SchemaElements = {
@@ -52,11 +52,11 @@ function fromType(
 	indices: Map<string, number>,
 	type: types.Type
 ): values.Value {
-	if (types.isURI(type)) {
+	if (type.kind === "uri") {
 		return values.coproduct(ul.uri, values.unit())
-	} else if (types.isLiteral(type)) {
+	} else if (type.kind === "literal") {
 		return values.coproduct(ul.literal, values.uri(type.datatype))
-	} else if (types.isProduct(type)) {
+	} else if (type.kind === "product") {
 		const index = elements[ul.product].length
 		elements[ul.product].push(values.unit())
 
@@ -72,7 +72,7 @@ function fromType(
 		}
 
 		return values.coproduct(ul.product, values.reference(index))
-	} else if (types.isCoproduct(type)) {
+	} else if (type.kind === "coproduct") {
 		const index = elements[ul.coproduct].length
 		elements[ul.coproduct].push(values.unit())
 
@@ -88,7 +88,7 @@ function fromType(
 		}
 
 		return values.coproduct(ul.coproduct, values.reference(index))
-	} else if (types.isReference(type)) {
+	} else if (type.kind === "reference") {
 		const index = indices.get(type.key)
 		if (index === undefined) {
 			throw new Error(`internal error`)

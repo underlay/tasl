@@ -61,7 +61,7 @@ export class Instance {
 	}
 
 	isEqualTo(instance: Instance): boolean {
-		if (Object.is(this, instance)) {
+		if (this === instance) {
 			return true
 		}
 

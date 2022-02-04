@@ -240,18 +240,18 @@ export namespace values {
 	 * @returns {boolean} true if X is equal to Y, false otherwise
 	 */
 	export function isEqualTo(type: types.Type, x: Value, y: Value): boolean {
-		if (types.isURI(type) && values.isURI(x) && values.isURI(y)) {
+		if (type.kind === "uri" && x.kind === "uri" && y.kind === "uri") {
 			return x.value === y.value
 		} else if (
-			types.isLiteral(type) &&
-			values.isLiteral(x) &&
-			values.isLiteral(y)
+			type.kind === "literal" &&
+			x.kind === "literal" &&
+			y.kind === "literal"
 		) {
 			return x.value === y.value
 		} else if (
-			types.isProduct(type) &&
-			values.isProduct(x) &&
-			values.isProduct(y)
+			type.kind === "product" &&
+			x.kind === "product" &&
+			y.kind === "product"
 		) {
 			for (const [key, component] of Object.entries(type.components)) {
 				if (key in x.components && key in y.components) {
@@ -266,9 +266,9 @@ export namespace values {
 			}
 			return true
 		} else if (
-			types.isCoproduct(type) &&
-			values.isCoproduct(x) &&
-			values.isCoproduct(y)
+			type.kind === "coproduct" &&
+			x.kind === "coproduct" &&
+			y.kind === "coproduct"
 		) {
 			if (x.key in type.options && y.key in type.options) {
 				return (
@@ -278,9 +278,9 @@ export namespace values {
 				throw new Error("one of the values is not of the provided type")
 			}
 		} else if (
-			types.isReference(type) &&
-			values.isReference(x) &&
-			values.isReference(y)
+			type.kind === "reference" &&
+			x.kind === "reference" &&
+			y.kind === "reference"
 		) {
 			return x.index === y.index
 		} else {
@@ -329,22 +329,22 @@ export namespace values {
 				throw new Error("values cannot be cast to different kinds of types")
 			}
 
-			return values.product(
-				Object.fromEntries(
-					Object.entries(target.components).map(([key, component]) => {
-						if (type.components[key] === undefined) {
-							throw new Error(`the product value has no component key ${key}`)
-						} else if (value.components[key] === undefined) {
-							throw new Error("the product value is not of the provided type")
-						}
+			const components: Record<string, values.Value> = {}
+			for (const [key, component] of Object.entries(target.components)) {
+				if (type.components[key] === undefined) {
+					throw new Error(`the product value has no component key ${key}`)
+				} else if (value.components[key] === undefined) {
+					throw new Error("the product value is not of the provided type")
+				}
 
-						return [
-							key,
-							cast(type.components[key], value.components[key], component),
-						]
-					})
+				components[key] = cast(
+					type.components[key],
+					value.components[key],
+					component
 				)
-			)
+			}
+
+			return values.product(components)
 		} else if (type.kind === "coproduct") {
 			if (value.kind !== "coproduct" || target.kind !== "coproduct") {
 				throw new Error("values cannot be cast to different kinds of types")

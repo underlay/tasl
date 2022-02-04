@@ -27,7 +27,7 @@ export function decodeSchema(data: Uint8Array): Schema {
 	)
 
 	for (const element of instance.values(ul.component)) {
-		if (!values.isProduct(element)) {
+		if (element.kind !== "product") {
 			throw new Error("internal error decoding schema")
 		}
 
@@ -39,15 +39,15 @@ export function decodeSchema(data: Uint8Array): Schema {
 
 		if (source === undefined) {
 			throw new Error("internal error decoding schema")
-		} else if (!values.isReference(source)) {
+		} else if (source.kind !== "reference") {
 			throw new Error("internal error decoding schema")
 		} else if (key === undefined) {
 			throw new Error("internal error decoding schema")
-		} else if (!values.isURI(key)) {
+		} else if (key.kind !== "uri") {
 			throw new Error("internal error decoding schema")
 		} else if (value === undefined) {
 			throw new Error("internal error decoding schema")
-		} else if (!values.isCoproduct(value)) {
+		} else if (value.kind !== "coproduct") {
 			throw new Error("internal error decoding schema")
 		}
 
@@ -66,7 +66,7 @@ export function decodeSchema(data: Uint8Array): Schema {
 	)
 
 	for (const element of instance.values(ul.option)) {
-		if (!values.isProduct(element)) {
+		if (element.kind !== "product") {
 			throw new Error("internal error decoding schema")
 		}
 
@@ -78,15 +78,15 @@ export function decodeSchema(data: Uint8Array): Schema {
 
 		if (source === undefined) {
 			throw new Error("internal error decoding schema")
-		} else if (!values.isReference(source)) {
+		} else if (source.kind !== "reference") {
 			throw new Error("internal error decoding schema")
 		} else if (key === undefined) {
 			throw new Error("internal error decoding schema")
-		} else if (!values.isURI(key)) {
+		} else if (key.kind !== "uri") {
 			throw new Error("internal error decoding schema")
 		} else if (value === undefined) {
 			throw new Error("internal error decoding schema")
-		} else if (!values.isCoproduct(value)) {
+		} else if (value.kind !== "coproduct") {
 			throw new Error("internal error decoding schema")
 		}
 
@@ -104,12 +104,12 @@ export function decodeSchema(data: Uint8Array): Schema {
 		if (value.key === ul.uri) {
 			return types.uri()
 		} else if (value.key === ul.literal) {
-			if (!values.isURI(value.value)) {
+			if (value.value.kind !== "uri") {
 				throw new Error("internal error decoding schema")
 			}
 			return types.literal(value.value.value)
 		} else if (value.key === ul.product) {
-			if (!values.isReference(value.value)) {
+			if (value.value.kind !== "reference") {
 				throw new Error("internal error decoding schema")
 			}
 			const { index } = value.value
@@ -119,55 +119,56 @@ export function decodeSchema(data: Uint8Array): Schema {
 			// it's important that the deletion happens before
 			// we call parseValue() on the components or else
 			// reference cycles will cause infinite loops.
-			const components = products[index]
-			if (components === undefined) {
+			const product = products[index]
+			if (product === undefined) {
 				throw new Error("re-used product element")
 			} else {
 				delete products[index]
 			}
 
-			return types.product(
-				Object.fromEntries(
-					Object.entries(components).map(([key, value]) => {
-						if (!values.isCoproduct(value)) {
-							throw new Error("internal error decoding schema")
-						}
-						return [key, toType(value)]
-					})
-				)
-			)
+			const components: Record<string, types.Type> = {}
+			for (const [key, value] of Object.entries(product)) {
+				if (value.kind !== "coproduct") {
+					throw new Error("internal error decoding schema")
+				}
+
+				components[key] = toType(value)
+			}
+
+			return types.product(components)
 		} else if (value.key === ul.coproduct) {
-			if (!values.isReference(value.value)) {
+			if (value.value.kind !== "reference") {
 				throw new Error("internal error decoding schema")
 			}
+
 			const { index } = value.value
 
 			// same for coproducts here...
-			const options = coproducts[index]
-			if (options === undefined) {
+			const coproduct = coproducts[index]
+			if (coproduct === undefined) {
 				throw new Error("re-used coproduct element")
 			} else {
 				delete coproducts[index]
 			}
 
-			return types.coproduct(
-				Object.fromEntries(
-					Object.entries(options).map(([key, value]) => {
-						if (!values.isCoproduct(value)) {
-							throw new Error("internal error decoding schema")
-						}
-						return [key, toType(value)]
-					})
-				)
-			)
+			const options: Record<string, types.Type> = {}
+			for (const [key, value] of Object.entries(coproduct)) {
+				if (value.kind !== "coproduct") {
+					throw new Error("internal error decoding schema")
+				}
+
+				options[key] = toType(value)
+			}
+
+			return types.coproduct(options)
 		} else if (value.key === ul.reference) {
-			if (!values.isReference(value.value)) {
+			if (value.value.kind !== "reference") {
 				throw new Error("internal error decoding schema")
 			}
 
 			const { index } = value.value
 			const element = instance.get(ul.class, index)
-			if (!values.isProduct(element)) {
+			if (element.kind !== "product") {
 				throw new Error("internal error decoding schema")
 			}
 
@@ -176,7 +177,7 @@ export function decodeSchema(data: Uint8Array): Schema {
 				throw new Error("internal error decoding schema")
 			}
 
-			if (!values.isURI(key)) {
+			if (key.kind !== "uri") {
 				throw new Error("internal error decoding schema")
 			}
 
@@ -188,7 +189,7 @@ export function decodeSchema(data: Uint8Array): Schema {
 
 	const classes: Record<string, types.Type> = {}
 	for (const element of instance.values(ul.class)) {
-		if (!values.isProduct(element)) {
+		if (element.kind !== "product") {
 			throw new Error("internal error decoding schema")
 		}
 
@@ -197,7 +198,7 @@ export function decodeSchema(data: Uint8Array): Schema {
 			throw new Error("internal error decoding schema")
 		}
 
-		if (!values.isURI(key)) {
+		if (key.kind !== "uri") {
 			throw new Error("internal error decoding schema")
 		}
 
@@ -210,7 +211,7 @@ export function decodeSchema(data: Uint8Array): Schema {
 			throw new Error("internal error decoding schema")
 		}
 
-		if (!values.isCoproduct(value)) {
+		if (value.kind !== "coproduct") {
 			throw new Error("internal error decoding schema")
 		}
 

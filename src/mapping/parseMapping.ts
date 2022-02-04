@@ -35,35 +35,47 @@ export function parseMapping(
 		}
 	}
 
-	function parsePath(node: SyntaxNode): expressions.Term {
+	function parseTerm(node: SyntaxNode): expressions.Term {
 		const identifier = node.getChild("Identifier")
 		if (identifier === null) {
-			throw new Error("internal parse error - missing Value/Identifier node")
+			throw new Error("internal parse error: missing Term/Identifier node")
 		}
 
 		const id = slice(identifier)
-		const segments = node.getChildren("Segment")
-		return segments.reduce<expressions.Term>((term, segment) => {
-			if (segment.name === "Projection") {
-				const key = segment.getChild("Key")
-				if (key === null) {
-					throw new Error("internal parse error - missing Projection/Key node")
-				}
 
-				return expressions.projection(getURI(key), term)
-			} else if (segment.name === "Dereference") {
-				const key = segment.getChild("Key")
-				if (key === null) {
-					throw new Error("internal parse error - missing Dereference/Key node")
-				}
+		const path = node.getChild("Path")
+		if (path === null) {
+			throw new Error("internal parse error: missing Term/Path node")
+		}
 
-				return expressions.dereference(getURI(key), term)
-			} else {
-				throw new Error(
-					`internal parse error - invalid path node name "${segment.name}""`
-				)
-			}
-		}, expressions.variable(id))
+		const segments = path.getChildren("Segment")
+
+		return expressions.term(
+			id,
+			segments.map((segment) => {
+				if (segment.name === "Projection") {
+					const key = segment.getChild("Key")
+					if (key === null) {
+						throw new Error("internal parse error: missing Projection/Key node")
+					}
+
+					return expressions.projection(getURI(key))
+				} else if (segment.name === "Dereference") {
+					const key = segment.getChild("Key")
+					if (key === null) {
+						throw new Error(
+							"internal parse error: missing Dereference/Key node"
+						)
+					}
+
+					return expressions.dereference(getURI(key))
+				} else {
+					throw new Error(
+						`internal parse error: invalid segment node "${segment.name}""`
+					)
+				}
+			})
+		)
 	}
 
 	function parseExpression(node: SyntaxNode): expressions.Expression {
@@ -73,20 +85,20 @@ export function parseMapping(
 		} else if (node.name === "Literal") {
 			const string = node.getChild("String")
 			if (string === null) {
-				throw new Error("internal parse error - missing Literal/String node")
+				throw new Error("internal parse error: missing Literal/String node")
 			}
 
 			const value = JSON.parse(slice(string))
 			return expressions.literal(value)
-		} else if (node.name === "Path") {
-			return parsePath(node)
-		} else if (node.name === "Construction") {
+		} else if (node.name === "Term") {
+			return parseTerm(node)
+		} else if (node.name === "Product") {
 			const components: Record<string, expressions.Expression> = {}
-			const entries = node.getChildren("Slot")
+			const entries = node.getChildren("Component")
 			for (const entry of entries) {
 				const term = entry.getChild("Key")
 				if (term === null) {
-					throw new Error("internal parse error - missing Slot/Key node")
+					throw new Error("internal parse error: missing Component/Key node")
 				}
 
 				const key = getURI(term)
@@ -96,7 +108,9 @@ export function parseMapping(
 
 				const expression = entry.getChild("Expression")
 				if (expression === null) {
-					throw new Error("internal parse error - missing Slot/Expression node")
+					throw new Error(
+						"internal parse error: missing Component/Expression node"
+					)
 				}
 
 				const injections = entry.getChildren("Injection")
@@ -110,16 +124,17 @@ export function parseMapping(
 		} else if (node.name === "Match") {
 			const path = node.getChild("Path")
 			if (path === null) {
-				throw new Error("internal parse error - missing Match/Value node")
+				throw new Error("internal parse error: missing Match/Value node")
 			}
 
-			const cases: Record<string, expressions.Case> = {}
+			const term = parseTerm(path)
 
+			const cases: Record<string, expressions.Case> = {}
 			const entries = node.getChildren("Case")
 			for (const entry of entries) {
 				const term = entry.getChild("Key")
 				if (term === null) {
-					throw new Error("internal parse error - missing Case/Key node")
+					throw new Error("internal parse error: missing Case/Key node")
 				}
 
 				const key = getURI(term)
@@ -129,12 +144,12 @@ export function parseMapping(
 
 				const identifier = entry.getChild("Identifier")
 				if (identifier === null) {
-					throw new Error("internal parse error - missing Case/Identifier node")
+					throw new Error("internal parse error: missing Case/Identifier node")
 				}
 
 				const expression = entry.getChild("Expression")
 				if (expression === null) {
-					throw new Error("internal parse error - missing Case/Expression node")
+					throw new Error("internal parse error: missing Case/Expression node")
 				}
 
 				const injections = entry.getChildren("Injection")
@@ -144,10 +159,10 @@ export function parseMapping(
 				}
 			}
 
-			return expressions.match(parsePath(path), cases)
+			return expressions.match(term.id, term.path, cases)
 		} else {
 			throw new Error(
-				`internal parse error - invalid value node name "${node.name}"`
+				`internal parse error: invalid value node name "${node.name}"`
 			)
 		}
 	}
@@ -159,15 +174,13 @@ export function parseMapping(
 		injections.reduce<expressions.Expression>((expression, injection) => {
 			const key = injection.getChild("Key")
 			if (key === null) {
-				throw new Error("internal parse error - missing Injection/Key node")
+				throw new Error("internal parse error: missing Injection/Key node")
 			}
 
 			return expressions.coproduct(getURI(key), expression)
 		}, expression)
 
-	const mapping: {
-		[K in string]: { id: string; source: string; value: expressions.Expression }
-	} = {}
+	const maps: Record<string, expressions.Map> = {}
 
 	for (
 		let node = tree.topNode.firstChild;
@@ -180,14 +193,14 @@ export function parseMapping(
 			const identifier = node.getChild("Prefix")
 			if (identifier === null) {
 				throw new Error(
-					"internal parse error - missing NamespaceDefinition/Prefix node"
+					"internal parse error: missing NamespaceDefinition/Prefix node"
 				)
 			}
 
 			const namespace = node.getChild("Namespace")
 			if (namespace === null) {
 				throw new Error(
-					"internal parse error - missing NamespaceDefinition/Namespace node"
+					"internal parse error: missing NamespaceDefinition/Namespace node"
 				)
 			}
 
@@ -197,52 +210,48 @@ export function parseMapping(
 			const target = node.getChild("Target")
 			if (target === null) {
 				throw new Error(
-					"internal parse error - missing MapDeclaration/Target node"
+					"internal parse error: missing MapDeclaration/Target node"
 				)
 			}
 
 			const key = getURI(target)
-			if (key in mapping) {
+			if (key in maps) {
 				throw new Error(`duplicate map key ${key}`)
 			}
 
 			const source = node.getChild("Source")
 			if (source === null) {
 				throw new Error(
-					"internal parse error - missing MapDeclaration/Source node"
+					"internal parse error: missing MapDeclaration/Source node"
 				)
 			}
 
 			const identifier = node.getChild("Identifier")
 			if (identifier === null) {
 				throw new Error(
-					"internal parse error - missing MapDeclaration/Identifier node"
+					"internal parse error: missing MapDeclaration/Identifier node"
 				)
 			}
 
 			const expression = node.getChild("Expression")
 			if (expression === null) {
 				throw new Error(
-					"internal parse error - missing MapDeclaration/Expression node"
+					"internal parse error: missing MapDeclaration/Expression node"
 				)
 			}
 
 			const injections = node.getChildren("Injection")
-			mapping[key] = {
-				source: getURI(source),
+			maps[key] = {
+				key: getURI(source),
 				id: slice(identifier),
 				value: parseInjections(parseExpression(expression), injections),
 			}
 		} else {
 			throw new Error(
-				`internal parser error - invalid statement node name "${node.name}""`
+				`internal parser error: invalid statement node name "${node.name}""`
 			)
 		}
 	}
 
-	return new Mapping(
-		source,
-		target,
-		Object.entries(mapping).map(([target, map]) => ({ target, ...map }))
-	)
+	return new Mapping(source, target, maps)
 }

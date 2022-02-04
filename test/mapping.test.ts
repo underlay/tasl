@@ -116,21 +116,17 @@ test("apply instantiated mapping", (t) => {
 		}),
 	})
 
-	const mapping = new Mapping(sourceSchema, targetSchema, [
-		{
-			source: "http://schema.org/Person",
-			target: "http://example.com/person",
+	const mapping = new Mapping(sourceSchema, targetSchema, {
+		"http://example.com/person": {
+			key: "http://schema.org/Person",
 			id: "person",
 			value: expressions.product({
-				"http://example.com/name": expressions.projection(
-					"http://schema.org/name",
-					expressions.variable("person")
-				),
+				"http://example.com/name": expressions.term("person", [
+					expressions.projection("http://schema.org/name"),
+				]),
 				"http://example.com/gender": expressions.match(
-					expressions.projection(
-						"http://schema.org/gender",
-						expressions.variable("person")
-					),
+					"person",
+					[expressions.projection("http://schema.org/gender")],
 					{
 						"http://schema.org/Male": {
 							id: "gender",
@@ -142,13 +138,13 @@ test("apply instantiated mapping", (t) => {
 						},
 						"http://schema.org/value": {
 							id: "gender",
-							value: expressions.variable("gender"),
+							value: expressions.term("gender", []),
 						},
 					}
 				),
 			}),
 		},
-	])
+	})
 
 	const targetInstance = mapping.apply(sourceInstance)
 

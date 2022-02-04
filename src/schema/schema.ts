@@ -56,7 +56,7 @@ export class Schema {
 	}
 
 	isEqualTo(schema: Schema): boolean {
-		if (Object.is(this, schema)) {
+		if (this === schema) {
 			return true
 		}
 

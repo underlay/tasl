@@ -17,11 +17,11 @@ export function validateSchema(
 
 function validateType(classes: Record<string, types.Type>, type: types.Type) {
 	Object.freeze(type)
-	if (types.isURI(type)) {
+	if (type.kind === "uri") {
 		return
-	} else if (types.isLiteral(type)) {
+	} else if (type.kind === "literal") {
 		validateURI(type.datatype)
-	} else if (types.isProduct(type)) {
+	} else if (type.kind === "product") {
 		Object.freeze(type.components)
 		const keys = getKeys(type.components)
 		cache.product.set(type, keys)
@@ -29,7 +29,7 @@ function validateType(classes: Record<string, types.Type>, type: types.Type) {
 			validateURI(key)
 			validateType(classes, type.components[key])
 		}
-	} else if (types.isCoproduct(type)) {
+	} else if (type.kind === "coproduct") {
 		Object.freeze(type.options)
 		const keys = getKeys(type.options)
 		cache.coproduct.set(type, keys)
@@ -37,7 +37,7 @@ function validateType(classes: Record<string, types.Type>, type: types.Type) {
 			validateURI(key)
 			validateType(classes, type.options[key])
 		}
-	} else if (types.isReference(type)) {
+	} else if (type.kind === "reference") {
 		if (type.key in classes) {
 			return
 		} else {

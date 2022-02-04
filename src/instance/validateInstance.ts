@@ -24,20 +24,20 @@ function validateValue(
 	type: types.Type,
 	value: values.Value
 ) {
-	if (types.isURI(type)) {
-		if (!values.isURI(value)) {
+	if (type.kind === "uri") {
+		if (value.kind !== "uri") {
 			throw new Error(`type error: expected a URI value`)
 		}
 
 		validateURI(value.value)
-	} else if (types.isLiteral(type)) {
-		if (!values.isLiteral(value)) {
+	} else if (type.kind === "literal") {
+		if (value.kind !== "literal") {
 			throw new Error(`type error: expected a literal value`)
 		}
 
 		validateLiteral(type.datatype, value.value)
-	} else if (types.isProduct(type)) {
-		if (!values.isProduct(value)) {
+	} else if (type.kind === "product") {
+		if (value.kind !== "product") {
 			throw new Error(`type error: expected a product value`)
 		}
 
@@ -58,8 +58,8 @@ function validateValue(
 
 			validateValue(elements, type.components[key], value.components[key])
 		}
-	} else if (types.isCoproduct(type)) {
-		if (!values.isCoproduct(value)) {
+	} else if (type.kind === "coproduct") {
+		if (value.kind !== "coproduct") {
 			throw new Error(`type error: expected a coproduct value`)
 		}
 
@@ -70,8 +70,8 @@ function validateValue(
 		}
 
 		validateValue(elements, type.options[value.key], value.value)
-	} else if (types.isReference(type)) {
-		if (!values.isReference(value)) {
+	} else if (type.kind === "reference") {
+		if (value.kind !== "reference") {
 			throw new Error(`type error: expected a reference value`)
 		}
 

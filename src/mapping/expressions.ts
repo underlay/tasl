@@ -1,7 +1,6 @@
 export namespace expressions {
 	export type Map = {
-		source: string
-		target: string
+		key: string
 		id: string
 		value: Expression
 	}
@@ -15,47 +14,23 @@ export namespace expressions {
 		components: Record<string, Expression>
 	}
 
-	export type Coproduct = {
-		kind: "coproduct"
-		key: string
-		value: Expression
-	}
+	export type Coproduct = { kind: "coproduct"; key: string; value: Expression }
 
-	export type Term = Variable | Projection | Dereference
-	export type Variable = { kind: "variable"; id: string }
-	export type Projection = { kind: "projection"; key: string; value: Term }
-	export type Dereference = { kind: "dereference"; key: string; value: Term }
+	export type Term = { kind: "term"; id: string; path: Path }
+
+	export type Path = Segment[]
+	export type Segment = Projection | Dereference
+	export type Projection = { kind: "projection"; key: string }
+	export type Dereference = { kind: "dereference"; key: string }
 
 	export type Match = {
 		kind: "match"
-		value: Term
+		id: string
+		path: Path
 		cases: Record<string, Case>
 	}
 
 	export type Case = { id: string; value: Expression }
-
-	export function variable(id: string): Variable {
-		return { kind: "variable", id }
-	}
-
-	export const isVariable = (expression: Expression): expression is Variable =>
-		expression.kind === "variable"
-
-	export function projection(key: string, value: Term): Projection {
-		return { kind: "projection", key, value }
-	}
-
-	export const isProjection = (
-		expression: Expression
-	): expression is Projection => expression.kind === "projection"
-
-	export function dereference(key: string, value: Term): Dereference {
-		return { kind: "dereference", key, value }
-	}
-
-	export const isDereference = (
-		expression: Expression
-	): expression is Dereference => expression.kind === "dereference"
 
 	export function uri(value: string): URI {
 		return { kind: "uri", value }
@@ -86,8 +61,33 @@ export namespace expressions {
 	export const isProduct = (expression: Expression): expression is Product =>
 		expression.kind === "product"
 
-	export function match(value: Term, cases: Record<string, Case>): Match {
-		return { kind: "match", value, cases }
+	export function term(id: string, path: Path): Term {
+		return { kind: "term", id, path }
+	}
+
+	export const isTerm = (expression: Expression): expression is Term =>
+		expression.kind === "term"
+
+	export function projection(key: string): Projection {
+		return { kind: "projection", key }
+	}
+
+	export const isProjection = (segment: Segment): segment is Projection =>
+		segment.kind === "projection"
+
+	export function dereference(key: string): Dereference {
+		return { kind: "dereference", key }
+	}
+
+	export const isDereference = (segment: Segment): segment is Dereference =>
+		segment.kind === "dereference"
+
+	export function match(
+		id: string,
+		path: Path,
+		cases: Record<string, Case>
+	): Match {
+		return { kind: "match", id, path, cases }
 	}
 
 	export const isMatch = (expression: Expression): expression is Match =>

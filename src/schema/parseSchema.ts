@@ -63,7 +63,7 @@ export function parseSchema(input: string): Schema {
 		} else if (node.name === "Literal") {
 			const key = node.getChild("Key")
 			if (key === null) {
-				throw new Error("internal parse error - missing Literal/Key node")
+				throw new Error("internal parse error: missing Literal/Key node")
 			}
 
 			return types.literal(getTerm(key))
@@ -73,7 +73,7 @@ export function parseSchema(input: string): Schema {
 			for (const entry of entries) {
 				const term = entry.getChild("Key")
 				if (term === null) {
-					throw new Error("internal parse error - missing Component/Key node")
+					throw new Error("internal parse error: missing Component/Key node")
 				}
 
 				const key = getTerm(term)
@@ -84,7 +84,7 @@ export function parseSchema(input: string): Schema {
 				const expression = entry.getChild("Expression")
 				if (expression === null) {
 					throw new Error(
-						"internal parse error - missing Component/Expression node"
+						"internal parse error: missing Component/Expression node"
 					)
 				}
 
@@ -98,7 +98,7 @@ export function parseSchema(input: string): Schema {
 			for (const entry of entries) {
 				const term = entry.getChild("Key")
 				if (term === null) {
-					throw new Error("internal parse error - missing Option/Key node")
+					throw new Error("internal parse error: missing Option/Key node")
 				}
 
 				const key = getTerm(term)
@@ -118,13 +118,13 @@ export function parseSchema(input: string): Schema {
 		} else if (node.name === "Reference") {
 			const term = node.getChild("Key")
 			if (term === null) {
-				throw new Error("internal parse error - missing Reference/Key node")
+				throw new Error("internal parse error: missing Reference/Key node")
 			}
 
 			return types.reference(getTerm(term))
 		} else {
 			throw new Error(
-				`internal parser error - invalid expression node name "${node.name}""`
+				`internal parse error: invalid expression node name "${node.name}""`
 			)
 		}
 	}
@@ -141,14 +141,14 @@ export function parseSchema(input: string): Schema {
 			const identifier = node.getChild("Prefix")
 			if (identifier === null) {
 				throw new Error(
-					"internal parse error - missing NamespaceDefinition/Prefix node"
+					"internal parse error: missing NamespaceDefinition/Prefix node"
 				)
 			}
 
 			const namespace = node.getChild("Namespace")
 			if (namespace === null) {
 				throw new Error(
-					"internal parse error - missing NamespaceDefinition/Namespace node"
+					"internal parse error: missing NamespaceDefinition/Namespace node"
 				)
 			}
 
@@ -157,14 +157,14 @@ export function parseSchema(input: string): Schema {
 			const name = node.getChild("Name")
 			if (name === null) {
 				throw new Error(
-					"internal parse error - missing TypeDefinition/Name node"
+					"internal parse error: missing TypeDefinition/Name node"
 				)
 			}
 
 			const expression = node.getChild("Expression")
 			if (expression === null) {
 				throw new Error(
-					"internal parse error - missing TypeDefinition/Expression node"
+					"internal parse error: missing TypeDefinition/Expression node"
 				)
 			}
 
@@ -173,7 +173,7 @@ export function parseSchema(input: string): Schema {
 			const term = node.getChild("Key")
 			if (term === null) {
 				throw new Error(
-					"internal parse error - missing ClassDeclaration/Key node"
+					"internal parse error: missing ClassDeclaration/Key node"
 				)
 			}
 
@@ -186,14 +186,14 @@ export function parseSchema(input: string): Schema {
 			const expression = node.getChild("Expression")
 			if (expression === null) {
 				throw new Error(
-					"internal parse error - missing ClassDeclaration/Expression node"
+					"internal parse error: missing ClassDeclaration/Expression node"
 				)
 			}
 
 			classes[key] = parseType(expression)
 		} else {
 			throw new Error(
-				`internal parser error - invalid statement node name "${node.name}""`
+				`internal parse error: invalid statement node name "${node.name}""`
 			)
 		}
 	}

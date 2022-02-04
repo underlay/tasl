@@ -2,32 +2,48 @@ import { signalInvalidType } from "../utils.js"
 
 import type { Schema, types } from "../schema/index.js"
 import { Instance, values } from "../instance/index.js"
-import { validateMapping } from "./validateMapping.js"
 
 import type { expressions } from "./expressions.js"
+import { validateMapping } from "./validateMapping.js"
+
 import { forComponents } from "../keys.js"
 
 export class Mapping {
+	#keys: readonly string[]
 	constructor(
 		readonly source: Schema,
 		readonly target: Schema,
-		readonly maps: expressions.Map[]
+		readonly maps: Record<string, expressions.Map>
 	) {
-		validateMapping(source, target, maps)
+		this.#keys = validateMapping(source, target, maps)
 	}
 
-	get(target: string): expressions.Map {
-		const map = this.maps.find((map) => map.target === target)
+	get(key: string): expressions.Map {
+		const map = this.maps[key]
 		if (map === undefined) {
-			throw new Error(`mapping does not have a map with target ${target}`)
-		} else {
-			return map
+			throw new Error(`mapping does not have a map with key ${key}`)
 		}
+
+		return map
+	}
+
+	has(key: string): boolean {
+		return key in this.maps
+	}
+
+	*keys(): Iterable<string> {
+		yield* this.#keys
 	}
 
 	*values(): Iterable<expressions.Map> {
-		for (const map of this.maps) {
-			yield map
+		for (const key of this.#keys) {
+			yield this.maps[key]
+		}
+	}
+
+	*entries(): Iterable<[string, expressions.Map]> {
+		for (const key of this.#keys) {
+			yield [key, this.maps[key]]
 		}
 	}
 
@@ -40,15 +56,15 @@ export class Mapping {
 
 		const elements: Record<string, values.Value[]> = {}
 		for (const [key, targetType] of this.target.entries()) {
-			const { value: expression, id, source: sourceKey } = this.get(key)
+			const { value: expression, id, key: sourceKey } = this.maps[key]
 			const sourceType = this.source.get(sourceKey)
 			elements[key] = new Array(instance.count(sourceKey))
-			for (const [index, value] of instance.entries(sourceKey)) {
+			for (const [index, element] of instance.entries(sourceKey)) {
 				elements[key][index] = this.applyExpression(
 					instance,
 					expression,
 					targetType,
-					{ [id]: [sourceType, value] }
+					{ [id]: [sourceType, element] }
 				)
 			}
 		}
@@ -95,23 +111,31 @@ export class Mapping {
 			}
 
 			return values.product(components)
+		} else if (expression.kind === "term") {
+			const { id, path } = expression
+			const [t, v] = this.evaluateTerm(instance, id, path, environment)
+			return this.project([t, v], targetType)
 		} else if (expression.kind === "match") {
-			const [t, v] = this.evaluateTerm(instance, expression.value, environment)
+			const { id, path, cases } = expression
+			const [t, v] = this.evaluateTerm(instance, id, path, environment)
 			if (t.kind !== "coproduct") {
-				throw new Error("the value of a match expression must be a coproduct")
+				throw new Error(
+					"the term value of a match expression must be a coproduct"
+				)
 			} else if (v.kind !== "coproduct") {
+				throw new Error("internal type error")
+			} else if (t.options[v.key] === undefined) {
 				throw new Error("internal type error")
 			}
 
-			if (v.key in expression.cases) {
-				const { value: expr, id } = expression.cases[v.key]
-				return this.applyExpression(instance, expr, targetType, {
-					...environment,
-					[id]: [t.options[v.key], v.value],
-				})
-			} else {
+			if (cases[v.key] === undefined) {
 				throw new Error(`missing case for option ${v.key}`)
 			}
+
+			return this.applyExpression(instance, cases[v.key].value, targetType, {
+				...environment,
+				[cases[v.key].id]: [t.options[v.key], v.value],
+			})
 		} else if (expression.kind === "coproduct") {
 			if (targetType.kind !== "coproduct") {
 				throw new Error("unexpected injection expression")
@@ -127,53 +151,48 @@ export class Mapping {
 				this.applyExpression(instance, expression.value, option, environment)
 			)
 		} else {
-			const [t, v] = this.evaluateTerm(instance, expression, environment)
-			return this.project([t, v], targetType)
+			signalInvalidType(expression)
 		}
 	}
 
 	private evaluateTerm(
 		instance: Instance,
-		term: expressions.Term,
+		id: string,
+		path: (expressions.Projection | expressions.Dereference)[],
 		environment: Record<string, [types.Type, values.Value]>
 	): [types.Type, values.Value] {
-		if (term.kind === "projection") {
-			const [t, v] = this.evaluateTerm(instance, term.value, environment)
+		return path.reduce<[types.Type, values.Value]>(([t, v], segment) => {
+			if (segment.kind === "projection") {
+				if (t.kind !== "product") {
+					throw new Error("invalid projection: term value is not a product")
+				} else if (v.kind !== "product") {
+					throw new Error("internal type error")
+				}
 
-			if (t.kind !== "product") {
-				throw new Error("invalid projection - value is not a product")
-			} else if (v.kind !== "product") {
-				throw new Error("internal type error")
-			}
+				if (t.components[segment.key] === undefined) {
+					throw new Error(
+						`invalid projection: no component with key ${segment.key}`
+					)
+				} else if (v.components[segment.key] === undefined) {
+					throw new Error("internal type error")
+				}
 
-			if (t.components[term.key] === undefined) {
-				throw new Error(
-					`invalid projection - no component with key ${term.key}`
-				)
-			} else if (v.components[term.key] === undefined) {
-				throw new Error("internal type error")
-			}
+				return [t.components[segment.key], v.components[segment.key]]
+			} else if (segment.kind === "dereference") {
+				if (t.kind !== "reference") {
+					throw new Error("invalid dereference: term value is not a reference")
+				} else if (v.kind !== "reference") {
+					throw new Error("internal type error")
+				}
 
-			return [t.components[term.key], v.components[term.key]]
-		} else if (term.kind === "dereference") {
-			const [t, v] = this.evaluateTerm(instance, term.value, environment)
-
-			if (t.kind !== "reference") {
-				throw new Error("invalid dereference - value is not a reference")
-			} else if (v.kind !== "reference") {
-				throw new Error("internal type error")
-			}
-
-			return [this.source.get(term.key), instance.get(term.key, v.index)]
-		} else if (term.kind === "variable") {
-			if (term.id in environment) {
-				return environment[term.id]
+				return [
+					this.source.get(segment.key),
+					instance.get(segment.key, v.index),
+				]
 			} else {
-				throw new Error(`unbound variable ${term.id}`)
+				signalInvalidType(segment)
 			}
-		} else {
-			signalInvalidType(term)
-		}
+		}, environment[id])
 	}
 
 	private project(
@@ -254,10 +273,14 @@ export class Mapping {
 				throw new Error("internal type error")
 			}
 
-			const { source } = this.get(targetType.key)
-			if (t.key !== source) {
+			const map = this.maps[targetType.key]
+			if (map === undefined) {
+				throw new Error("key not found")
+			}
+
+			if (t.key !== map.key) {
 				throw new Error(
-					`invalid type - expected a reference to ${source}, but got a reference to ${t.key}`
+					`invalid type - expected a reference to ${map.key}, but got a reference to ${t.key}`
 				)
 			}
 
