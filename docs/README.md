@@ -16,9 +16,9 @@ Each of these can be instantiated directly with a JSON format, encoded to a `Uin
 
 Each of these are documented in depth on their own page:
 
-- [./schemas](./schemas)
-- [./instances](./instances)
-- [./mappings](./mappings)
+- [schemas.md](./schemas.md)
+- [instances.md](./instances.md)
+- [mappings.md](./mappings.md)
 
 It's best to read these in order: schemas, then instances, and then mappings.
 
