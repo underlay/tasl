@@ -110,6 +110,10 @@ const instance = new Instance(schema, {
 					kind: "literal",
 					value: "My Life As Jane Doe: A Memoir",
 				},
+				"http://schema.org/identifier": {
+					kind: "uri",
+					value: "urn:isbn:000-0-0000-01",
+				},
 				"http://schema.org/author": {
 					kind: "reference",
 					index: 1,
