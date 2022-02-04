@@ -21,3 +21,5 @@ Each of these are documented in depth on their own page:
 - [mappings.md](./mappings.md)
 
 It's best to read these in order: schemas, then instances, and then mappings.
+
+A consolidated TypeScript API declaration is given in [API.md](./API.md) as well.
