@@ -8,7 +8,6 @@ An algebraic data model for strongly typed semantic data.
 
 - [Install](#install)
 - [API](#api)
-- [Usage](#usage)
 - [Testing](#testing)
 - [Contributing](#contributing)
 - [License](#license)
@@ -22,80 +21,6 @@ npm i tasl
 ## API
 
 See the [docs/](./docs) folder.
-
-## Usage
-
-```ts
-import {
-	Schema,
-	types,
-	Instance,
-	values,
-	encodeInstance,
-	decodeInstance,
-} from "tasl"
-
-// Directly instantiate a schema using the types.* factory methods
-const schema = new Schema({
-	"http://schema.org/Person": types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/gender": types.coproduct({
-			"http://schema.org/Male": types.unit,
-			"http://schema.org/Female": types.unit,
-			"http://schema.org/value": types.string,
-		}),
-	}),
-})
-// Schema {
-//   classes: {
-//     'http://schema.org/Person': { kind: 'product', components: [Object] }
-//   },
-// }
-
-// Directly instantiate an instance using the values.* factory methods
-const instance = new Instance(schema, {
-	"http://schema.org/Person": [
-		values.product({
-			"http://schema.org/name": values.string("John Doe"),
-			"http://schema.org/gender": values.coproduct(
-				"http://schema.org/Male",
-				values.unit()
-			),
-		}),
-		values.product({
-			"http://schema.org/name": values.string("Jane Doe"),
-			"http://schema.org/gender": values.coproduct(
-				"http://schema.org/Female",
-				values.unit()
-			),
-		}),
-	],
-})
-// Instance {
-//   schema: Schema {
-//     classes: { 'http://schema.org/Person': [Object] }
-//   },
-//   elements: { 'http://schema.org/Person': [ [Object], [Object] ] }
-// }
-
-// Encode the instance to a Uint8Array
-const data = encodeInstance(instance)
-// Uint8Array(22) [
-//     1,  2,   1,   8,  74, 111, 104,
-//   110, 32,  68, 111, 101,   0,   8,
-//    74, 97, 110, 101,  32,  68, 111,
-//   101
-// ]
-
-// Decode the Uint8Array back into an identical Instance
-decodeInstance(schema, data)
-// Instance {
-//   schema: Schema {
-//     classes: { 'http://schema.org/Person': [Object] }
-//   },
-//   elements: { 'http://schema.org/Person': [ [Object], [Object] ] }
-// }
-```
 
 ## Testing
 
