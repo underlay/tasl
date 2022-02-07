@@ -18,16 +18,16 @@ The tasl JavaScript library exports a regular ES6 class `Instance` at the top le
 
 ```ts
 declare class Instance {
-	constructor(
-		readonly schema: Schema,
-		readonly elements: Record<string, values.Value[]>
-	)
-	count(key: string): number
-	get(key: string, index: number): values.Value
-	keys(key: string): Iterable<number>
-	values(key: string): Iterable<values.Value>
-	entries(key: string): Iterable<[number, values.Value]>
-	isEqualTo(instance: Instance): boolean
+  constructor(
+    readonly schema: Schema,
+    readonly elements: Record<string, values.Value[]>
+  )
+  count(key: string): number
+  get(key: string, index: number): values.Value
+  keys(key: string): Iterable<number>
+  values(key: string): Iterable<values.Value>
+  entries(key: string): Iterable<[number, values.Value]>
+  isEqualTo(instance: Instance): boolean
 }
 
 type Value = URI | Literal | Product | Coproduct | Reference
@@ -47,80 +47,80 @@ Here's an example instance of our example schema.
 import { Schema, types, Instance } from "tasl"
 
 const schema = new Schema({
-	"http://schema.org/Person": types.product({
-		"http://schema.org/name": types.product({
-			"http://schema.org/givenName": types.string,
-			"http://schema.org/familyName": types.string,
-		}),
-		"http://schema.org/email": types.uri(),
-	}),
-	"http://schema.org/Book": types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/identifier": types.uri(),
-		"http://schema.org/author": types.reference("http://schema.org/Person"),
-	}),
+  "http://schema.org/Person": types.product({
+    "http://schema.org/name": types.product({
+      "http://schema.org/givenName": types.string,
+      "http://schema.org/familyName": types.string,
+    }),
+    "http://schema.org/email": types.uri(),
+  }),
+  "http://schema.org/Book": types.product({
+    "http://schema.org/name": types.string,
+    "http://schema.org/identifier": types.uri(),
+    "http://schema.org/author": types.reference("http://schema.org/Person"),
+  }),
 })
 
 // an empty instance of the schema
 const emptyInstance = new Instance(schema, {
-	"http://schema.org/Person": [],
-	"http://schema.org/Book": [],
+  "http://schema.org/Person": [],
+  "http://schema.org/Book": [],
 })
 
 const instance = new Instance(schema, {
-	"http://schema.org/Person": [
-		{
-			kind: "product",
-			components: {
-				"http://schema.org/name": {
-					kind: "product",
-					components: {
-						"http://schema.org/givenName": { kind: "literal", value: "John" },
-						"http://schema.org/familyName": { kind: "literal", value: "Doe" },
-					},
-				},
-				"http://schema.org/email": {
-					kind: "uri",
-					value: "mailto:johndoe@example.com",
-				},
-			},
-		},
-		{
-			kind: "product",
-			components: {
-				"http://schema.org/name": {
-					kind: "product",
-					components: {
-						"http://schema.org/givenName": { kind: "literal", value: "Jane" },
-						"http://schema.org/familyName": { kind: "literal", value: "Doe" },
-					},
-				},
-				"http://schema.org/email": {
-					kind: "uri",
-					value: "mailto:janedoe@example.com",
-				},
-			},
-		},
-	],
-	"http://schema.org/Book": [
-		{
-			kind: "product",
-			components: {
-				"http://schema.org/name": {
-					kind: "literal",
-					value: "My Life As Jane Doe: A Memoir",
-				},
-				"http://schema.org/identifier": {
-					kind: "uri",
-					value: "urn:isbn:000-0-0000-01",
-				},
-				"http://schema.org/author": {
-					kind: "reference",
-					index: 1,
-				},
-			},
-		},
-	],
+  "http://schema.org/Person": [
+    {
+      kind: "product",
+      components: {
+        "http://schema.org/name": {
+          kind: "product",
+          components: {
+            "http://schema.org/givenName": { kind: "literal", value: "John" },
+            "http://schema.org/familyName": { kind: "literal", value: "Doe" },
+          },
+        },
+        "http://schema.org/email": {
+          kind: "uri",
+          value: "mailto:johndoe@example.com",
+        },
+      },
+    },
+    {
+      kind: "product",
+      components: {
+        "http://schema.org/name": {
+          kind: "product",
+          components: {
+            "http://schema.org/givenName": { kind: "literal", value: "Jane" },
+            "http://schema.org/familyName": { kind: "literal", value: "Doe" },
+          },
+        },
+        "http://schema.org/email": {
+          kind: "uri",
+          value: "mailto:janedoe@example.com",
+        },
+      },
+    },
+  ],
+  "http://schema.org/Book": [
+    {
+      kind: "product",
+      components: {
+        "http://schema.org/name": {
+          kind: "literal",
+          value: "My Life As Jane Doe: A Memoir",
+        },
+        "http://schema.org/identifier": {
+          kind: "uri",
+          value: "urn:isbn:000-0-0000-01",
+        },
+        "http://schema.org/author": {
+          kind: "reference",
+          index: 1,
+        },
+      },
+    },
+  ],
 })
 ```
 
@@ -130,11 +130,11 @@ Just like how the `types` namespace has factory methods for constructing types, 
 
 ```ts
 declare namespace values {
-	function uri(value: string): URI
-	function literal(value: string): Literal
-	function product(components: Record<string, Value>): Product
-	function coproduct(key: string, value: Value): Coproduct
-	function reference(index: number): Reference
+  function uri(value: string): URI
+  function literal(value: string): Literal
+  function product(components: Record<string, Value>): Product
+  function coproduct(key: string, value: Value): Coproduct
+  function reference(index: number): Reference
 }
 ```
 
@@ -144,21 +144,21 @@ Again, analogous to the standard library of constants for common types in the `t
 
 ```ts
 declare namespace values {
-	function unit(): Product
-	function string(value: string): Literal
-	function boolean(value: boolean): Literal
-	function f32(value: number): Literal
-	function f64(value: number): Literal
-	function i64(value: bigint): Literal
-	function i32(value: number): Literal
-	function i16(value: number): Literal
-	function i8(value: number): Literal
-	function u64(value: bigint): Literal
-	function u32(value: number): Literal
-	function u16(value: number): Literal
-	function u8(value: number): Literal
-	function bytes(value: Uint8Array): Literal
-	function JSON(value: any): Literal
+  function unit(): Product
+  function string(value: string): Literal
+  function boolean(value: boolean): Literal
+  function f32(value: number): Literal
+  function f64(value: number): Literal
+  function i64(value: bigint): Literal
+  function i32(value: number): Literal
+  function i16(value: number): Literal
+  function i8(value: number): Literal
+  function u64(value: bigint): Literal
+  function u32(value: number): Literal
+  function u16(value: number): Literal
+  function u8(value: number): Literal
+  function bytes(value: Uint8Array): Literal
+  function JSON(value: any): Literal
 }
 ```
 
@@ -170,43 +170,43 @@ Here's the example instance from above rewritten to use the value factory method
 import { Schema, types, Instance, values } from "tasl"
 
 const schema = new Schema({
-	"http://schema.org/Person": types.product({
-		"http://schema.org/name": types.product({
-			"http://schema.org/givenName": types.string,
-			"http://schema.org/familyName": types.string,
-		}),
-		"http://schema.org/email": types.uri(),
-	}),
-	"http://schema.org/Book": types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/identifier": types.uri(),
-		"http://schema.org/author": types.reference("http://schema.org/Person"),
-	}),
+  "http://schema.org/Person": types.product({
+    "http://schema.org/name": types.product({
+      "http://schema.org/givenName": types.string,
+      "http://schema.org/familyName": types.string,
+    }),
+    "http://schema.org/email": types.uri(),
+  }),
+  "http://schema.org/Book": types.product({
+    "http://schema.org/name": types.string,
+    "http://schema.org/identifier": types.uri(),
+    "http://schema.org/author": types.reference("http://schema.org/Person"),
+  }),
 })
 
 const instance = new Instance(schema, {
-	"http://schema.org/Person": [
-		values.product({
-			"http://schema.org/name": values.product({
-				"http://schema.org/givenName": values.string("John"),
-				"http://schema.org/familyName": values.string("Doe"),
-			}),
-			"http://schema.org/email": values.uri("mailto:johndoe@example.com"),
-		}),
-		values.product({
-			"http://schema.org/name": values.product({
-				"http://schema.org/givenName": values.string("Jane"),
-				"http://schema.org/familyName": values.string("Doe"),
-			}),
-			"http://schema.org/email": values.uri("mailto:janedoe@example.com"),
-		}),
-	],
-	"http://schema.org/Book": [
-		values.product({
-			"http://schema.org/name": values.string("My Life As Jane Doe: A Memoir"),
-			"http://schema.org/author": values.reference(1),
-		}),
-	],
+  "http://schema.org/Person": [
+    values.product({
+      "http://schema.org/name": values.product({
+        "http://schema.org/givenName": values.string("John"),
+        "http://schema.org/familyName": values.string("Doe"),
+      }),
+      "http://schema.org/email": values.uri("mailto:johndoe@example.com"),
+    }),
+    values.product({
+      "http://schema.org/name": values.product({
+        "http://schema.org/givenName": values.string("Jane"),
+        "http://schema.org/familyName": values.string("Doe"),
+      }),
+      "http://schema.org/email": values.uri("mailto:janedoe@example.com"),
+    }),
+  ],
+  "http://schema.org/Book": [
+    values.product({
+      "http://schema.org/name": values.string("My Life As Jane Doe: A Memoir"),
+      "http://schema.org/author": values.reference(1),
+    }),
+  ],
 })
 ```
 
@@ -229,7 +229,7 @@ Two values of the same type can be tested for value equality.
 
 ```ts
 declare namespace values {
-	function isEqualTo(type: Type, x: Value, y: Value): boolean
+  function isEqualTo(type: Type, x: Value, y: Value): boolean
 }
 ```
 
@@ -241,7 +241,7 @@ A value of type Y can be cast into a value of type X if and only if X ≤ Y.
 
 ```ts
 declare namespace values {
-	function cast(type: Type, value: Value, target: Type): Value
+  function cast(type: Type, value: Value, target: Type): Value
 }
 ```
 
@@ -258,17 +258,17 @@ values.cast(types.boolean, values.boolean(false), types.string)
 // Uncaught Error: a literal value cannot be cast to a different literal datatype
 
 values.cast(
-	types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/email": types.uri(),
-	}),
-	values.product({
-		"http://schema.org/name": values.string("John Doe"),
-		"http://schema.org/email": values.uri("mailto:johndoe@example.com"),
-	}),
-	types.product({
-		"http://schema.org/name": types.string,
-	})
+  types.product({
+    "http://schema.org/name": types.string,
+    "http://schema.org/email": types.uri(),
+  }),
+  values.product({
+    "http://schema.org/name": values.string("John Doe"),
+    "http://schema.org/email": values.uri("mailto:johndoe@example.com"),
+  }),
+  types.product({
+    "http://schema.org/name": types.string,
+  })
 )
 // {
 //   kind: 'product',
@@ -276,30 +276,30 @@ values.cast(
 // }
 
 values.cast(
-	types.product({
-		"http://schema.org/name": types.string,
-	}),
-	values.product({
-		"http://schema.org/name": values.string("John Doe"),
-	}),
-	types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/email": types.uri(),
-	})
+  types.product({
+    "http://schema.org/name": types.string,
+  }),
+  values.product({
+    "http://schema.org/name": values.string("John Doe"),
+  }),
+  types.product({
+    "http://schema.org/name": types.string,
+    "http://schema.org/email": types.uri(),
+  })
 )
 // Uncaught Error: the product value has no component key http://schema.org/email
 
 values.cast(
-	types.coproduct({
-		"http://schema.org/Male": types.unit,
-		"http://schema.org/Female": types.unit,
-		"http://schema.org/value": types.string,
-	}),
-	values.coproduct("http://schema.org/Male", values.unit()),
-	types.coproduct({
-		"http://schema.org/Male": types.unit,
-		"http://schema.org/Female": types.unit,
-	})
+  types.coproduct({
+    "http://schema.org/Male": types.unit,
+    "http://schema.org/Female": types.unit,
+    "http://schema.org/value": types.string,
+  }),
+  values.coproduct("http://schema.org/Male", values.unit()),
+  types.coproduct({
+    "http://schema.org/Male": types.unit,
+    "http://schema.org/Female": types.unit,
+  })
 )
 // Uncaught Error: the target type is not a subtype of the source type
 ```

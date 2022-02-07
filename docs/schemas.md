@@ -19,23 +19,23 @@ The tasl JavaScript library represents regular ES6 class `Schema` at the top lev
 
 ```ts
 declare class Schema {
-	constructor(readonly classes: Record<string, types.Type>)
-	get(key: string): types.Type
-	has(key: string): boolean
-	keys(): Iterable<string>
-	values(): Iterable<types.Type>
-	entries(): Iterable<[string, types.Type]>
-	isEqualTo(schema: Schema): boolean
+  constructor(readonly classes: Record<string, types.Type>)
+  get(key: string): types.Type
+  has(key: string): boolean
+  keys(): Iterable<string>
+  values(): Iterable<types.Type>
+  entries(): Iterable<[string, types.Type]>
+  isEqualTo(schema: Schema): boolean
 }
 
 namespace types {
-	type Type = URI | Literal | Product | Coproduct | Reference
+  type Type = URI | Literal | Product | Coproduct | Reference
 
-	type URI = { kind: "uri" }
-	type Literal = { kind: "literal"; datatype: string }
-	type Product = { kind: "product"; components: Record<string, Type> }
-	type Coproduct = { kind: "coproduct"; options: Record<string, Type> }
-	type Reference = { kind: "reference"; key: string }
+  type URI = { kind: "uri" }
+  type Literal = { kind: "literal"; datatype: string }
+  type Product = { kind: "product"; components: Record<string, Type> }
+  type Coproduct = { kind: "coproduct"; options: Record<string, Type> }
+  type Reference = { kind: "reference"; key: string }
 }
 ```
 
@@ -47,39 +47,39 @@ Here's an example schema.
 import { Schema } from "tasl"
 
 const schema = new Schema({
-	"http://schema.org/Person": {
-		kind: "product",
-		components: {
-			"http://schema.org/name": {
-				kind: "product",
-				components: {
-					"http://schema.org/givenName": {
-						kind: "literal",
-						datatype: "http://www.w3.org/2001/XMLSchema#string",
-					},
-					"http://schema.org/familyName": {
-						kind: "literal",
-						datatype: "http://www.w3.org/2001/XMLSchema#string",
-					},
-				},
-			},
-			"http://schema.org/email": { kind: "uri" },
-		},
-	},
-	"http://schema.org/Book": {
-		kind: "product",
-		components: {
-			"http://schema.org/name": {
-				kind: "literal",
-				datatype: "http://www.w3.org/2001/XMLSchema#string",
-			},
-			"http://schema.org/identifier": { kind: "uri" },
-			"http://schema.org/author": {
-				kind: "reference",
-				key: "http://schema.org/Person",
-			},
-		},
-	},
+  "http://schema.org/Person": {
+    kind: "product",
+    components: {
+      "http://schema.org/name": {
+        kind: "product",
+        components: {
+          "http://schema.org/givenName": {
+            kind: "literal",
+            datatype: "http://www.w3.org/2001/XMLSchema#string",
+          },
+          "http://schema.org/familyName": {
+            kind: "literal",
+            datatype: "http://www.w3.org/2001/XMLSchema#string",
+          },
+        },
+      },
+      "http://schema.org/email": { kind: "uri" },
+    },
+  },
+  "http://schema.org/Book": {
+    kind: "product",
+    components: {
+      "http://schema.org/name": {
+        kind: "literal",
+        datatype: "http://www.w3.org/2001/XMLSchema#string",
+      },
+      "http://schema.org/identifier": { kind: "uri" },
+      "http://schema.org/author": {
+        kind: "reference",
+        key: "http://schema.org/Person",
+      },
+    },
+  },
 })
 ```
 
@@ -89,11 +89,11 @@ Our example is very structured but also very verbose. The `types` namespace has 
 
 ```ts
 declare namespace types {
-	function uri(): URI
-	function literal(datatype: string): Literal
-	function product(components: Record<string, Type>): Product
-	function coproduct(options: Record<string, Type>): Coproduct
-	function reference(key: string): Reference
+  function uri(): URI
+  function literal(datatype: string): Literal
+  function product(components: Record<string, Type>): Product
+  function coproduct(options: Record<string, Type>): Coproduct
+  function reference(key: string): Reference
 }
 ```
 
@@ -103,24 +103,24 @@ Here's the same example schema re-written using these factory methods.
 import { Schema, types } from "tasl"
 
 const schema = new Schema({
-	"http://schema.org/Person": types.product({
-		"http://schema.org/name": types.product({
-			"http://schema.org/givenName": types.literal(
-				"http://www.w3.org/2001/XMLSchema#string"
-			),
-			"http://schema.org/familyName": types.literal(
-				"http://www.w3.org/2001/XMLSchema#string"
-			),
-		}),
-		"http://schema.org/email": types.uri(),
-	}),
-	"http://schema.org/Book": types.product({
-		"http://schema.org/name": types.literal(
-			"http://www.w3.org/2001/XMLSchema#string"
-		),
-		"http://schema.org/identifier": types.uri(),
-		"http://schema.org/author": types.reference("http://schema.org/Person"),
-	}),
+  "http://schema.org/Person": types.product({
+    "http://schema.org/name": types.product({
+      "http://schema.org/givenName": types.literal(
+        "http://www.w3.org/2001/XMLSchema#string"
+      ),
+      "http://schema.org/familyName": types.literal(
+        "http://www.w3.org/2001/XMLSchema#string"
+      ),
+    }),
+    "http://schema.org/email": types.uri(),
+  }),
+  "http://schema.org/Book": types.product({
+    "http://schema.org/name": types.literal(
+      "http://www.w3.org/2001/XMLSchema#string"
+    ),
+    "http://schema.org/identifier": types.uri(),
+    "http://schema.org/author": types.reference("http://schema.org/Person"),
+  }),
 })
 ```
 
@@ -132,22 +132,22 @@ This is essentially the standard library of common types that should cover the n
 
 ```ts
 declare namespace types {
-	const unit: Product
+  const unit: Product
 
-	const string: Literal
-	const boolean: Literal
-	const f32: Literal
-	const f64: Literal
-	const i64: Literal
-	const i32: Literal
-	const i16: Literal
-	const i8: Literal
-	const u64: Literal
-	const u32: Literal
-	const u16: Literal
-	const u8: Literal
-	const bytes: Literal
-	const JSON: Literal
+  const string: Literal
+  const boolean: Literal
+  const f32: Literal
+  const f64: Literal
+  const i64: Literal
+  const i32: Literal
+  const i16: Literal
+  const i8: Literal
+  const u64: Literal
+  const u32: Literal
+  const u16: Literal
+  const u8: Literal
+  const bytes: Literal
+  const JSON: Literal
 }
 ```
 
@@ -176,18 +176,18 @@ Here's the same example schema rewritten to use the `types.string` constant inst
 import { Schema, types } from "tasl"
 
 const schema = new Schema({
-	"http://schema.org/Person": types.product({
-		"http://schema.org/name": types.product({
-			"http://schema.org/givenName": types.string,
-			"http://schema.org/familyName": types.string,
-		}),
-		"http://schema.org/email": types.uri(),
-	}),
-	"http://schema.org/Book": types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/identifier": types.uri(),
-		"http://schema.org/author": types.reference("http://schema.org/Person"),
-	}),
+  "http://schema.org/Person": types.product({
+    "http://schema.org/name": types.product({
+      "http://schema.org/givenName": types.string,
+      "http://schema.org/familyName": types.string,
+    }),
+    "http://schema.org/email": types.uri(),
+  }),
+  "http://schema.org/Book": types.product({
+    "http://schema.org/name": types.string,
+    "http://schema.org/identifier": types.uri(),
+    "http://schema.org/author": types.reference("http://schema.org/Person"),
+  }),
 })
 ```
 
@@ -285,8 +285,8 @@ We can compare types with `types.isSubtypeOf` and `types.isEqualTo`.
 
 ```ts
 declare namespace types {
-	function isSubtypeOf(x: Type, y: Type): boolean
-	function isEqualTo(x: Type, y: Type): boolean
+  function isSubtypeOf(x: Type, y: Type): boolean
+  function isEqualTo(x: Type, y: Type): boolean
 }
 ```
 
@@ -311,70 +311,70 @@ types.isSubtypeOf(types.uri(), types.uri()) // true
 types.isSubtypeOf(types.uri(), types.string) // false
 
 types.isSubtypeOf(
-	types.product({}),
-	types.product({ "http://schema.org/name": types.string })
+  types.product({}),
+  types.product({ "http://schema.org/name": types.string })
 ) // true
 
 types.isSubtypeOf(
-	types.product({ "http://schema.org/name": types.string }),
-	types.product({})
+  types.product({ "http://schema.org/name": types.string }),
+  types.product({})
 ) // false
 
 types.isSubtypeOf(
-	types.product({ "http://schema.org/name": types.string }),
-	types.product({ "http://schema.org/name": types.boolean })
+  types.product({ "http://schema.org/name": types.string }),
+  types.product({ "http://schema.org/name": types.boolean })
 ) // false
 
 types.isSubtypeOf(
-	types.product({ "http://schema.org/name": types.string }),
-	types.product({
-		"http://schema.org/name": types.product({
-			"http://schema.org/givenName": types.string,
-			"http://schema.org/familyName": types.string,
-		}),
-	})
+  types.product({ "http://schema.org/name": types.string }),
+  types.product({
+    "http://schema.org/name": types.product({
+      "http://schema.org/givenName": types.string,
+      "http://schema.org/familyName": types.string,
+    }),
+  })
 ) // false
 
 types.isSubtypeOf(
-	types.product({
-		"http://schema.org/gender": types.coproduct({
-			"http://schema.org/Male": types.unit,
-			"http://schema.org/Female": types.unit,
-			"http://schema.org/value": types.string,
-		}),
-	}),
-	types.product({
-		"http://schema.org/gender": types.coproduct({
-			"http://schema.org/Male": types.unit,
-			"http://schema.org/Female": types.unit,
-		}),
-	})
+  types.product({
+    "http://schema.org/gender": types.coproduct({
+      "http://schema.org/Male": types.unit,
+      "http://schema.org/Female": types.unit,
+      "http://schema.org/value": types.string,
+    }),
+  }),
+  types.product({
+    "http://schema.org/gender": types.coproduct({
+      "http://schema.org/Male": types.unit,
+      "http://schema.org/Female": types.unit,
+    }),
+  })
 ) // true
 
 types.isSubtypeOf(
-	types.product({
-		"http://schema.org/gender": types.coproduct({
-			"http://schema.org/Male": types.unit,
-			"http://schema.org/Female": types.unit,
-		}),
-	}),
-	types.product({
-		"http://schema.org/gender": types.coproduct({
-			"http://schema.org/Male": types.unit,
-			"http://schema.org/Female": types.unit,
-			"http://schema.org/value": types.string,
-		}),
-	})
+  types.product({
+    "http://schema.org/gender": types.coproduct({
+      "http://schema.org/Male": types.unit,
+      "http://schema.org/Female": types.unit,
+    }),
+  }),
+  types.product({
+    "http://schema.org/gender": types.coproduct({
+      "http://schema.org/Male": types.unit,
+      "http://schema.org/Female": types.unit,
+      "http://schema.org/value": types.string,
+    }),
+  })
 ) // false
 
 types.isSubtypeOf(
-	types.product({
-		"http://schema.org/author": types.reference("http://schema.org/Person"),
-	}),
-	types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/author": types.reference("http://schema.org/Person"),
-	})
+  types.product({
+    "http://schema.org/author": types.reference("http://schema.org/Person"),
+  }),
+  types.product({
+    "http://schema.org/name": types.string,
+    "http://schema.org/author": types.reference("http://schema.org/Person"),
+  })
 ) // true
 ```
 
@@ -395,9 +395,9 @@ The _greatest common subtype_ of types X and Y is a maximal type Z such that Z i
 
 ```ts
 declare namespace types {
-	function hasCommonBounds(x: Type, y: Type): boolean
-	function greatestCommonSubtype(x: Type, y: Type): Type
-	function leastCommonSupertype(x: Type, y: Type): Type
+  function hasCommonBounds(x: Type, y: Type): boolean
+  function greatestCommonSubtype(x: Type, y: Type): Type
+  function leastCommonSupertype(x: Type, y: Type): Type
 }
 ```
 
@@ -412,13 +412,13 @@ types.greatestCommonSubtype(types.uri(), types.uri()) // { kind: "uri" }
 types.leastCommonSupertype(types.uri(), types.uri()) // { kind: "uri" }
 
 types.greatestCommonSubtype(
-	types.product({ "http://schema.org/name": types.string }),
-	types.product({ "http://schema.org/email": types.uri() })
+  types.product({ "http://schema.org/name": types.string }),
+  types.product({ "http://schema.org/email": types.uri() })
 ) // { kind: 'product', components: {} }
 
 types.leastCommonSupertype(
-	types.product({ "http://schema.org/name": types.string }),
-	types.product({ "http://schema.org/email": types.uri() })
+  types.product({ "http://schema.org/name": types.string }),
+  types.product({ "http://schema.org/email": types.uri() })
 )
 // {
 //   kind: 'product',
@@ -432,14 +432,14 @@ types.leastCommonSupertype(
 // }
 
 types.greatestCommonSubtype(
-	types.coproduct({
-		"http://example.com/foo": types.unit,
-		"http://example.com/bar": types.unit,
-	}),
-	types.coproduct({
-		"http://example.com/foo": types.unit,
-		"http://example.com/baz": types.unit,
-	})
+  types.coproduct({
+    "http://example.com/foo": types.unit,
+    "http://example.com/bar": types.unit,
+  }),
+  types.coproduct({
+    "http://example.com/foo": types.unit,
+    "http://example.com/baz": types.unit,
+  })
 )
 // {
 //   kind: 'coproduct',
@@ -451,14 +451,14 @@ types.greatestCommonSubtype(
 // }
 
 types.leastCommonSupertype(
-	types.coproduct({
-		"http://example.com/foo": types.unit,
-		"http://example.com/bar": types.unit,
-	}),
-	types.coproduct({
-		"http://example.com/foo": types.unit,
-		"http://example.com/baz": types.unit,
-	})
+  types.coproduct({
+    "http://example.com/foo": types.unit,
+    "http://example.com/bar": types.unit,
+  }),
+  types.coproduct({
+    "http://example.com/foo": types.unit,
+    "http://example.com/baz": types.unit,
+  })
 )
 // {
 //   kind: 'coproduct',
@@ -469,13 +469,13 @@ types.greatestCommonSubtype(types.string, types.boolean)
 // Uncaught Error: cannot unify unequal literal types
 
 types.greatestCommonSubtype(
-	types.product({ "http://schema.org/name": types.string }),
-	types.product({
-		"http://schema.org/name": types.product({
-			"http://schema.org/givenName": types.string,
-			"http://schema.org/familyName": types.string,
-		}),
-	})
+  types.product({ "http://schema.org/name": types.string }),
+  types.product({
+    "http://schema.org/name": types.product({
+      "http://schema.org/givenName": types.string,
+      "http://schema.org/familyName": types.string,
+    }),
+  })
 )
 // Uncaught Error: cannot unify types of different kinds
 ```

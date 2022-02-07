@@ -12,44 +12,44 @@ A `Mapping` is a runtime representation of a structural transformation between t
 
 ```ts
 declare class Mapping {
-	constructor(
-		readonly source: Schema,
-		readonly target: Schema,
-		readonly maps: Record<string, expressions.Map>
-	)
-	get(key: string): expressions.Map
-	has(key: string): boolean
-	keys(): Iterable<string>
-	values(): Iterable<expressions.Map>
-	entries(): Iterable<[string, expressions.Map]>
-	apply(instance: Instance): Instance
+  constructor(
+    readonly source: Schema,
+    readonly target: Schema,
+    readonly maps: Record<string, expressions.Map>
+  )
+  get(key: string): expressions.Map
+  has(key: string): boolean
+  keys(): Iterable<string>
+  values(): Iterable<expressions.Map>
+  entries(): Iterable<[string, expressions.Map]>
+  apply(instance: Instance): Instance
 }
 
 declare namespace expressions {
-	type Map = { key: string; id: string; value: Expression }
+  type Map = { key: string; id: string; value: Expression }
 
-	type Expression = URI | Literal | Product | Coproduct | Term | Match
+  type Expression = URI | Literal | Product | Coproduct | Term | Match
 
-	type URI = { kind: "uri"; value: string }
-	type Literal = { kind: "literal"; value: string }
-	type Product = { kind: "product"; components: Record<string, Expression> }
-	type Coproduct = { kind: "coproduct"; key: string; value: Expression }
+  type URI = { kind: "uri"; value: string }
+  type Literal = { kind: "literal"; value: string }
+  type Product = { kind: "product"; components: Record<string, Expression> }
+  type Coproduct = { kind: "coproduct"; key: string; value: Expression }
 
-	type Term = { kind: "term"; id: string; path: Path }
+  type Term = { kind: "term"; id: string; path: Path }
 
-	type Path = Segment[]
-	type Segment = Projection | Dereference
-	type Projection = { kind: "projection"; key: string }
-	type Dereference = { kind: "dereference"; key: string }
+  type Path = Segment[]
+  type Segment = Projection | Dereference
+  type Projection = { kind: "projection"; key: string }
+  type Dereference = { kind: "dereference"; key: string }
 
-	type Match = {
-		kind: "match"
-		id: string
-		path: Path
-		cases: Record<string, Case>
-	}
+  type Match = {
+    kind: "match"
+    id: string
+    path: Path
+    cases: Record<string, Case>
+  }
 
-	type Case = { id: string; value: Expression }
+  type Case = { id: string; value: Expression }
 }
 ```
 
@@ -63,22 +63,22 @@ Let's pause here and look at a tiny example mapping.
 import { Schema, types, Instance, values, Mapping, expressions } from "tasl"
 
 const sourceSchema = new Schema({
-	"http://schema.org/Person": types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/email": types.uri(),
-	}),
+  "http://schema.org/Person": types.product({
+    "http://schema.org/name": types.string,
+    "http://schema.org/email": types.uri(),
+  }),
 })
 
 const targetSchema = new Schema({
-	"http://example.com/widget": types.string,
+  "http://example.com/widget": types.string,
 })
 
 const mapping = new Mapping(sourceSchema, targetSchema, {
-	"http://example.com/widget": {
-		key: "http://schema.org/Person",
-		id: "person",
-		value: expressions.literal("foo"),
-	},
+  "http://example.com/widget": {
+    key: "http://schema.org/Person",
+    id: "person",
+    value: expressions.literal("foo"),
+  },
 })
 ```
 
@@ -96,11 +96,11 @@ The expression in our example is equivalent to this JavaScript function:
 
 ```ts
 const f = (person: {
-	kind: "product"
-	components: {
-		"http://schema.org/name": { kind: "literal"; value: string }
-		"http://schema.org/email": { kind: "uri"; value: string }
-	}
+  kind: "product"
+  components: {
+    "http://schema.org/name": { kind: "literal"; value: string }
+    "http://schema.org/email": { kind: "uri"; value: string }
+  }
 }): { kind: "literal"; value: string } => ({ kind: "literal", value: "foo" })
 ```
 
@@ -110,16 +110,16 @@ We can see this by applying the mapping to an instance of the source schema.
 
 ```ts
 const instance = new Instance(sourceSchema, {
-	"http://schema.org/Person": [
-		values.product({
-			"http://schema.org/name": values.string("John Doe"),
-			"http://schema.org/email": values.uri("mailto:johndoe@example.com"),
-		}),
-		values.product({
-			"http://schema.org/name": values.string("Jane Doe"),
-			"http://schema.org/email": values.uri("mailto:janedoe@example.com"),
-		}),
-	],
+  "http://schema.org/Person": [
+    values.product({
+      "http://schema.org/name": values.string("John Doe"),
+      "http://schema.org/email": values.uri("mailto:johndoe@example.com"),
+    }),
+    values.product({
+      "http://schema.org/name": values.string("Jane Doe"),
+      "http://schema.org/email": values.uri("mailto:janedoe@example.com"),
+    }),
+  ],
 })
 
 const targetInstance = mapping.apply(instance)
@@ -130,7 +130,7 @@ console.log(targetInstance)
 // }
 
 for (const element of targetInstance.values("http://example.com/widget")) {
-	console.log(element)
+  console.log(element)
 }
 // { kind: 'literal', value: 'foo' }
 // { kind: 'literal', value: 'foo' }
@@ -148,21 +148,21 @@ To see this, let's look at a more complex example. Here we're mapping a source s
 import { Schema, types, Instance, values, Mapping, expressions } from "tasl"
 
 const sourceSchema = new Schema({
-	"http://schema.org/Person": types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/email": types.uri(),
-	}),
-	"http://schema.org/Book": types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/author": types.reference("http://schema.org/Person"),
-	}),
+  "http://schema.org/Person": types.product({
+    "http://schema.org/name": types.string,
+    "http://schema.org/email": types.uri(),
+  }),
+  "http://schema.org/Book": types.product({
+    "http://schema.org/name": types.string,
+    "http://schema.org/author": types.reference("http://schema.org/Person"),
+  }),
 })
 
 const targetSchema = new Schema({
-	"http://example.com/book": types.product({
-		"http://example.com/name": types.string,
-		"http://example.com/author": types.string,
-	}),
+  "http://example.com/book": types.product({
+    "http://example.com/name": types.string,
+    "http://example.com/author": types.string,
+  }),
 })
 ```
 
@@ -172,20 +172,20 @@ The way we do this is with `expressions.Term` expressions. Mappings use string `
 
 ```ts
 const mapping = new Mapping(sourceSchema, targetSchema, {
-	"http://example.com/book": {
-		key: "http://schema.org/Book",
-		id: "book",
-		value: expressions.product({
-			"http://example.com/name": expressions.term("book", [
-				expressions.projection("http://schema.org/name"),
-			]),
-			"http://example.com/author": expressions.term("book", [
-				expressions.projection("http://schema.org/author"),
-				expressions.dereference("http://schema.org/Person"),
-				expressions.projection("http://schema.org/name"),
-			]),
-		}),
-	},
+  "http://example.com/book": {
+    key: "http://schema.org/Book",
+    id: "book",
+    value: expressions.product({
+      "http://example.com/name": expressions.term("book", [
+        expressions.projection("http://schema.org/name"),
+      ]),
+      "http://example.com/author": expressions.term("book", [
+        expressions.projection("http://schema.org/author"),
+        expressions.dereference("http://schema.org/Person"),
+        expressions.projection("http://schema.org/name"),
+      ]),
+    }),
+  },
 })
 ```
 
@@ -200,21 +200,21 @@ Here's a example illustrating case analysis.
 
 ```ts
 const sourceSchema = new Schema({
-	"http://schema.org/Person": types.product({
-		"http://schema.org/name": types.string,
-		"http://schema.org/gender": types.coproduct({
-			"http://schema.org/Male": types.unit,
-			"http://schema.org/Female": types.unit,
-			"http://schema.org/value": types.string,
-		}),
-	}),
+  "http://schema.org/Person": types.product({
+    "http://schema.org/name": types.string,
+    "http://schema.org/gender": types.coproduct({
+      "http://schema.org/Male": types.unit,
+      "http://schema.org/Female": types.unit,
+      "http://schema.org/value": types.string,
+    }),
+  }),
 })
 
 const targetSchema = new Schema({
-	"http://example.com/person": types.product({
-		"http://example.com/name": types.string,
-		"http://example.com/gender": types.string,
-	}),
+  "http://example.com/person": types.product({
+    "http://example.com/name": types.string,
+    "http://example.com/gender": types.string,
+  }),
 })
 ```
 
@@ -224,33 +224,33 @@ To write a mapping between these schemas, we must handle each case of the source
 
 ```ts
 const mapping = new Mapping(sourceSchema, targetSchema, {
-	"http://example.com/person": {
-		key: "http://schema.org/Person",
-		id: "person",
-		value: expressions.product({
-			"http://example.com/name": expressions.term("person", [
-				expressions.projection("http://schema.org/name"),
-			]),
-			"http://example.com/gender": expressions.match(
-				"person",
-				[expressions.projection("http://schema.org/gender")],
-				{
-					"http://schema.org/Male": {
-						id: "gender",
-						value: expressions.literal("Male"),
-					},
-					"http://schema.org/Female": {
-						id: "gender",
-						value: expressions.literal("Female"),
-					},
-					"http://schema.org/value": {
-						id: "gender",
-						value: expressions.term("gender", []),
-					},
-				}
-			),
-		}),
-	},
+  "http://example.com/person": {
+    key: "http://schema.org/Person",
+    id: "person",
+    value: expressions.product({
+      "http://example.com/name": expressions.term("person", [
+        expressions.projection("http://schema.org/name"),
+      ]),
+      "http://example.com/gender": expressions.match(
+        "person",
+        [expressions.projection("http://schema.org/gender")],
+        {
+          "http://schema.org/Male": {
+            id: "gender",
+            value: expressions.literal("Male"),
+          },
+          "http://schema.org/Female": {
+            id: "gender",
+            value: expressions.literal("Female"),
+          },
+          "http://schema.org/value": {
+            id: "gender",
+            value: expressions.term("gender", []),
+          },
+        }
+      ),
+    }),
+  },
 })
 ```
 
@@ -262,31 +262,31 @@ Written JavaScript, the entire match expression would look like this:
 
 ```ts
 const f = (
-	x:
-		| {
-				kind: "coproduct"
-				key: "http://schema.org/Male"
-				value: { kind: "product"; components: {} }
-		  }
-		| {
-				kind: "coproduct"
-				key: "http://schema.org/Female"
-				value: { kind: "product"; components: {} }
-		  }
-		| {
-				kind: "coproduct"
-				key: "http://schema.org/value"
-				value: { kind: "literal"; value: string }
-		  }
+  x:
+    | {
+        kind: "coproduct"
+        key: "http://schema.org/Male"
+        value: { kind: "product"; components: {} }
+      }
+    | {
+        kind: "coproduct"
+        key: "http://schema.org/Female"
+        value: { kind: "product"; components: {} }
+      }
+    | {
+        kind: "coproduct"
+        key: "http://schema.org/value"
+        value: { kind: "literal"; value: string }
+      }
 ): { kind: "literal"; value: string } => {
-	switch (x.key) {
-		case "http://schema.org/Male":
-			return { kind: "literal", value: "Male" }
-		case "http://schema.org/Female":
-			return { kind: "literal", value: "Female" }
-		case "http://schema.org/value":
-			return { kind: "literal", value: x.value }
-	}
+  switch (x.key) {
+    case "http://schema.org/Male":
+      return { kind: "literal", value: "Male" }
+    case "http://schema.org/Female":
+      return { kind: "literal", value: "Female" }
+    case "http://schema.org/value":
+      return { kind: "literal", value: x.value }
+  }
 }
 ```
 
@@ -296,9 +296,9 @@ An even more concise way to instantiate mappings is to use the `.taslx` DSL with
 
 ```ts
 declare function parseMapping(
-	source: Schema,
-	target: Schema,
-	input: string
+  source: Schema,
+  target: Schema,
+  input: string
 ): Mapping
 ```
 
@@ -342,8 +342,8 @@ Mappings can be encoded and decoded from `Uint8Arrays` with the top-level `encod
 ```ts
 declare function encodeMapping(mapping: Mapping): Uint8Array
 declare function decodeMapping(
-	source: Schema,
-	target: Schema,
-	data: Uint8Array
+  source: Schema,
+  target: Schema,
+  data: Uint8Array
 ): Mapping
 ```
