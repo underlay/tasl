@@ -32,7 +32,7 @@ npm run test
 
 ## Contributing
 
-PRs accepted!
+If there's anything you want to discuss, request, contribute to, or give feedback on, feel free to open an issue!
 
 ## License
 
