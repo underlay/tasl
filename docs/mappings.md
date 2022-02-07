@@ -316,8 +316,8 @@ namespace s http://schema.org/
 namespace ex http://example.com/
 
 map ex:book <= s:Book (book) => {
-	ex:name <= book / s:name
-	ex:author <= book / s:author * s:Person / s:name
+  ex:name <= book / s:name
+  ex:author <= book / s:author * s:Person / s:name
 }
 ```
 
@@ -326,12 +326,12 @@ namespace s http://schema.org/
 namespace ex http://example.com/
 
 map ex:person <= s:Person (person) => {
-	ex:name <= person / s:name
-	ex:gender <= person / s:gender [
-		s:Male (gender) => "Male"
-		s:Female (gender) => "Female"
-		s:value (gender) => value
-	]
+  ex:name <= person / s:name
+  ex:gender <= person / s:gender [
+    s:Male (gender) => "Male"
+    s:Female (gender) => "Female"
+    s:value (gender) => value
+  ]
 }
 ```
 

@@ -209,16 +209,16 @@ namespace s http://schema.org/
 
 class s:Person {
   s:name -> {
-		s:familyName -> string
-		s:givenName -> string
-	}
+    s:familyName -> string
+    s:givenName -> string
+  }
   s:email -> uri
 }
 
 class s:Book {
-	s:name -> string
-	s:identifier -> uri
-	s:author -> * s:Person
+  s:name -> string
+  s:identifier -> uri
+  s:author -> * s:Person
 }
 `)
 // Schema {
