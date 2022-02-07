@@ -3,7 +3,7 @@
 ## Table of contents
 
 - [Overview](#overview)
-- [.taslx DSL](#taslx-dsl)
+- [`.taslx` DSL](#taslx-dsl)
 - [Binary codec](#binary-codec)
 
 ## Overview
@@ -290,7 +290,7 @@ const f = (
 }
 ```
 
-## .taslx DSL
+## `.taslx` DSL
 
 An even more concise way to instantiate mappings is to use the `.taslx` DSL with the `parseMapping` method. The DSL supports comments and URI namespaces, which dramatically improve readability. Just like the `Mapping` constructor, `parseMapping` takes concrete source and target schemas as its first arguments.
 
