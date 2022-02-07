@@ -268,7 +268,7 @@ decodeSchema(encodeSchema(schema))
 // Schema {
 //   classes: {
 //     'http://schema.org/Person': { kind: 'product', components: [Object] }
-//   },
+//   }
 // }
 
 schema.isEqualTo(decodeSchema(encodeSchema(schema)))
@@ -296,7 +296,7 @@ The subtype relation (denoted ≤ in writing) is defined by cases:
 - A literal type X is a subtype of a literal type Y if and only if X and Y have the same datatype
 - A product type X is a subtype of the product type Y if and only if
   - for every component key K in X, Y has a component with key K, and the type X(K) is a subtype of the type Y(K)
-- A coproduct type X is a subtype of the coproduct type Y if
+- A coproduct type X is a subtype of the coproduct type Y if and only if
   - for every option key K in Y, X has an option with key K, and the type X(K) is a subtype of the type Y(K)
 - A reference type X is a subtype of a reference type Y if and only if X and Y reference the same class
 - If two types X and Y are of different kinds, then neither X ≤ Y nor Y ≤ X
@@ -401,9 +401,9 @@ declare namespace types {
 }
 ```
 
-In general, the infima and suprema of arbitrary types X and Y **are not guaranteed to exist**. The method `types.hasCommonBounds` checks whether two types have an infimum and supremum (if they have one then they also have the other). `types.greatestCommonSubtype` and `types.leastCommonSupertype` will **throw an error** if call with types that do not have common bounds.
+In general, the infima and suprema of arbitrary types X and Y **are not guaranteed to exist**. The method `types.hasCommonBounds` checks whether two types have an infimum and supremum (if they have one then they also have the other). `types.greatestCommonSubtype` and `types.leastCommonSupertype` will **throw an error** if called with types that do not have common bounds.
 
-Intuitively, `types.greatestCommonSubtype` and `types.leastCommonSupertype` are two complementary ways of "merging" two types by either discarding extra product components and keeping extra coproduct options, or keeping extra product comopnents and discarding extra coproduct options, respectively.
+Intuitively, `types.greatestCommonSubtype` and `types.leastCommonSupertype` are two complementary ways of "merging" two types by either discarding extra product components and keeping extra coproduct options, or keeping extra product components and discarding extra coproduct options, respectively.
 
 ```ts
 import { types } from "tasl"
