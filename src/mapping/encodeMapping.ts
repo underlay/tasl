@@ -38,7 +38,7 @@ export function encodeMapping(mapping: Mapping): Uint8Array {
 	}
 
 	for (const [target, map] of mapping.entries()) {
-		const { key: source, id, value: expression } = map
+		const { source: source, id, value: expression } = map
 		const { length: index } = elements[ul.map]
 		const value = values.coproduct(ul.map, values.reference(index))
 		elements[ul.map].push(

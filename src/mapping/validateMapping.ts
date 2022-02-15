@@ -16,7 +16,7 @@ export function validateMapping(
 		}
 
 		Object.freeze(maps[targetKey])
-		const { id, value, key: sourceKey } = maps[targetKey]
+		const { id, value, source: sourceKey } = maps[targetKey]
 		const sourceType = source.get(sourceKey)
 		const environment = { [id]: sourceType }
 		validateExpression(source, maps, value, targetType, environment)
@@ -72,8 +72,8 @@ function validateExpression(
 			const map = maps[type.key]
 			if (map === undefined) {
 				throw new Error(`missing target ${type.key} from mapping`)
-			} else if (termType.kind !== "reference" || termType.key !== map.key) {
-				throw new Error(`expected a reference to class ${map.key}`)
+			} else if (termType.kind !== "reference" || termType.key !== map.source) {
+				throw new Error(`expected a reference to class ${map.source}`)
 			}
 		} else {
 			if (!types.isSubtypeOf(type, termType)) {

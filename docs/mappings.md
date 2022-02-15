@@ -26,7 +26,7 @@ declare class Mapping {
 }
 
 declare namespace expressions {
-  type Map = { key: string; id: string; value: Expression }
+  type Map = { source: string; id: string; value: Expression }
 
   type Expression = URI | Literal | Product | Coproduct | Term | Match
 
@@ -75,7 +75,7 @@ const targetSchema = new Schema({
 
 const mapping = new Mapping(sourceSchema, targetSchema, {
   "http://example.com/widget": {
-    key: "http://schema.org/Person",
+    source: "http://schema.org/Person",
     id: "person",
     value: expressions.literal("foo"),
   },
@@ -86,7 +86,7 @@ Here we have a source schema with a single class `http://schema.org/Person` and 
 
 | property | type                     | description                                                 |
 | -------- | ------------------------ | ----------------------------------------------------------- |
-| `key`    | `string`                 | the key of a class in the **source** schema                 |
+| `source` | `string`                 | the key of a class in the source schema                     |
 | `id`     | `string`                 | a term to bind element values to                            |
 | `value`  | `expressions.Expression` | an expression evaluating to a term of the target class type |
 
@@ -173,7 +173,7 @@ The way we do this is with `expressions.Term` expressions. Mappings use string `
 ```ts
 const mapping = new Mapping(sourceSchema, targetSchema, {
   "http://example.com/book": {
-    key: "http://schema.org/Book",
+    source: "http://schema.org/Book",
     id: "book",
     value: expressions.product({
       "http://example.com/name": expressions.term("book", [
@@ -225,7 +225,7 @@ To write a mapping between these schemas, we must handle each case of the source
 ```ts
 const mapping = new Mapping(sourceSchema, targetSchema, {
   "http://example.com/person": {
-    key: "http://schema.org/Person",
+    source: "http://schema.org/Person",
     id: "person",
     value: expressions.product({
       "http://example.com/name": expressions.term("person", [

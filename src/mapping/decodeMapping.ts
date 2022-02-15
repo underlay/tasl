@@ -335,7 +335,11 @@ export function decodeMapping(
 			coproduct: new Set(),
 		})
 
-		maps[target.value] = { key: source.value, id: `m${i}`, value: expression }
+		maps[target.value] = {
+			source: source.value,
+			id: `m${i}`,
+			value: expression,
+		}
 	}
 
 	return new Mapping(source, target, maps)

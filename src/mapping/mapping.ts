@@ -56,7 +56,7 @@ export class Mapping {
 
 		const elements: Record<string, values.Value[]> = {}
 		for (const [key, targetType] of this.target.entries()) {
-			const { value: expression, id, key: sourceKey } = this.maps[key]
+			const { value: expression, id, source: sourceKey } = this.maps[key]
 			const sourceType = this.source.get(sourceKey)
 			elements[key] = new Array(instance.count(sourceKey))
 			for (const [index, element] of instance.entries(sourceKey)) {
@@ -278,9 +278,9 @@ export class Mapping {
 				throw new Error("key not found")
 			}
 
-			if (t.key !== map.key) {
+			if (t.key !== map.source) {
 				throw new Error(
-					`invalid type - expected a reference to ${map.key}, but got a reference to ${t.key}`
+					`invalid type - expected a reference to ${map.source}, but got a reference to ${t.key}`
 				)
 			}
 

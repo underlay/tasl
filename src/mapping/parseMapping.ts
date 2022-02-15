@@ -242,7 +242,7 @@ export function parseMapping(
 
 			const injections = node.getChildren("Injection")
 			maps[key] = {
-				key: getURI(source),
+				source: getURI(source),
 				id: slice(identifier),
 				value: parseInjections(parseExpression(expression), injections),
 			}

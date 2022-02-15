@@ -118,7 +118,7 @@ test("apply instantiated mapping", (t) => {
 
 	const mapping = new Mapping(sourceSchema, targetSchema, {
 		"http://example.com/person": {
-			key: "http://schema.org/Person",
+			source: "http://schema.org/Person",
 			id: "person",
 			value: expressions.product({
 				"http://example.com/name": expressions.term("person", [

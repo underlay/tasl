@@ -1,6 +1,6 @@
 export namespace expressions {
 	export type Map = {
-		key: string
+		source: string
 		id: string
 		value: Expression
 	}
