@@ -20,6 +20,7 @@ The tasl JavaScript library represents regular ES6 class `Schema` at the top lev
 ```ts
 declare class Schema {
   constructor(readonly classes: Record<string, types.Type>)
+  count(): number
   get(key: string): types.Type
   has(key: string): boolean
   keys(): Iterable<string>

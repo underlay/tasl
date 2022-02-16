@@ -8,6 +8,10 @@ export class Schema {
 		this.#keys = validateSchema(classes)
 	}
 
+	count(): number {
+		return this.#keys.length
+	}
+
 	get(key: string): types.Type {
 		const type = this.classes[key]
 		if (type === undefined) {

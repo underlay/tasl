@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.3.0-rc.2] 2022-02-15
+
+### Added
+
+- Add `Schema.count(): number`
+
+### Changed
+
+- Rename `Map.key` to `Map.source`
+
+## [0.3.0-rc.1] 2022-02-04
+
+### Removed
+
+- Type predicate utility methods
+
+### Changed
+
+- Better key caching
+
 ## [0.3.0-rc.0] 2022-01-25
 
 ### Changed
