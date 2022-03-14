@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.3.0-rc.3] 2022-03-13
+
+### Added
+
+- `forComponents` and `forOptions` key utilities
+- `values.Element` type
+
+### Changed
+
+- Instances now have explicit integer IDs instead of using implicit array indices!
+- `values.Reference.index` is renamed to `values.Reference.id`
+
 ## [0.3.0-rc.2] 2022-02-16
 
 ### Added
