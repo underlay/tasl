@@ -8,7 +8,7 @@ export function validateSchema(
 ): readonly string[] {
 	Object.freeze(classes)
 	const keys = getKeys(classes)
-	for (const key of keys) {
+	for (const [index, key] of keys.entries()) {
 		validateURI(key)
 		validateType(classes, classes[key])
 	}
@@ -17,15 +17,15 @@ export function validateSchema(
 
 function validateType(classes: Record<string, types.Type>, type: types.Type) {
 	Object.freeze(type)
+
 	if (type.kind === "uri") {
-		return
 	} else if (type.kind === "literal") {
 		validateURI(type.datatype)
 	} else if (type.kind === "product") {
 		Object.freeze(type.components)
 		const keys = getKeys(type.components)
 		cache.product.set(type, keys)
-		for (const key of keys) {
+		for (const [index, key] of keys.entries()) {
 			validateURI(key)
 			validateType(classes, type.components[key])
 		}
@@ -33,13 +33,12 @@ function validateType(classes: Record<string, types.Type>, type: types.Type) {
 		Object.freeze(type.options)
 		const keys = getKeys(type.options)
 		cache.coproduct.set(type, keys)
-		for (const key of keys) {
+		for (const [index, key] of keys.entries()) {
 			validateURI(key)
 			validateType(classes, type.options[key])
 		}
 	} else if (type.kind === "reference") {
 		if (type.key in classes) {
-			return
 		} else {
 			throw new Error(
 				`invalid reference type: there is no class with key ${type.key} in the schema`

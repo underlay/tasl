@@ -1,7 +1,5 @@
 import { ul } from "@underlay/namespaces"
 
-import { iota } from "../utils.js"
-
 import type { Schema } from "../schema/index.js"
 import { decodeInstance, values } from "../instance/index.js"
 
@@ -12,7 +10,7 @@ import { expressions } from "./expressions.js"
 /**
  * Convert an encoded instance of the mapping schema to a mapping
  * @param {Schema} source
- * @param {Schema} garget
+ * @param {Schema} target
  * @param {Uint8Array} data
  * @returns {Mapping}
  */
@@ -23,9 +21,10 @@ export function decodeMapping(
 ): Mapping {
 	const instance = decodeInstance(mappingSchema, data)
 
-	const products: Record<string, values.Value>[] = Array.from(
-		iota(instance.count(ul.product), (_) => ({}))
-	)
+	const products = new Map<number, Record<string, values.Value>>()
+	for (const id of instance.keys(ul.product)) {
+		products.set(id, {})
+	}
 
 	for (const element of instance.values(ul.component)) {
 		if (element.kind !== "product") {
@@ -52,7 +51,7 @@ export function decodeMapping(
 			throw new Error("internal error decoding mapping")
 		}
 
-		const components = products[source.index]
+		const components = products.get(source.id)
 		if (components === undefined) {
 			throw new Error("broken construction reference value")
 		} else if (key.value in components) {
@@ -62,10 +61,16 @@ export function decodeMapping(
 		}
 	}
 
-	const matches: Record<string, { index: number; value: values.Value }>[] =
-		Array.from(iota(instance.count(ul.match), (_) => ({})))
+	const matches = new Map<
+		number,
+		Record<string, { id: number; value: values.Value }>
+	>()
 
-	for (const [i, element] of instance.entries(ul.case)) {
+	for (const id of instance.keys(ul.match)) {
+		matches.set(id, {})
+	}
+
+	for (const [id, element] of instance.entries(ul.case)) {
 		if (element.kind !== "product") {
 			throw new Error("internal error decoding mapping")
 		}
@@ -90,13 +95,13 @@ export function decodeMapping(
 			throw new Error("internal error decoding mapping")
 		}
 
-		const cases = matches[source.index]
+		const cases = matches.get(source.id)
 		if (cases === undefined) {
 			throw new Error("broken match reference value")
 		} else if (key.value in cases) {
 			throw new Error("duplicate case keys")
 		} else {
-			cases[key.value] = { index: i, value }
+			cases[key.value] = { id, value }
 		}
 	}
 
@@ -114,25 +119,25 @@ export function decodeMapping(
 				throw new Error("internal error decoding mapping")
 			}
 
-			return expressions.term(`m${term.value.index}`, [])
+			return expressions.term(`m${term.value.id}`, [])
 		} else if (term.key === ul.case) {
 			if (term.value.kind !== "reference") {
 				throw new Error("internal error decoding mapping")
 			}
 
-			return expressions.term(`c${term.value.index}`, [])
+			return expressions.term(`c${term.value.id}`, [])
 		} else if (term.key === ul.projection) {
 			if (term.value.kind !== "reference") {
 				throw new Error("internal error decoding mapping")
 			}
 
-			if (context.projection.has(term.value.index)) {
+			if (context.projection.has(term.value.id)) {
 				throw new Error("projection cycle detected")
 			} else {
-				context.projection.add(term.value.index)
+				context.projection.add(term.value.id)
 			}
 
-			const element = instance.get(ul.projection, term.value.index)
+			const element = instance.get(ul.projection, term.value.id)
 			if (element.kind !== "product") {
 				throw new Error("internal error decoding mapping")
 			}
@@ -157,13 +162,13 @@ export function decodeMapping(
 				throw new Error("internal error decoding mapping")
 			}
 
-			if (context.dereference.has(term.value.index)) {
+			if (context.dereference.has(term.value.id)) {
 				throw new Error("dereference cycle detected")
 			} else {
-				context.dereference.add(term.value.index)
+				context.dereference.add(term.value.id)
 			}
 
-			const element = instance.get(ul.dereference, term.value.index)
+			const element = instance.get(ul.dereference, term.value.id)
 			if (element.kind !== "product") {
 				throw new Error("internal error decoding mapping")
 			}
@@ -215,7 +220,7 @@ export function decodeMapping(
 				throw new Error("internal error decoding mapping")
 			}
 
-			const element = instance.get(ul.match, expression.value.index)
+			const element = instance.get(ul.match, expression.value.id)
 			if (element.kind !== "product") {
 				throw new Error("internal error decoding mapping")
 			}
@@ -227,18 +232,18 @@ export function decodeMapping(
 				throw new Error("internal error decoding mapping")
 			}
 
+			const match = matches.get(expression.value.id)
+			if (match === undefined) {
+				throw new Error("internal error decoding mapping")
+			}
+
 			const cases = Object.fromEntries(
-				Object.entries(matches[expression.value.index]).map(
-					([key, { index, value }]) => {
-						if (value.kind !== "coproduct") {
-							throw new Error("internal error decoding mapping")
-						}
-						return [
-							key,
-							{ id: `c${index}`, value: toExpression(value, context) },
-						]
+				Object.entries(match).map(([key, { id, value }]) => {
+					if (value.kind !== "coproduct") {
+						throw new Error("internal error decoding mapping")
 					}
-				)
+					return [key, { id: `c${id}`, value: toExpression(value, context) }]
+				})
 			)
 
 			const term = toTerm(value, {
@@ -252,8 +257,13 @@ export function decodeMapping(
 				throw new Error("internal error decoding mapping")
 			}
 
+			const product = products.get(expression.value.id)
+			if (product === undefined) {
+				throw new Error("internal error decoding mapping")
+			}
+
 			const components = Object.fromEntries(
-				Object.entries(products[expression.value.index]).map(([key, value]) => {
+				Object.entries(product).map(([key, value]) => {
 					if (value.kind !== "coproduct") {
 						throw new Error("internal error decoding mapping")
 					}
@@ -268,13 +278,13 @@ export function decodeMapping(
 				throw new Error("internal error decoding mapping")
 			}
 
-			if (context.coproduct.has(expression.value.index)) {
+			if (context.coproduct.has(expression.value.id)) {
 				throw new Error("coproduct injection cycle detected")
 			} else {
-				context.coproduct.add(expression.value.index)
+				context.coproduct.add(expression.value.id)
 			}
 
-			const element = instance.get(ul.coproduct, expression.value.index)
+			const element = instance.get(ul.coproduct, expression.value.id)
 			if (element.kind !== "product") {
 				throw new Error("internal error decoding mapping")
 			}
@@ -299,7 +309,7 @@ export function decodeMapping(
 		}
 	}
 
-	const maps: Record<string, expressions.Map> = {}
+	const maps: expressions.Map[] = []
 	for (const [i, element] of instance.entries(ul.map)) {
 		if (element.kind !== "product") {
 			throw new Error("internal error decoding mapping")
@@ -335,11 +345,12 @@ export function decodeMapping(
 			coproduct: new Set(),
 		})
 
-		maps[target.value] = {
+		maps.push({
 			source: source.value,
+			target: target.value,
 			id: `m${i}`,
 			value: expression,
-		}
+		})
 	}
 
 	return new Mapping(source, target, maps)

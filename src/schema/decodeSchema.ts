@@ -22,9 +22,10 @@ export function decodeSchema(data: Uint8Array): Schema {
 
 	const instance = decodeInstance(schemaSchema, data)
 
-	const products: Record<string, values.Value>[] = Array.from(
-		iota(instance.count(ul.product), (_) => ({}))
-	)
+	const products = new Map<number, Record<string, values.Value>>()
+	for (const id of instance.keys(ul.product)) {
+		products.set(id, {})
+	}
 
 	for (const element of instance.values(ul.component)) {
 		if (element.kind !== "product") {
@@ -51,7 +52,7 @@ export function decodeSchema(data: Uint8Array): Schema {
 			throw new Error("internal error decoding schema")
 		}
 
-		const components = products[source.index]
+		const components = products.get(source.id)
 		if (components === undefined) {
 			throw new Error("broken reference value")
 		} else if (key.value in components) {
@@ -61,9 +62,10 @@ export function decodeSchema(data: Uint8Array): Schema {
 		}
 	}
 
-	const coproducts: Record<string, values.Value>[] = Array.from(
-		iota(instance.count(ul.coproduct), (_) => ({}))
-	)
+	const coproducts = new Map<number, Record<string, values.Value>>()
+	for (const id of instance.keys(ul.coproduct)) {
+		coproducts.set(id, {})
+	}
 
 	for (const element of instance.values(ul.option)) {
 		if (element.kind !== "product") {
@@ -90,7 +92,7 @@ export function decodeSchema(data: Uint8Array): Schema {
 			throw new Error("internal error decoding schema")
 		}
 
-		const options = coproducts[source.index]
+		const options = coproducts.get(source.id)
 		if (options === undefined) {
 			throw new Error("broken reference value")
 		} else if (key.value in options) {
@@ -112,18 +114,18 @@ export function decodeSchema(data: Uint8Array): Schema {
 			if (value.value.kind !== "reference") {
 				throw new Error("internal error decoding schema")
 			}
-			const { index } = value.value
+			const { id } = value.value
 
 			// this is how we check for product element re-use.
 			// once we "visit" an element we delete its index.
 			// it's important that the deletion happens before
 			// we call parseValue() on the components or else
 			// reference cycles will cause infinite loops.
-			const product = products[index]
+			const product = products.get(id)
 			if (product === undefined) {
 				throw new Error("re-used product element")
 			} else {
-				delete products[index]
+				products.delete(id)
 			}
 
 			const components: Record<string, types.Type> = {}
@@ -141,14 +143,14 @@ export function decodeSchema(data: Uint8Array): Schema {
 				throw new Error("internal error decoding schema")
 			}
 
-			const { index } = value.value
+			const { id } = value.value
 
 			// same for coproducts here...
-			const coproduct = coproducts[index]
+			const coproduct = coproducts.get(id)
 			if (coproduct === undefined) {
 				throw new Error("re-used coproduct element")
 			} else {
-				delete coproducts[index]
+				coproducts.delete(id)
 			}
 
 			const options: Record<string, types.Type> = {}
@@ -166,8 +168,8 @@ export function decodeSchema(data: Uint8Array): Schema {
 				throw new Error("internal error decoding schema")
 			}
 
-			const { index } = value.value
-			const element = instance.get(ul.class, index)
+			const { id } = value.value
+			const element = instance.get(ul.class, id)
 			if (element.kind !== "product") {
 				throw new Error("internal error decoding schema")
 			}

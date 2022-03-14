@@ -5,8 +5,10 @@ declare class Schema {
   has(key: string): boolean
   keys(): Iterable<string>
   values(): Iterable<types.Type>
-  entries(): Iterable<[string, types.Type]>
+  entries(): Iterable<[string, types.Type, number]>
   isEqualTo(schema: Schema): boolean
+  indexOfKey(key: string): number
+  keyAtIndex(index: number): string
 }
 
 declare function encodeSchema(schema: Schema): Uint8Array
@@ -54,10 +56,10 @@ declare namespace types {
 declare class Instance {
   constructor(
     readonly schema: Schema,
-    readonly elements: Record<string, values.Value[]>
+    readonly elements: Record<string, values.Element[]>
   )
   count(key: string): number
-  get(key: string, index: number): values.Value
+  get(key: string, id: number): values.Value
   keys(key: string): Iterable<number>
   values(key: string): Iterable<values.Value>
   entries(key: string): Iterable<[number, values.Value]>
@@ -68,19 +70,21 @@ declare function encodeInstance(instance: Instance): Uint8Array
 declare function decodeInstance(schema: Schema, data: Uint8Array): Instance
 
 declare namespace values {
+  type Element = { id: number; value: Value }
+
   type Value = URI | Literal | Product | Coproduct | Reference
 
   type URI = { kind: "uri"; value: string }
   type Literal = { kind: "literal"; value: string }
   type Product = { kind: "product"; components: Record<string, Value> }
   type Coproduct = { kind: "coproduct"; key: string; value: Value }
-  type Reference = { kind: "reference"; index: number }
+  type Reference = { kind: "reference"; id: number }
 
   function uri(value: string): URI
   function literal(value: string): Literal
   function product(components: Record<string, Value>): Product
   function coproduct(key: string, value: Value): Coproduct
-  function reference(index: number): Reference
+  function reference(id: number): Reference
 
   function unit(): Product
   function string(value: string): Literal
@@ -106,7 +110,7 @@ declare class Mapping {
   constructor(
     readonly source: Schema,
     readonly target: Schema,
-    readonly maps: Record<string, expressions.Map>
+    readonly maps: expressions.Map[]
   )
   get(key: string): expressions.Map
   has(key: string): boolean
@@ -129,7 +133,7 @@ declare function parseMapping(
 ): Mapping
 
 declare namespace expressions {
-  type Map = { key: string; id: string; value: Expression }
+  type Map = { source: string; target: string; id: string; value: Expression }
 
   type Expression = URI | Literal | Product | Coproduct | Term | Match
 

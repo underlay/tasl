@@ -15,7 +15,7 @@ declare class Mapping {
   constructor(
     readonly source: Schema,
     readonly target: Schema,
-    readonly maps: Record<string, expressions.Map>
+    maps: expressions.Map[]
   )
   get(key: string): expressions.Map
   has(key: string): boolean
@@ -26,7 +26,7 @@ declare class Mapping {
 }
 
 declare namespace expressions {
-  type Map = { source: string; id: string; value: Expression }
+  type Map = { source: string; target: string; id: string; value: Expression }
 
   type Expression = URI | Literal | Product | Coproduct | Term | Match
 
@@ -171,9 +171,10 @@ We want to populate `http://example.com/book` in the target using elements from 
 The way we do this is with `expressions.Term` expressions. Mappings use string `id` properties as lexically scoped variable names - we give each `expressions.Map` a string `id` to bind element values to, so that later we can reference them with terms. Terms also have a `path` array of projections and dereferences that let us access components of products and "follow" indices of references to their element values.
 
 ```ts
-const mapping = new Mapping(sourceSchema, targetSchema, {
-  "http://example.com/book": {
+const mapping = new Mapping(sourceSchema, targetSchema, [
+  {
     source: "http://schema.org/Book",
+    target: "http://example.com/book",
     id: "book",
     value: expressions.product({
       "http://example.com/name": expressions.term("book", [
@@ -186,13 +187,13 @@ const mapping = new Mapping(sourceSchema, targetSchema, {
       ]),
     }),
   },
-})
+])
 ```
 
 Here, we've bound each element of the source class to the identifier `book`, and when we write the template of our target value (the `expressions.product` with `http://example.com/name` and `http://example.com/author` components) we use term expressions of identifer to populate the components. The two term expressions in this mapping reference the same identifier but with different paths:
 
 - `[expression.projection("http://schema.org/name")]` means "take the `http://schema.org/name` component of the product value". Typechecking happens inside the `Mapping` constructor, which will throw an error if value bound to the identifier isn't a product, or if it didn't have a `http://schema.org/name` component, or if the `http://schema.org/name` component wasn't of the expected type (string literal in this case).
-- `[expressions.projection("http://schema.org/author"), expressions.dereference("http://schema.org/Person"), expressions.projection("http://schema.org/name")]` means "take the `http://schema.org/author` component of the product value, and follow the index of the resulting reference value into the `http://schema.org/Person` class, and then take the `http://schema.org/name` component of the resulting person element". The `Mapping` constructor would throw an error if the value bound to the identifier wasn't a product, if the `http://schema.org/author` component wasn't a reference to the `http://schema.org/Person` class, or if the person class wasn't a product type, or if the `http://schema.org/name` component of the person type wasn't a string literal.
+- `[expressions.projection("http://schema.org/author"), expressions.dereference("http://schema.org/Person"), expressions.projection("http://schema.org/name")]` means "take the `http://schema.org/author` component of the product value, and follow the id of the resulting reference value into the `http://schema.org/Person` class, and then take the `http://schema.org/name` component of the resulting person element". The `Mapping` constructor would throw an error if the value bound to the identifier wasn't a product, if the `http://schema.org/author` component wasn't a reference to the `http://schema.org/Person` class, or if the person class wasn't a product type, or if the `http://schema.org/name` component of the person type wasn't a string literal.
 
 This covers terms, paths, projections, and deferences. The last kind of expression that we haven't seen yet is `expressions.Match`. Match expressions are dual to component projections. A product value has values for all of its component types, so the only way to "operate" on it is to access one of its components by name. But a coproduct value has a value for just one of its option types, so the only way to "operate" on it is to do case anaylsis on all of the options at once.
 
@@ -223,9 +224,10 @@ In the source schema, a person's gender is either one of two distinguished enums
 To write a mapping between these schemas, we must handle each case of the source person's gender coproduct and map them **all** to the target person's gender (ie a string).
 
 ```ts
-const mapping = new Mapping(sourceSchema, targetSchema, {
-  "http://example.com/person": {
+const mapping = new Mapping(sourceSchema, targetSchema, [
+  {
     source: "http://schema.org/Person",
+    target: "http://example.com/person",
     id: "person",
     value: expressions.product({
       "http://example.com/name": expressions.term("person", [
@@ -251,7 +253,7 @@ const mapping = new Mapping(sourceSchema, targetSchema, {
       ),
     }),
   },
-})
+])
 ```
 
 Match expressions always match "on" a specific term; they have `id` and `path` properties just like `expressions.Term`. This term (`person / http://schema.org/gender` in this case) must evalute to a coproduct, or the Mapping constructor will throw an error. A match expression then has an object of cases; each case has its own `id: string` property that the value of the corresponding option will be bound to, and a `value: expressions.Expression` property. Match expressions must have a case for every option in the matched term's type, and each case of a match expression must evaluate to a term of the target type (a string literal in this case).

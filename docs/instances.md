@@ -12,7 +12,7 @@
 
 ## Overview
 
-An `Instance` is a runtime representation of the contents of a dataset. Every instance is an instance of a particular `Schema`, and it has, for each class in its schema, an array of _values_ of the class type. The values at the top-level of each array are called _elements_.
+An `Instance` is a runtime representation of the contents of a dataset. Every instance is an instance of a particular `Schema`, and it has, for each class in its schema, a set of _values_ of the class type, each with a unique unsigned integer id. The values at the top-level of each array are called _elements_.
 
 The tasl JavaScript library exports a regular ES6 class `Instance` at the top level. Just like `Schema` classes are built out of objects from the `types` namespace, `Instance` classes are built out of objects from the `values` namespace. Each kind of type in `types.` corresponds to a kind of value in `values.`, also represented as regular JavaScript objects discriminated by a `.kind` property.
 
@@ -20,15 +20,17 @@ The tasl JavaScript library exports a regular ES6 class `Instance` at the top le
 declare class Instance {
   constructor(
     readonly schema: Schema,
-    readonly elements: Record<string, values.Value[]>
+    readonly elements: Record<string, values.Element[]>
   )
   count(key: string): number
-  get(key: string, index: number): values.Value
+  get(key: string, id: number): values.Value
   keys(key: string): Iterable<number>
   values(key: string): Iterable<values.Value>
   entries(key: string): Iterable<[number, values.Value]>
   isEqualTo(instance: Instance): boolean
 }
+
+type Element = { id: number; value: Value }
 
 type Value = URI | Literal | Product | Coproduct | Reference
 
@@ -36,7 +38,7 @@ type URI = { kind: "uri"; value: string }
 type Literal = { kind: "literal"; value: string }
 type Product = { kind: "product"; components: Record<string, Value> }
 type Coproduct = { kind: "coproduct"; key: string; value: Value }
-type Reference = { kind: "reference"; index: number }
+type Reference = { kind: "reference"; id: number }
 ```
 
 Instances are always instances of a particular schema, so the first argument to the `Instance` constructor is a `readonly schema: Schema`.
@@ -70,53 +72,62 @@ const emptyInstance = new Instance(schema, {
 const instance = new Instance(schema, {
   "http://schema.org/Person": [
     {
-      kind: "product",
-      components: {
-        "http://schema.org/name": {
-          kind: "product",
-          components: {
-            "http://schema.org/givenName": { kind: "literal", value: "John" },
-            "http://schema.org/familyName": { kind: "literal", value: "Doe" },
+      id: 0,
+      value: {
+        kind: "product",
+        components: {
+          "http://schema.org/name": {
+            kind: "product",
+            components: {
+              "http://schema.org/givenName": { kind: "literal", value: "John" },
+              "http://schema.org/familyName": { kind: "literal", value: "Doe" },
+            },
           },
-        },
-        "http://schema.org/email": {
-          kind: "uri",
-          value: "mailto:johndoe@example.com",
+          "http://schema.org/email": {
+            kind: "uri",
+            value: "mailto:johndoe@example.com",
+          },
         },
       },
     },
     {
-      kind: "product",
-      components: {
-        "http://schema.org/name": {
-          kind: "product",
-          components: {
-            "http://schema.org/givenName": { kind: "literal", value: "Jane" },
-            "http://schema.org/familyName": { kind: "literal", value: "Doe" },
+      id: 1,
+      value: {
+        kind: "product",
+        components: {
+          "http://schema.org/name": {
+            kind: "product",
+            components: {
+              "http://schema.org/givenName": { kind: "literal", value: "Jane" },
+              "http://schema.org/familyName": { kind: "literal", value: "Doe" },
+            },
           },
-        },
-        "http://schema.org/email": {
-          kind: "uri",
-          value: "mailto:janedoe@example.com",
+          "http://schema.org/email": {
+            kind: "uri",
+            value: "mailto:janedoe@example.com",
+          },
         },
       },
     },
   ],
   "http://schema.org/Book": [
     {
-      kind: "product",
-      components: {
-        "http://schema.org/name": {
-          kind: "literal",
-          value: "My Life As Jane Doe: A Memoir",
-        },
-        "http://schema.org/identifier": {
-          kind: "uri",
-          value: "urn:isbn:000-0-0000-01",
-        },
-        "http://schema.org/author": {
-          kind: "reference",
-          index: 1,
+      id: 0,
+      value: {
+        kind: "product",
+        components: {
+          "http://schema.org/name": {
+            kind: "literal",
+            value: "My Life As Jane Doe: A Memoir",
+          },
+          "http://schema.org/identifier": {
+            kind: "uri",
+            value: "urn:isbn:000-0-0000-01",
+          },
+          "http://schema.org/author": {
+            kind: "reference",
+            id: 1,
+          },
         },
       },
     },
@@ -134,7 +145,7 @@ declare namespace values {
   function literal(value: string): Literal
   function product(components: Record<string, Value>): Product
   function coproduct(key: string, value: Value): Coproduct
-  function reference(index: number): Reference
+  function reference(id: number): Reference
 }
 ```
 
@@ -186,26 +197,37 @@ const schema = new Schema({
 
 const instance = new Instance(schema, {
   "http://schema.org/Person": [
-    values.product({
-      "http://schema.org/name": values.product({
-        "http://schema.org/givenName": values.string("John"),
-        "http://schema.org/familyName": values.string("Doe"),
+    {
+      id: 0,
+      value: values.product({
+        "http://schema.org/name": values.product({
+          "http://schema.org/givenName": values.string("John"),
+          "http://schema.org/familyName": values.string("Doe"),
+        }),
+        "http://schema.org/email": values.uri("mailto:johndoe@example.com"),
       }),
-      "http://schema.org/email": values.uri("mailto:johndoe@example.com"),
-    }),
-    values.product({
-      "http://schema.org/name": values.product({
-        "http://schema.org/givenName": values.string("Jane"),
-        "http://schema.org/familyName": values.string("Doe"),
+    },
+    {
+      id: 0,
+      value: values.product({
+        "http://schema.org/name": values.product({
+          "http://schema.org/givenName": values.string("Jane"),
+          "http://schema.org/familyName": values.string("Doe"),
+        }),
+        "http://schema.org/email": values.uri("mailto:janedoe@example.com"),
       }),
-      "http://schema.org/email": values.uri("mailto:janedoe@example.com"),
-    }),
+    },
   ],
   "http://schema.org/Book": [
-    values.product({
-      "http://schema.org/name": values.string("My Life As Jane Doe: A Memoir"),
-      "http://schema.org/author": values.reference(1),
-    }),
+    {
+      id: 0,
+      value: values.product({
+        "http://schema.org/name": values.string(
+          "My Life As Jane Doe: A Memoir"
+        ),
+        "http://schema.org/author": values.reference(1),
+      }),
+    },
   ],
 })
 ```

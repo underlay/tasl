@@ -15,9 +15,9 @@ test("encode nano instance", (t) => {
 
 	const instance = new Instance(schema, {
 		"http://example.com/foo": [
-			values.boolean(true),
-			values.boolean(false),
-			values.boolean(true),
+			{ id: 0, value: values.boolean(true) },
+			{ id: 1, value: values.boolean(false) },
+			{ id: 2, value: values.boolean(true) },
 		],
 	})
 
@@ -27,8 +27,11 @@ test("encode nano instance", (t) => {
 		new Uint8Array([
 			0x01, // version number
 			0x03, // number of elements in the class
+			0x00, // the delta-encoded id of the first element
 			0x01, // the value of the first element ("true")
+			0x00, // the delta-encoded id of the second element
 			0x00, // the value of the second element ("false")
+			0x00, // the delta-encoded id of the third element
 			0x01, // the value of the third element ("true")
 		])
 	)
@@ -49,24 +52,39 @@ test("encode micro instance", (t) => {
 
 	const instance = new Instance(schema, {
 		"http://example.com/a": [
-			values.product({
-				"http://example.com/a/a": values.u8(0xff),
-				"http://example.com/a/b": values.boolean(false),
-			}),
+			{
+				id: 0,
+				value: values.product({
+					"http://example.com/a/a": values.u8(0xff),
+					"http://example.com/a/b": values.boolean(false),
+				}),
+			},
 		],
 		"http://example.com/b": [
-			values.coproduct(
-				"http://example.com/b/a",
-				values.bytes(new Uint8Array([0x0f, 0xee, 0x12, 0x00]))
-			),
-			values.coproduct("http://example.com/b/b", values.unit()),
-			values.coproduct("http://example.com/b/b", values.unit()),
-			values.coproduct(
-				"http://example.com/b/c",
-				values.uri(
-					"dweb:/ipfs/bafybeiczsscdsbs7ffqz55asqdf3smv6klcw3gofszvwlyarci47bgf354"
-				)
-			),
+			{
+				id: 0,
+				value: values.coproduct(
+					"http://example.com/b/a",
+					values.bytes(new Uint8Array([0x0f, 0xee, 0x12, 0x00]))
+				),
+			},
+			{
+				id: 1,
+				value: values.coproduct("http://example.com/b/b", values.unit()),
+			},
+			{
+				id: 2,
+				value: values.coproduct("http://example.com/b/b", values.unit()),
+			},
+			{
+				id: 3,
+				value: values.coproduct(
+					"http://example.com/b/c",
+					values.uri(
+						"dweb:/ipfs/bafybeiczsscdsbs7ffqz55asqdf3smv6klcw3gofszvwlyarci47bgf354"
+					)
+				),
+			},
 		],
 	})
 
@@ -77,14 +95,19 @@ test("encode micro instance", (t) => {
 		new Uint8Array([
 			0x01, // version number
 			0x01, // number of elements in the first class
+			0x00, // the delta-encoded id of the first element
 			0xff, // the value of the first component (u8)
 			0x00, // the value of the second component (boolean)
 			0x04, // the number of elements in the second class
+			0x00, // the delta-encoded id of the first element
 			0x00, // the index of option for the first element's value
 			0x04, // the number of bytes in the binary literal
 			...[0x0f, 0xee, 0x12, 0x00], // the raw bytes of the binary literal
+			0x00, // the delta-encoded id of the second element
 			0x01, // the index of the option for the second element's value
+			0x00, // the delta-encoded id of the third element
 			0x01, // the index of the option for the third element's value
+			0x00, // the delta-encoded id of the fourth element
 			0x02, // the index of the option for the fourth element's value
 			0x46, // the length of the URI in bytes (70)s
 			...new TextEncoder().encode(

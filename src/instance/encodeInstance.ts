@@ -4,7 +4,6 @@ import { forComponents, indexOfOption } from "../keys.js"
 import { version } from "../version.js"
 
 import {
-	signalInvalidType,
 	EncodeState,
 	encodeString,
 	encodeUnsignedVarint,
@@ -40,10 +39,14 @@ export function encodeInstance(instance: Instance): Uint8Array {
 
 	for (const [key, type] of instance.schema.entries()) {
 		// write the number of elements in the class
-		process(encodeUnsignedVarint(state, instance.count(key)))
+		const count = instance.count(key)
+		process(encodeUnsignedVarint(state, count))
 
-		for (const value of instance.values(key)) {
-			process(encodeValue(state, instance, type, value))
+		let previous = 0
+		for (const [id, value] of instance.entries(key)) {
+			process(encodeUnsignedVarint(state, id - previous))
+			previous = id + 1
+			process(encodeValue(state, type, value))
 		}
 	}
 
@@ -63,59 +66,29 @@ export function encodeInstance(instance: Instance): Uint8Array {
 	return new Uint8Array(buffer)
 }
 
-function* encodeValue(
+export function* encodeValue(
 	state: EncodeState,
-	instance: Instance,
 	type: types.Type,
 	value: values.Value
 ): Iterable<Uint8Array> {
-	if (type.kind === "reference") {
-		if (instance.schema.has(type.key)) {
-			if (value.kind === "reference") {
-				const count = instance.count(type.key)
-				if (0 <= value.index && value.index < count) {
-					yield* encodeUnsignedVarint(state, value.index)
-				} else {
-					throw new Error("broken reference value")
-				}
-			} else {
-				throw new Error("expected a reference value")
+	if (type.kind === "uri" && value.kind === "uri") {
+		yield* encodeString(state, value.value)
+	} else if (type.kind === "literal" && value.kind == "literal") {
+		yield* encodeLiteral(state, type.datatype, value.value)
+	} else if (type.kind === "product" && value.kind === "product") {
+		for (const [key, component] of forComponents(type)) {
+			if (value.components[key] === undefined) {
+				throw new Error("key not found")
 			}
-		} else {
-			throw new Error("broken reference type")
+			yield* encodeValue(state, component, value.components[key])
 		}
-	} else if (type.kind === "uri") {
-		if (value.kind === "uri") {
-			yield* encodeString(state, value.value)
-		} else {
-			throw new Error("expected a uri value")
-		}
-	} else if (type.kind === "literal") {
-		if (value.kind === "literal") {
-			yield* encodeLiteral(state, type.datatype, value.value)
-		} else {
-			throw new Error("expected a literal value")
-		}
-	} else if (type.kind === "product") {
-		if (value.kind == "product") {
-			for (const [key, component] of forComponents(type)) {
-				if (value.components[key] === undefined) {
-					throw new Error("key not found")
-				}
-				yield* encodeValue(state, instance, component, value.components[key])
-			}
-		} else {
-			throw new Error("expected a product value")
-		}
-	} else if (type.kind === "coproduct") {
-		if (value.kind === "coproduct") {
-			const index = indexOfOption(type, value.key)
-			yield* encodeUnsignedVarint(state, index)
-			yield* encodeValue(state, instance, type.options[value.key], value.value)
-		} else {
-			throw new Error("expected a coproduct value")
-		}
+	} else if (type.kind === "coproduct" && value.kind === "coproduct") {
+		const index = indexOfOption(type, value.key)
+		yield* encodeUnsignedVarint(state, index)
+		yield* encodeValue(state, type.options[value.key], value.value)
+	} else if (type.kind === "reference" && value.kind === "reference") {
+		yield* encodeUnsignedVarint(state, value.id)
 	} else {
-		signalInvalidType(type)
+		throw new Error("internal type error")
 	}
 }

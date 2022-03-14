@@ -1,0 +1,59 @@
+namespace ul http://underlay.org/ns/
+
+type term [
+  ul:map <- * ul:map
+  ul:case <- * ul:case
+  ul:projection <- * ul:projection
+  ul:dereference <- * ul:dereference
+]
+
+type expression [
+  ul:map <- * ul:map
+  ul:case <- * ul:case
+  ul:projection <- * ul:projection
+  ul:dereference <- * ul:dereference
+  ul:uri <- uri
+  ul:literal <- string
+  ul:match <- * ul:match
+  ul:product <- * ul:product
+  ul:coproduct <- * ul:coproduct
+]
+
+class ul:map {
+  ul:source -> uri
+  ul:target -> uri
+  ul:value -> expression
+}
+
+class ul:projection {
+  ul:key -> uri
+  ul:value -> term
+}
+
+class ul:dereference {
+  ul:key -> uri
+  ul:value -> term
+}
+
+class ul:match {
+  ul:value -> term
+}
+
+class ul:case {
+  ul:source -> * ul:match
+  ul:key -> uri
+  ul:value -> expression
+}
+
+class ul:product {}
+
+class ul:component {
+  ul:source -> * ul:product
+  ul:key -> uri
+  ul:value -> expression
+}
+
+class ul:coproduct {
+  ul:key -> uri
+  ul:value -> expression
+}

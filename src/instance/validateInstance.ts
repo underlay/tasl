@@ -6,24 +6,26 @@ import { signalInvalidType, validateURI } from "../utils.js"
 
 export function validateInstance(
 	schema: Schema,
-	elements: Record<string, values.Value[]>
+	elements: Record<string, Map<number, values.Value>>,
+	has: (key: string, id: number) => boolean
 ) {
 	for (const [key, type] of schema.entries()) {
-		if (key in elements) {
-			for (const value of elements[key as string]) {
-				validateValue(elements, type, value)
-			}
-		} else {
-			throw new Error(`missing element array for class ${key}`)
+		for (const value of elements[key].values()) {
+			validateValue(type, value, has)
 		}
 	}
 }
 
-function validateValue(
-	elements: Record<string, values.Value[]>,
+export function validateValue(
 	type: types.Type,
-	value: values.Value
+	value: values.Value,
+	has: (key: string, id: number) => boolean
+	// callback?: (value: values.Value) => void
 ) {
+	// if (callback !== undefined) {
+	// 	callback(value)
+	// }
+
 	if (type.kind === "uri") {
 		if (value.kind !== "uri") {
 			throw new Error(`type error: expected a URI value`)
@@ -56,7 +58,7 @@ function validateValue(
 				)
 			}
 
-			validateValue(elements, type.components[key], value.components[key])
+			validateValue(type.components[key], value.components[key], has)
 		}
 	} else if (type.kind === "coproduct") {
 		if (value.kind !== "coproduct") {
@@ -69,22 +71,22 @@ function validateValue(
 			)
 		}
 
-		validateValue(elements, type.options[value.key], value.value)
+		validateValue(type.options[value.key], value.value, has)
 	} else if (type.kind === "reference") {
 		if (value.kind !== "reference") {
 			throw new Error(`type error: expected a reference value`)
 		}
 
-		if (Math.floor(value.index) !== value.index) {
-			throw new Error(`type error: reference value index is not an integer`)
+		if (Math.floor(value.id) !== value.id) {
+			throw new Error(`type error: reference id ${value.id} is not an integer`)
 		}
 
-		if (value.index < 0) {
-			throw new Error(`type error: reference value index is negative`)
+		if (value.id < 0) {
+			throw new Error(`type error: reference id is negative`)
 		}
 
-		if (value.index >= elements[type.key].length) {
-			throw new Error(`reference error: index ${value.index} is out of range`)
+		if (!has(type.key, value.id)) {
+			throw new Error(`reference error: no element with id ${value.id}`)
 		}
 	} else {
 		signalInvalidType(type)

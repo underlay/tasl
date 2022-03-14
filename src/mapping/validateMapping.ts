@@ -1,4 +1,4 @@
-import { getKeys, signalInvalidType } from "../utils.js"
+import { signalInvalidType } from "../utils.js"
 
 import { Schema, types } from "../schema/index.js"
 
@@ -8,27 +8,40 @@ import { forComponents, forOptions } from "../keys.js"
 export function validateMapping(
 	source: Schema,
 	target: Schema,
-	maps: Record<string, expressions.Map>
-): readonly string[] {
-	for (const [targetKey, targetType] of target.entries()) {
-		if (maps[targetKey] === undefined) {
-			throw new Error(`missing target ${targetKey} from mapping`)
+	maps: expressions.Map[]
+): Map<string, expressions.Map> {
+	const mapping = new Map()
+	maps.sort(({ target: a }, { target: b }) => (a < b ? -1 : a > b ? 1 : 0))
+	for (const map of maps) {
+		Object.freeze(map)
+		if (mapping.has(map.target)) {
+			throw new Error("duplicate map target")
+		} else {
+			mapping.set(map.target, map)
 		}
-
-		Object.freeze(maps[targetKey])
-		const { id, value, source: sourceKey } = maps[targetKey]
-		const sourceType = source.get(sourceKey)
-		const environment = { [id]: sourceType }
-		validateExpression(source, maps, value, targetType, environment)
 	}
 
-	Object.freeze(maps)
-	return getKeys(maps)
+	for (const key of target.keys()) {
+		if (mapping.has(key)) {
+			continue
+		} else {
+			throw new Error(`missing target ${key} from mapping`)
+		}
+	}
+
+	for (const map of mapping.values()) {
+		const sourceType = source.get(map.source)
+		const targetType = target.get(map.target)
+		const environment = { [map.id]: sourceType }
+		validateExpression(source, mapping, map.value, targetType, environment)
+	}
+
+	return mapping
 }
 
 function validateExpression(
 	source: Schema,
-	maps: Record<string, expressions.Map>,
+	maps: Map<string, expressions.Map>,
 	expression: expressions.Expression,
 	type: types.Type,
 	environment: Record<string, types.Type>
@@ -69,7 +82,7 @@ function validateExpression(
 		const { id, path } = expression
 		const termType = getTermType(source, id, path, environment)
 		if (type.kind === "reference") {
-			const map = maps[type.key]
+			const map = maps.get(type.key)
 			if (map === undefined) {
 				throw new Error(`missing target ${type.key} from mapping`)
 			} else if (termType.kind !== "reference" || termType.key !== map.source) {

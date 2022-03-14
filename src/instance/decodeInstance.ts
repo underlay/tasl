@@ -27,19 +27,26 @@ export function decodeInstance(schema: Schema, data: Uint8Array): Instance {
 		throw new Error(`unsupported version: ${v}`)
 	}
 
-	const elements: Record<string, values.Value[]> = {}
+	const elements: Record<string, values.Element[]> = {}
 	for (const [key, type] of schema.entries()) {
-		const length = decodeUnsignedVarint(state)
 		elements[key] = []
-		for (let i = 0; i < length; i++) {
-			elements[key].push(decodeValue(state, type))
+		let id = 0
+		const length = decodeUnsignedVarint(state)
+		for (let n = 0; n < length; n++) {
+			id += decodeUnsignedVarint(state)
+			const value = decodeValue(state, type)
+			elements[key].push({ id, value })
+			id++
 		}
 	}
 
 	return new Instance(schema, elements)
 }
 
-function decodeValue(state: DecodeState, type: types.Type): values.Value {
+export function decodeValue(
+	state: DecodeState,
+	type: types.Type
+): values.Value {
 	if (type.kind === "uri") {
 		const value = decodeString(state)
 		return values.uri(value)
@@ -55,12 +62,12 @@ function decodeValue(state: DecodeState, type: types.Type): values.Value {
 		return values.product(components)
 	} else if (type.kind === "coproduct") {
 		const index = decodeUnsignedVarint(state)
-		const key = optionAtIndex(type, index)
-		const value = decodeValue(state, type.options[key])
+		const [key, option] = optionAtIndex(type, index)
+		const value = decodeValue(state, option)
 		return values.coproduct(key, value)
 	} else if (type.kind === "reference") {
-		const index = decodeUnsignedVarint(state)
-		return values.reference(index)
+		const id = decodeUnsignedVarint(state)
+		return values.reference(id)
 	} else {
 		signalInvalidType(type)
 	}

@@ -9,17 +9,17 @@ import { validateMapping } from "./validateMapping.js"
 import { forComponents } from "../keys.js"
 
 export class Mapping {
-	#keys: readonly string[]
+	readonly #maps: Map<string, expressions.Map>
 	constructor(
 		readonly source: Schema,
 		readonly target: Schema,
-		readonly maps: Record<string, expressions.Map>
+		maps: expressions.Map[]
 	) {
-		this.#keys = validateMapping(source, target, maps)
+		this.#maps = validateMapping(source, target, maps)
 	}
 
 	get(key: string): expressions.Map {
-		const map = this.maps[key]
+		const map = this.#maps.get(key)
 		if (map === undefined) {
 			throw new Error(`mapping does not have a map with key ${key}`)
 		}
@@ -28,23 +28,19 @@ export class Mapping {
 	}
 
 	has(key: string): boolean {
-		return key in this.maps
+		return this.#maps.has(key)
 	}
 
 	*keys(): Iterable<string> {
-		yield* this.#keys
+		yield* this.#maps.keys()
 	}
 
 	*values(): Iterable<expressions.Map> {
-		for (const key of this.#keys) {
-			yield this.maps[key]
-		}
+		yield* this.#maps.values()
 	}
 
 	*entries(): Iterable<[string, expressions.Map]> {
-		for (const key of this.#keys) {
-			yield [key, this.maps[key]]
-		}
+		yield* this.#maps.entries()
 	}
 
 	apply(instance: Instance): Instance {
@@ -54,18 +50,17 @@ export class Mapping {
 			)
 		}
 
-		const elements: Record<string, values.Value[]> = {}
-		for (const [key, targetType] of this.target.entries()) {
-			const { value: expression, id, source: sourceKey } = this.maps[key]
-			const sourceType = this.source.get(sourceKey)
-			elements[key] = new Array(instance.count(sourceKey))
-			for (const [index, element] of instance.entries(sourceKey)) {
-				elements[key][index] = this.applyExpression(
-					instance,
-					expression,
-					targetType,
-					{ [id]: [sourceType, element] }
-				)
+		const elements: Record<string, values.Element[]> = {}
+		for (const map of this.#maps.values()) {
+			const targetType = this.target.get(map.target)
+			const sourceType = this.source.get(map.source)
+			elements[map.target] = []
+			for (const [id, element] of instance.entries(map.source)) {
+				const value = this.applyExpression(instance, map.value, targetType, {
+					[map.id]: [sourceType, element],
+				})
+
+				elements[map.target].push({ id, value })
 			}
 		}
 
@@ -185,10 +180,7 @@ export class Mapping {
 					throw new Error("internal type error")
 				}
 
-				return [
-					this.source.get(segment.key),
-					instance.get(segment.key, v.index),
-				]
+				return [this.source.get(segment.key), instance.get(segment.key, v.id)]
 			} else {
 				signalInvalidType(segment)
 			}
@@ -273,7 +265,7 @@ export class Mapping {
 				throw new Error("internal type error")
 			}
 
-			const map = this.maps[targetType.key]
+			const map = this.#maps.get(targetType.key)
 			if (map === undefined) {
 				throw new Error("key not found")
 			}
@@ -284,7 +276,7 @@ export class Mapping {
 				)
 			}
 
-			return values.reference(v.index)
+			return values.reference(v.id)
 		} else {
 			signalInvalidType(targetType)
 		}

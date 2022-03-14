@@ -92,20 +92,26 @@ test("apply instantiated mapping", (t) => {
 	// directly instantiate an instance
 	const sourceInstance = new Instance(sourceSchema, {
 		"http://schema.org/Person": [
-			values.product({
-				"http://schema.org/name": values.string("John Doe"),
-				"http://schema.org/gender": values.coproduct(
-					"http://schema.org/Male",
-					values.unit()
-				),
-			}),
-			values.product({
-				"http://schema.org/name": values.string("Jane Doe"),
-				"http://schema.org/gender": values.coproduct(
-					"http://schema.org/Female",
-					values.unit()
-				),
-			}),
+			{
+				id: 0,
+				value: values.product({
+					"http://schema.org/name": values.string("John Doe"),
+					"http://schema.org/gender": values.coproduct(
+						"http://schema.org/Male",
+						values.unit()
+					),
+				}),
+			},
+			{
+				id: 1,
+				value: values.product({
+					"http://schema.org/name": values.string("Jane Doe"),
+					"http://schema.org/gender": values.coproduct(
+						"http://schema.org/Female",
+						values.unit()
+					),
+				}),
+			},
 		],
 	})
 
@@ -116,8 +122,9 @@ test("apply instantiated mapping", (t) => {
 		}),
 	})
 
-	const mapping = new Mapping(sourceSchema, targetSchema, {
-		"http://example.com/person": {
+	const mapping = new Mapping(sourceSchema, targetSchema, [
+		{
+			target: "http://example.com/person",
 			source: "http://schema.org/Person",
 			id: "person",
 			value: expressions.product({
@@ -144,20 +151,26 @@ test("apply instantiated mapping", (t) => {
 				),
 			}),
 		},
-	})
+	])
 
 	const targetInstance = mapping.apply(sourceInstance)
 
-	t.deepEqual(targetInstance.elements, {
+	t.deepEqual(targetInstance.toJSON(), {
 		"http://example.com/person": [
-			values.product({
-				"http://example.com/name": values.string("John Doe"),
-				"http://example.com/gender": values.string("Male"),
-			}),
-			values.product({
-				"http://example.com/name": values.string("Jane Doe"),
-				"http://example.com/gender": values.string("Female"),
-			}),
+			{
+				id: 0,
+				value: values.product({
+					"http://example.com/name": values.string("John Doe"),
+					"http://example.com/gender": values.string("Male"),
+				}),
+			},
+			{
+				id: 1,
+				value: values.product({
+					"http://example.com/name": values.string("Jane Doe"),
+					"http://example.com/gender": values.string("Female"),
+				}),
+			},
 		],
 	})
 })

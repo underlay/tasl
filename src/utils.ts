@@ -40,18 +40,27 @@ export interface DecodeState {
 	offset: number
 }
 
-export const defaultChunkSize = 512
+export function makeDecodeState(data: Uint8Array): DecodeState {
+	const view = new DataView(data.buffer, data.byteOffset, data.byteLength)
+	return { data, view, offset: 0 }
+}
 
 export interface EncodeState {
 	buffer: ArrayBuffer
 	view: DataView
 	offset: number
+	chunkSize: number
 }
 
-export function makeEncodeState(): EncodeState {
-	const buffer = new ArrayBuffer(defaultChunkSize)
-	const view = new DataView(buffer, 0, defaultChunkSize)
-	return { buffer, view, offset: 0 }
+const defaultChunkSize = 1024
+
+export function makeEncodeState(
+	options: { chunkSize?: number } = {}
+): EncodeState {
+	const chunkSize = options.chunkSize || defaultChunkSize
+	const buffer = new ArrayBuffer(chunkSize)
+	const view = new DataView(buffer, 0, chunkSize)
+	return { buffer, view, offset: 0, chunkSize }
 }
 
 export function* allocate(
@@ -60,7 +69,7 @@ export function* allocate(
 ): Iterable<Uint8Array> {
 	if (state.buffer.byteLength < state.offset + size) {
 		yield new Uint8Array(state.buffer, 0, state.offset)
-		const byteLength = Math.max(defaultChunkSize, size)
+		const byteLength = Math.max(state.chunkSize, size)
 		state.buffer = new ArrayBuffer(byteLength)
 		state.offset = 0
 		state.view = new DataView(state.buffer, 0, byteLength)

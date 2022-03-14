@@ -50,7 +50,17 @@ export function encodeMapping(mapping: Mapping): Uint8Array {
 		)
 	}
 
-	return encodeInstance(new Instance(mappingSchema, elements))
+	return encodeInstance(
+		new Instance(
+			mappingSchema,
+			Object.fromEntries(
+				Object.entries(elements).map(([key, values]) => [
+					key,
+					values.map((value, id) => ({ id, value })),
+				])
+			)
+		)
+	)
 }
 
 function fromExpression(
@@ -105,7 +115,7 @@ function fromExpression(
 				[c.id]: values.coproduct(ul.case, reference),
 			})
 
-			reference.index = elements[ul.case].length
+			reference.id = elements[ul.case].length
 
 			elements[ul.case].push(
 				values.product({

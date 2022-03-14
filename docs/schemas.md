@@ -25,7 +25,7 @@ declare class Schema {
   has(key: string): boolean
   keys(): Iterable<string>
   values(): Iterable<types.Type>
-  entries(): Iterable<[string, types.Type]>
+  entries(): Iterable<[string, types.Type, number]>
   isEqualTo(schema: Schema): boolean
 }
 

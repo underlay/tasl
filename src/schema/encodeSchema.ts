@@ -6,7 +6,7 @@ import { Instance, values, encodeInstance } from "../instance/index.js"
 
 import { Schema } from "./schema.js"
 import { types } from "./types.js"
-import { schemaSchema, typeType } from "./schemaSchema.js"
+import { schemaSchema } from "./schemaSchema.js"
 import { forComponents, forOptions } from "../keys.js"
 
 type SchemaElements = {
@@ -43,7 +43,16 @@ export function encodeSchema(schema: Schema): Uint8Array {
 		)
 	}
 
-	const instance = new Instance(schemaSchema, elements)
+	const instance = new Instance(
+		schemaSchema,
+		Object.fromEntries(
+			Object.entries(elements).map(([key, values]) => [
+				key,
+				values.map((value, id) => ({ id, value })),
+			])
+		)
+	)
+
 	return encodeInstance(instance)
 }
 

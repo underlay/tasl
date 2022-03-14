@@ -4,13 +4,13 @@ import { types } from "../schema/types.js"
 const { stringify } = JSON
 
 export namespace values {
+	export type Element = { id: number; value: Value }
 	export type Value = URI | Literal | Product | Coproduct | Reference
-
 	export type URI = { kind: "uri"; value: string }
 	export type Literal = { kind: "literal"; value: string }
 	export type Product = { kind: "product"; components: Record<string, Value> }
 	export type Coproduct = { kind: "coproduct"; key: string; value: Value }
-	export type Reference = { kind: "reference"; index: number }
+	export type Reference = { kind: "reference"; id: number }
 
 	/**
 	 * Make a new URI value.
@@ -82,11 +82,11 @@ export namespace values {
 
 	/**
 	 * Make a new reference value.
-	 * @param {number} index
+	 * @param {number} id
 	 * @returns {Reference}
 	 */
-	export function reference(index: number): Reference {
-		return { kind: "reference", index }
+	export function reference(id: number): Reference {
+		return { kind: "reference", id }
 	}
 
 	/**
@@ -282,7 +282,7 @@ export namespace values {
 			x.kind === "reference" &&
 			y.kind === "reference"
 		) {
-			return x.index === y.index
+			return x.id === y.id
 		} else {
 			throw new Error("one of the values is not of the provided type")
 		}

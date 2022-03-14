@@ -180,8 +180,7 @@ export function parseMapping(
 			return expressions.coproduct(getURI(key), expression)
 		}, expression)
 
-	const maps: Record<string, expressions.Map> = {}
-
+	const maps: expressions.Map[] = []
 	for (
 		let node = tree.topNode.firstChild;
 		node !== null;
@@ -241,11 +240,12 @@ export function parseMapping(
 			}
 
 			const injections = node.getChildren("Injection")
-			maps[key] = {
+			maps.push({
 				source: getURI(source),
+				target: key,
 				id: slice(identifier),
 				value: parseInjections(parseExpression(expression), injections),
-			}
+			})
 		} else {
 			throw new Error(
 				`internal parser error: invalid statement node name "${node.name}""`
